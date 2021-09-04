@@ -1,2 +1,3 @@
-# labe
-Citation dataflows.
+# Labe
+
+Prototyping citation data flows.
