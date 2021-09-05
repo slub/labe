@@ -6,6 +6,7 @@ Fetch references from fatcat ref search index.
 > https://search.fatcat.wiki/fatcat_ref/_search?q=source_release_ident:3jyo6iz5yrc4vbczch3mx4zfvy
 """
 
+import argparse
 import json
 import logging
 from urllib.parse import urljoin
@@ -35,7 +36,7 @@ def fetch_docs(
     size=100,
 ):
     """
-    For a ident, return all docs matching criteria.
+    For a ident, yield all documents.
     """
     offset = 0
     while True:
@@ -53,16 +54,20 @@ def fetch_docs(
                 "got {} for {} {}".format(resp.status_code, search_url, query)
             )
         resp = resp.json()
-        for doc in resp["hits"]["hits"]:
-            yield doc["_source"]
         relation = resp["hits"]["total"]["relation"]
         if relation != "eq":
             raise ValueError(
                 "expected eq for total relation, found: {}".format(relation)
             )
+
+        for doc in resp["hits"]["hits"]:
+            yield doc["_source"]
+
         total = resp["hits"]["total"]["value"]
         if total < (offset + size):
             break
+        else:
+            offset = offset + size
 
 
 def fetch_releases(ids, api="https://api.fatcat.wiki/v0/release/"):
@@ -75,7 +80,14 @@ def fetch_releases(ids, api="https://api.fatcat.wiki/v0/release/"):
         yield requests.get(url).json()
 
 
-def bfs(field="target_release_ident", ident="3jyo6iz5yrc4vbczch3mx4zfvy", max_docs=100):
+def edge_id_pair_to_release(tup):
+    releases = list(fetch_releases(tup))
+    return (releases[0], releases[1])
+
+
+def bfs(
+    field="target_release_ident", ident="3jyo6iz5yrc4vbczch3mx4zfvy", max_edges=100
+):
     """
     TODO: we want to record the edges, not just the ids.
     """
@@ -84,22 +96,43 @@ def bfs(field="target_release_ident", ident="3jyo6iz5yrc4vbczch3mx4zfvy", max_do
         if field == "target_release_ident"
         else "target_release_ident"
     )
-    seen = set()
+    edges = set()
     queue = [ident]
     while queue:
-        logger.debug("bfs: queue size: %s, seen: %s", len(queue), len(seen))
+        logger.debug("bfs: queue size: %s, edges: %s", len(queue), len(edges))
         ident = queue.pop()
-        seen.add(ident)
-        if len(seen) == max_docs:
+        if len(edges) > max_edges:
             break
         for doc in fetch_docs(field=field, ident=ident):
             queue.append(doc[other])
-    return seen
+            edges.add((ident, doc[other]))
+    return edges
 
 
 if __name__ == "__main__":
-    data = list(fetch_docs())
-    print(data)
-    ids = bfs(max_docs=3)
-    print(ids)
-    print(list(fetch_releases(ids)))
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--field", default="target_release_ident", type=str, help="which field to query"
+    )
+    parser.add_argument(
+        "--ident",
+        default="d4oy6i3aa5eethsoxh7onpmzuq",
+        type=str,
+        help="id to start with",
+    )
+    args = parser.parse_args()
+    data = list(fetch_docs(field=args.field, ident=args.ident))
+    logger.debug(data)
+    edges = bfs(max_edges=20)
+    logger.debug(edges)
+    for a, b in [edge_id_pair_to_release(t) for t in edges]:
+        fields = (
+            b["ident"],
+            b["title"][:32],
+            str(b.get("release_year", "NA")),
+            "=>",
+            a["ident"],
+            a["title"][:32],
+            str(a.get("release_year", "NA")),
+        )
+        print("\t".join(fields))
