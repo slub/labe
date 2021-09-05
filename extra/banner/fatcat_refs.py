@@ -110,7 +110,13 @@ def bfs(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument(
+        "--max-edges",
+        default=10,
+        type=int,
+        help="consider at most this number of edges (approximately)",
+    )
     parser.add_argument(
         "--field", default="target_release_ident", type=str, help="which field to query"
     )
@@ -120,19 +126,35 @@ if __name__ == "__main__":
         type=str,
         help="id to start with",
     )
+    parser.add_argument(
+        "--compact-table",
+        default=False,
+        action="store_true",
+        help="more compact output",
+    )
     args = parser.parse_args()
     data = list(fetch_docs(field=args.field, ident=args.ident))
     logger.debug(data)
-    edges = bfs(max_edges=20)
+    edges = bfs(max_edges=args.max_edges)
     logger.debug(edges)
     for a, b in [edge_id_pair_to_release(t) for t in edges]:
-        fields = (
-            b["ident"],
-            b["title"][:32],
-            str(b.get("release_year", "NA")),
-            "=>",
-            a["ident"],
-            a["title"][:32],
-            str(a.get("release_year", "NA")),
-        )
-        print("\t".join(fields))
+        if args.compact_table:
+            fields = (
+                b["title"][:32],
+                str(b.get("release_year", "MISS")),
+                "=>",
+                a["title"][:32],
+                str(a.get("release_year", "MISS")),
+            )
+            print("  ".join(fields))
+        else:
+            fields = (
+                b["ident"],
+                b["title"][:32],
+                str(b.get("release_year", "NA")),
+                "=>",
+                a["ident"],
+                a["title"][:32],
+                str(a.get("release_year", "NA")),
+            )
+            print("\t".join(fields))
