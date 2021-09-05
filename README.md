@@ -4,11 +4,17 @@
 
 Prototyping citation data flows.
 
+# Notes
+
+Install dev dependencies.
+
+```
+$ pip install -e .[dev]
+```
+
 # TODO
 
-* [ ] distribution format
-
-----
-
+* [ ] python distribution setup
 * [ ] sync graph data
+* [ ] define log format, structured logging
 * [ ] calculate subset
