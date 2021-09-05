@@ -1,2 +1,7 @@
+"""
+Command line entry points.
+"""
+
 def main():
-    print('labe')
+    print('labectl')
+
