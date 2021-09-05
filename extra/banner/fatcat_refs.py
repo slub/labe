@@ -6,11 +6,12 @@ Fetch references from fatcat ref search index.
 > https://search.fatcat.wiki/fatcat_ref/_search?q=source_release_ident:3jyo6iz5yrc4vbczch3mx4zfvy
 """
 
-import requests
 import json
-from urllib.parse import urljoin
 import logging
+from urllib.parse import urljoin
+
 import backoff
+import requests
 
 logger = logging.getLogger("simple_example")
 logger.setLevel(logging.DEBUG)
@@ -63,6 +64,7 @@ def fetch_docs(
         if total < (offset + size):
             break
 
+
 def fetch_releases(ids, api="https://api.fatcat.wiki/v0/release/"):
     """
     Fetch a batch of releases by identifier from fatcat api.
@@ -72,7 +74,11 @@ def fetch_releases(ids, api="https://api.fatcat.wiki/v0/release/"):
         logger.debug(url)
         yield requests.get(url).json()
 
+
 def bfs(field="target_release_ident", ident="3jyo6iz5yrc4vbczch3mx4zfvy", max_docs=100):
+    """
+    TODO: we want to record the edges, not just the ids.
+    """
     other = (
         "source_release_ident"
         if field == "target_release_ident"
