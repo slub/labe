@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 .PHONY: all
 all:
-	python setup develop
+	python setup.py develop
 
 .PHONY: clean
 clean:
