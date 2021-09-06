@@ -10,7 +10,7 @@ ZIPAPP := $(PKGNAME).pyz
 # and target *must match* (up to minor version) e.g. for aitio (2021), you
 # might want to use:
 # make refcat.pyz PYTHON_INTERPRETER='"/usr/bin/env python3.8"'
-PYTHON_INTERPRETER := "/usr/bin/env python3.8"
+PYTHON_INTERPRETER := "/usr/bin/env python"
 
 $(ZIPAPP): $(PY_FILES)
 	# https://shiv.readthedocs.io/en/latest/cli-reference.html
