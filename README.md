@@ -17,4 +17,9 @@ $ pip install -e .[dev]
 * [ ] python distribution setup
 * [ ] sync graph data
 * [ ] define log format, structured logging
-* [ ] calculate subset
+* [ ] calculate subset, data reduction
+* [ ] generate snapshot
+* [ ] indexing pipeline
+* [ ] http/rest api
+* [ ] delta report
+* [ ] ...
