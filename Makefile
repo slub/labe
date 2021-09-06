@@ -1,3 +1,5 @@
+# Makefile for building, testing, packaging.
+
 SHELL := /bin/bash
 PY_FILES := $(shell find . -name \*.py -print)
 PKGNAME := labe
@@ -7,9 +9,11 @@ PKGNAME := labe
 ZIPAPP := $(PKGNAME).pyz
 
 # IMPORTANT: Python version on dev (e.g. use https://github.com/pyenv/pyenv)
-# and target *must match* (up to minor version) e.g. for aitio (2021), you
-# might want to use:
+# and target *must match* (up to minor version), example:
 # make refcat.pyz PYTHON_INTERPRETER='"/usr/bin/env python3.8"'
+#
+# Not all systems provide a versionless python executable, but we can try
+# (until we have native deps).
 PYTHON_INTERPRETER := "/usr/bin/env python"
 
 $(ZIPAPP): $(PY_FILES)
