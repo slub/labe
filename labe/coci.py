@@ -23,7 +23,10 @@ def get_figshare_download_link(link):
     """
     Given a link that should redirect to figshare. If it does not, this will fail.
     """
-    pattern_figshare_url = r"https://figshare.com/articles/dataset/(?P<name>[^/]*)/(?P<id>[^/]*)/(?P<version>[\d]*)"
+    pattern_figshare_url = re.compile(
+        r"https://figshare.com/articles/dataset/"
+        "(?P<name>[^/]*)/(?P<id>[^/]*)/(?P<version>[\d]*)"
+    )
     landing_page_url = get_redirect_url(link)
     match = re.match(pattern_figshare_url, landing_page_url)
     if not match:
@@ -97,12 +100,16 @@ class OpenCitationsDataset:
              ... ]
 
         """
-        pattern_citation_data = r"citation data \((?P<format>[^)]*)\)</td><td><a href=\"(?P<url>[^\"]*)\">(?P<ext>[^<]*)</a></td><td>(?P<size>[^(]*)\((?P<size_compressed>[^)]*)\)</td></tr>"
+        pattern_citation_data = re.compile(
+            r"citation data \((?P<format>[^)]*)\)</td>"
+            '<td><a href="(?P<url>[^"]*)">(?P<ext>'
+            "[^<]*)</a></td><td>(?P<size>[^(]*)\((?P<"
+            "size_compressed>[^)]*)\)</td></tr>",
+            re.IGNORECASE,
+        )
         return [
             m.groupdict()
-            for m in re.finditer(
-                pattern_citation_data, self.cache[self.download_url], re.IGNORECASE
-            )
+            for m in re.finditer(pattern_citation_data, self.cache[self.download_url])
         ]
 
     def most_recent_url(self, format="CSV"):
