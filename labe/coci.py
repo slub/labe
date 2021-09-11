@@ -10,6 +10,7 @@ Access the open citations download site and dataset.
 
 """
 
+# TODO: use stdlib only, since we do not use any fancy requests features
 import requests
 import re
 
