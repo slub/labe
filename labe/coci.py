@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 
 """
-Access the open citations download site.
+Access the open citations download site and dataset.
+
+    >>> from labe.coci import OpenCitationsDataset
+    >>> ds = OpenCitationsDataset()
+    >>> ds.most_recent_download_url(format="CSV")
+    'https://figshare.com/ndownloader/articles/6741422/versions/11'
+
 """
 
 import requests
@@ -23,11 +29,11 @@ def get_figshare_download_link(link):
     """
     Given a link that should redirect to figshare. If it does not, this will fail.
     """
+    landing_page_url = get_redirect_url(link)
     pattern_figshare_url = re.compile(
         r"https://figshare.com/articles/dataset/"
         "(?P<name>[^/]*)/(?P<id>[^/]*)/(?P<version>[\d]*)"
     )
-    landing_page_url = get_redirect_url(link)
     match = re.match(pattern_figshare_url, landing_page_url)
     if not match:
         raise RuntimeError("unexpected landing page url: {}".format(landing_page_url))
