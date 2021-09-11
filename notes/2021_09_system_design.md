@@ -29,4 +29,7 @@ Other commands.
 $ labe-status
 $ labe-tree
 ```
+<<<<<<< HEAD
 
+=======
+>>>>>>> dataset download stub
