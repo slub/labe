@@ -1,0 +1,125 @@
+# -*- coding: utf-8 -*-
+
+"""
+Access the open citations download site.
+"""
+
+import requests
+import re
+
+
+def get_redirect_url(link):
+    """
+    Given a url, return the terminal url.
+    """
+    resp = requests.get(link)
+    if resp.status_code >= 400:
+        raise RuntimeError("got http status {} on {}".format(resp.status_code, link))
+    if resp.url:
+        return resp.url
+
+
+def get_figshare_download_link(link):
+    """
+    Given a link that should redirect to figshare. If it does not, this will fail.
+    """
+    pattern_figshare_url = r"https://figshare.com/articles/dataset/(?P<name>[^/]*)/(?P<id>[^/]*)/(?P<version>[\d]*)"
+    landing_page_url = get_redirect_url(link)
+    match = re.match(pattern_figshare_url, landing_page_url)
+    if not match:
+        raise RuntimeError("unexpected landing page url: {}".format(landing_page_url))
+    groups = match.groupdict()
+    return "https://figshare.com/ndownloader/articles/{}/versions/{}".format(
+        groups["id"], groups["version"]
+    )
+
+
+class OpenCitationsDataset:
+    """
+    Encapsulates dataset download. We have a few hops, for example:
+
+    https://opencitations.net/download
+                    |
+                    v
+    https://doi.org/10.6084/m9.figshare.6741422.v11
+                    |
+                    v
+    https://figshare.com/articles/dataset/Crossref_Open_Citation_Index_CSV_dataset_of_all_the_citation_data/6741422/11
+                    |
+                    v
+    https://figshare.com/ndownloader/articles/6741422/versions/11
+
+    This is fragile, since COCI and figshare both may change their scheme.
+    Figshare has an API, https://docs.figshare.com, but the complete download
+    URL is not contained in the articles details, e.g. in
+    https://api.figshare.com/v2/articles/6741422.
+
+    Use `direct_download_url` to override link returned by
+    `most_recent_download_url`, e.g. if scraping breaks.
+    """
+
+    def __init__(self, direct_download_url=None):
+        self.download_url = "https://opencitations.net/download"
+        self.cache = dict()
+        resp = requests.get(self.download_url)
+        if resp.status_code >= 400:
+            raise RuntimeError("cannot download page at: {}".format(self.download_url))
+        self.cache[self.download_url] = resp.text
+        self.direct_download_url = direct_download_url
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "<OpenCitationsDataset via {} ({} rows)>".format(
+            self.download_url, len(self.rows())
+        )
+
+    def rows(self):
+        """
+        Citation data (CSV)</td><td><a
+        href="https://doi.org/10.6084/m9.figshare.6741422.v11">ZIP</a></td><td>193.6
+        GB (29.44 GB zipped)
+
+        Return list of dicts describing a table entry. Most recent should be the first.
+
+            [ ...
+	        {'format': 'CSV',
+	         'url': 'https://doi.org/10.6084/m9.figshare.6741422.v3',
+	         'ext': 'ZIP',
+	         'size': '72 GB ',
+	         'size_compressed': '11 GB zipped'},
+	        {'format': 'N-Triple',
+	         'url': 'https://doi.org/10.6084/m9.figshare.6741425.v3',
+	         'ext': 'ZIP',
+	         'size': '481 GB ',
+	         'size_compressed': '22 GB zipped'},
+             ... ]
+
+        """
+        pattern_citation_data = r"citation data \((?P<format>[^)]*)\)</td><td><a href=\"(?P<url>[^\"]*)\">(?P<ext>[^<]*)</a></td><td>(?P<size>[^(]*)\((?P<size_compressed>[^)]*)\)</td></tr>"
+        return [
+            m.groupdict()
+            for m in re.finditer(
+                pattern_citation_data, self.cache[self.download_url], re.IGNORECASE
+            )
+        ]
+
+    def most_recent_url(self, format="CSV"):
+        """
+        Return the most recent link for a given format (as it is written on the
+        website, e.g. "CSV").
+        """
+        rows = [row for row in self.rows() if row.get("format") == format]
+        if not rows:
+            raise ValueError("no url found for format {}".format(format))
+        return rows[0].get("url")
+
+    def most_recent_download_url(self, format="CSV"):
+        """
+        Get the final download link, we want something like:
+        https://figshare.com/ndownloader/articles/6741422/versions/11.
+        """
+        if self.direct_download_url:
+            return self.direct_download_url
+        return get_figshare_download_link(self.most_recent_url(format=format))
