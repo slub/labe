@@ -25,8 +25,6 @@ with open("README.md", "r") as fh:
             "labectl=labe.cli:main"
         ]},
         install_requires=[
-            "bs4",
-            "dynaconf[ini]",
             "luigi",
             "requests",
         ],
