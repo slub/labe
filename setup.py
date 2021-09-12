@@ -21,23 +21,19 @@ with open("README.md", "r") as fh:
             "Operating System :: OS Independent",
         ],
         python_requires=">=3.6",
-        entry_points={"console_scripts": [
-            "labectl=labe.cli:main"
-        ]},
-        install_requires=[
-            "luigi",
-            "requests",
-            "xdg",
-        ],
-        extras_require={"dev": [
-            "ipython",
-            "isort",
-            "mypy",
-            "pylint",
-            "pytest",
-            "pytest-cov",
-            "shiv",
-            "twine",
-            "yapf",
-        ],},
+        entry_points={"console_scripts": ["labectl=labe.cli:main"]},
+        install_requires=["luigi", "requests", "xdg",],
+        extras_require={
+            "dev": [
+                "ipython",
+                "isort",
+                "mypy",
+                "pylint",
+                "pytest",
+                "pytest-cov",
+                "shiv",
+                "twine",
+                "yapf",
+            ],
+        },
     )

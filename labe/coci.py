@@ -15,11 +15,17 @@ import requests
 import re
 
 
-def get_redirect_url(link):
+def get_redirect_url(link, headers=None):
     """
     Given a url, return the terminal url.
     """
-    resp = requests.get(link)
+    if headers is None:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chr"
+            "ome/93.0.4577.63 Safari/537.36",
+        }
+    resp = requests.get(link, headers=headers)
     if resp.status_code >= 400:
         raise RuntimeError("got http status {} on {}".format(resp.status_code, link))
     if resp.url:
