@@ -29,3 +29,8 @@ Other commands.
 $ labe-status
 $ labe-tree
 ```
+
+Alternative third-party projects.
+
+* [DVC](https://dvc.org/) for handling versions of the raw inputs and pipelines
+* [taskfile.dev](https://taskfile.dev/#/)
