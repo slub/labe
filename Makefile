@@ -6,7 +6,7 @@ PKGNAME := labe
 
 # The "zipapp" we build, cf. PEP441, https://www.python.org/dev/peps/pep-0441/,
 # https://shiv.readthedocs.io/
-ZIPAPP := $(PKGNAME).pyz
+ZIPAPP := labectl
 
 # IMPORTANT: Python version on dev (e.g. use https://github.com/pyenv/pyenv)
 # and target *must match* (up to minor version), example:
@@ -28,5 +28,5 @@ all:
 .PHONY: clean
 clean:
 	rm -rf labe.egg-info
-	rm -rf labe.pyz
+	rm -rf labectl
 

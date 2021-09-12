@@ -27,6 +27,7 @@ with open("README.md", "r") as fh:
         install_requires=[
             "luigi",
             "requests",
+            "xdg",
         ],
         extras_require={"dev": [
             "ipython",
