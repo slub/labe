@@ -1,5 +1,5 @@
 """
-Unit tests for labe.
+Unit tests for labe. Most not mocked yet, hence slow.
 """
 
 import collections
