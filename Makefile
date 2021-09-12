@@ -25,6 +25,10 @@ $(ZIPAPP): $(PY_FILES)
 all:
 	python setup.py develop
 
+.PHONY: fmt
+fmt:
+	black -q .
+
 .PHONY: clean
 clean:
 	rm -rf labe.egg-info

@@ -13,4 +13,7 @@ def test_get_redirct_url():
 
     assert get_redirect_url("https://google.com") == "https://www.google.com/"
     assert get_redirect_url("http://google.com") == "https://www.google.com/?gws_rd=ssl"
-    assert get_redirect_url("https://doi.org/10.1111/icad.12417") == "https://onlinelibrary.wiley.com/doi/10.1111/icad.12417"
+    assert (
+        get_redirect_url("https://doi.org/10.1111/icad.12417")
+        == "https://onlinelibrary.wiley.com/doi/10.1111/icad.12417"
+    )
