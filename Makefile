@@ -27,6 +27,7 @@ all:
 
 .PHONY: fmt
 fmt:
+	isort .
 	black -q .
 
 .PHONY: clean

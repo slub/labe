@@ -2,11 +2,12 @@
 Command line entry points.
 """
 
-import os
 import argparse
 import logging
+import os
 import tempfile
-from labe.settings import settings, LOGGING_CONF_FILE
+
+from labe.settings import LOGGING_CONF_FILE, settings
 
 
 def main():

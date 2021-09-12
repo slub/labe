@@ -10,9 +10,10 @@ Access the open citations download site and dataset.
 
 """
 
+import re
+
 # TODO: use stdlib only, since we do not use any fancy requests features
 import requests
-import re
 
 
 def get_redirect_url(link, headers=None):
