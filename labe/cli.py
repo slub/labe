@@ -1,5 +1,19 @@
 """
-Command line entry points.
+Command line entry points for data processing, from acquisition to a prepared
+index.
+
+    $ labectl status
+    $ labectl gc
+    $ labectl help
+    $ labectl run [TARGET]
+
+Example:
+
+    $ labectl run UpdateIndex
+
+Put this into cron, to automate:
+
+    0 8 * * * labectl run UpdateIndex && labectl gc
 """
 
 import argparse
