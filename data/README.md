@@ -38,3 +38,25 @@ $ taskcat DOAJIntermediateSchema | jq -rc .doi | head -1000000 | grep -c "^null"
 219615
 ```
 
+## Index contents
+
+* DE-14: 9023521 docs
+* 1470424 docs that contain something that looks like a DOI, but only 868085 unique
+
+Checking a sample (5000):
+
+```
+time shuf -n 5000 ma.doi_unique.tsv | \
+    awk '{print "https://doi.org/"$0}' | \
+    clinker -w 256 -verbose
+
+$ jq -rc .status ma.doi_unique_link_sample.json | sort | uniq -c | sort -nr
+   4296 200
+    469 null
+    103 404
+     95 403
+     32 500
+      5 400
+```
+
+About 0.85 valid, so maybe about 737872 valid DOI in a set of 9023521 - about 8.2% overall.
