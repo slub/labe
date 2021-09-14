@@ -34,3 +34,33 @@ Alternative third-party projects.
 
 * [DVC](https://dvc.org/) for handling versions of the raw inputs and pipelines
 * [taskfile.dev](https://taskfile.dev/#/)
+
+## Design issues
+
+* [ ] we need SOLR data with DOI; might need external service to have best DOI
+  coverage; how much is actually lost in the SOLR schema?
+* [ ] one operation that applies an own data subset (e.g. by DOI) to open
+  citations to produce a "local" version of citation links
+
+Possible interaction, e.g. a sort of fusion:
+
+```
+$ ocifuse -oci coci.csv -our data.json -doi-field-name doi > fused.json
+```
+
+Take OCI and local file, output will be local file with additional fields for
+inbound and outbound references, e.g. like (id refers to local id):
+
+```json
+{
+    "id": "id-432",
+    ...
+    "citing": ["id-230", "id-123", ...],
+    "cited": ["id-729", "id-192", ...],
+    ...
+}
+```
+
+This file should be servable per HTTP for catalog frontend or other systems.
+May contain more information about the cited and citing entities (e.g. title,
+authors, year, ...) to minimize additional requests.
