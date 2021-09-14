@@ -9,6 +9,8 @@
 $ solrdump -server $SOLR -q 'institution:DE-14' -verbose | zstd -c -T0 > index.json.zst
 ```
 
+Note: grepping 59M docs takes 11m48.377s (with compression)
+
 ## Questions
 
 * [ ] can we get the DOI from all raw indexed data via regex?
