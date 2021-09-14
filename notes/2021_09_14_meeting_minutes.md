@@ -1,5 +1,7 @@
 # Meeting Minutes
 
+> 2021-09-14, 1100, JN, CR, MC, TW
+
 Current repo at: [https://github.com/GROSSWEBER/labe](https://github.com/GROSSWEBER/labe)
 
 ## Project
