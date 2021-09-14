@@ -24,6 +24,7 @@ https://doi.org/10.7916/cswr.v6i1.1975
 However, about 80% of DOAJ seems to have a DOI within the DOAJ metadata already:
 
 ```
-$ taskcat DOAJIntermediateSchema| jq -rc .doi | head -1000000 | grep -c "^null"
+$ taskcat DOAJIntermediateSchema | jq -rc .doi | head -1000000 | grep -c "^null"
 219615
 ```
+
