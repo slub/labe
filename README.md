@@ -23,3 +23,7 @@ $ pip install -e .[dev]
 * [ ] http/rest api
 * [ ] delta report
 * [ ] ...
+
+# Meeting Minutes
+
+* [2021-09-14](notes/2021_09_14_meeting_minutes.md)
