@@ -62,3 +62,33 @@ $ jq -rc .status ma.doi_unique_link_sample.json | sort | uniq -c | sort -nr
 ```
 
 About 0.85 valid, so maybe about 737872 valid DOI in a set of 9023521 - about 8.2% overall.
+
+* DE-14: 62388840
+* 64066526 URL, 62666501 unique
+
+Non DOI URL: 6502749 (unique)
+
+```
+3530302 www.jstor.org
+1602794 ieeexplore.ieee.org
+1332640 doaj.org
+  35627 pqdtopen.proquest.com
+    694
+    306 muse.jhu.edu
+    148 www3.interscience.wiley.com
+     75 www.historycooperative.org
+     60 www.bioone.org
+     54 www.sciencemag.org
+     21 www.ingentaconnect.com
+     19 bmrj.press.illinois.edu
+      7 onlinelibrary.wiley.com
+      1 www.mlajournals.org
+      1 booksandjournals.brillonline.com
+```
+
+No DOI in metadata, but has DOI example:
+
+* https://www.jstor.org/stable/523435, https://doi.org/10.2307/523435
+* does this pattern apply to all of JSTOR? no, e.g. 1904 article does not have a DOI: https://www.jstor.org/stable/2375834
+* ieee example: https://ieeexplore.ieee.org/document/1135671, http://doi.org/10.1109/tchmt.1980.1135671
+
