@@ -1,6 +1,6 @@
 # Meeting Minutes
 
-> 2021-09-14, 1300, JN, CR, MC
+> 2021-09-16, 1300, JN, CR, MC
 
 ## Topics
 
