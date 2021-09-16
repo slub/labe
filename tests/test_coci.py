@@ -11,7 +11,7 @@ import requests
 from labe.coci import get_figshare_download_link, get_redirect_url
 
 
-def internet(host="8.8.8.8", port=53, timeout=3):
+def no_internet(host="8.8.8.8", port=53, timeout=3):
     """
     Host: 8.8.8.8 (google-public-dns-a.google.com)
     OpenPort: 53/tcp
@@ -20,15 +20,13 @@ def internet(host="8.8.8.8", port=53, timeout=3):
     try:
         socket.setdefaulttimeout(timeout)
         socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
-        return True
-    except socket.error as ex:
         return False
+    except socket.error as ex:
+        return True
 
 
-@pytest.mark.skipif(not internet(), reason="no internet")
+@pytest.mark.skipif(no_internet(), reason="no internet")
 def test_get_redirct_url():
-    if not internet():
-        pytest.skip("no internet")
     with pytest.raises(requests.exceptions.MissingSchema):
         get_redirect_url("undefined")
 
@@ -40,7 +38,7 @@ def test_get_redirct_url():
     )
 
 
-@pytest.mark.skipif(not internet(), reason="no internet")
+@pytest.mark.skipif(no_internet(), reason="no internet")
 def test_get_figshare_download_link():
     Case = collections.namedtuple("Case", "link result")
     cases = (
