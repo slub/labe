@@ -10,6 +10,7 @@ import requests
 
 from labe.coci import get_figshare_download_link, get_redirect_url
 
+
 def internet(host="8.8.8.8", port=53, timeout=3):
     """
     Host: 8.8.8.8 (google-public-dns-a.google.com)
@@ -22,6 +23,7 @@ def internet(host="8.8.8.8", port=53, timeout=3):
         return True
     except socket.error as ex:
         return False
+
 
 @pytest.mark.skipif(not internet(), reason="no internet")
 def test_get_redirct_url():
@@ -53,5 +55,3 @@ def test_get_figshare_download_link():
     )
     for c in cases:
         assert get_figshare_download_link(c.link) == c.result
-
-
