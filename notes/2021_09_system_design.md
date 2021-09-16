@@ -63,4 +63,6 @@ inbound and outbound references, e.g. like (id refers to local id):
 
 This file should be servable per HTTP for catalog frontend or other systems.
 May contain more information about the cited and citing entities (e.g. title,
-authors, year, ...) to minimize additional requests.
+authors, year, ...) to minimize additional requests. In fact: we want *only
+one* request to get information about all linkage (inbound, outbound) - this
+may be a few or a few thousand records. Opportinities for caching.
