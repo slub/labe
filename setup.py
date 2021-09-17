@@ -22,7 +22,14 @@ with open("README.md", "r") as fh:
         ],
         python_requires=">=3.6",
         entry_points={"console_scripts": ["labectl=labe.cli:main"]},
-        install_requires=["luigi", "requests", "xdg", "dynaconf[ini]"],
+        install_requires=[
+            "luigi",
+            "requests",
+            "xdg",
+            "dynaconf[ini]",
+            "marcx",
+            "orjson",
+        ],
         extras_require={
             "dev": [
                 "ipython",
