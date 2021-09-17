@@ -92,3 +92,20 @@ No DOI in metadata, but has DOI example:
 * does this pattern apply to all of JSTOR? no, e.g. 1904 article does not have a DOI: https://www.jstor.org/stable/2375834
 * ieee example: https://ieeexplore.ieee.org/document/1135671, http://doi.org/10.1109/tchmt.1980.1135671
 
+## Joining datasets
+
+Options:
+
+We could use an online system, e.g. elasticsearch, to index the citation data
+and do a request for each metadata item. At 100 rps, we would need something
+like 1 week to iterate over 60M docs. Plus we need extra hardware to run the
+index - although this would be a one time cost.
+
+Offline version would allow to stream through the input file and amend the
+metadata records on the fly. No extra component, but OCI needs to be prepared
+to support this approach, e.g.
+
+* [ ] get oci dump; citing-cited
+* [ ] sort input by DOI
+* [ ] sort by citing; these will be the outbound refs
+* [ ] sort by cited; these will be the inbound refs
