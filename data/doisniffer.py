@@ -123,7 +123,8 @@ def sniff_doi(
                     file=sys.stderr,
                 )
             doc["doi_str_mv"] = list(sniffed)
-            writer.write(json.dumps(doc) + "\n")
+            writer.write(json.dumps(doc).decode("utf-8"))
+            writer.write("\n")
 
 
 if __name__ == "__main__":
