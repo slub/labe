@@ -89,7 +89,8 @@ if __name__ == "__main__":
             # Postprocess some values
             if value.endswith("/epdf"):
                 value = value[: len(value) - 5]
-            if value.endswith("."):
+            if value.endswith(".") or value.endswith("*"):
                 # 10.1007/978-3-322-84738-6.
+                # 10.4028/www.scientific.net/AMR.429*
                 value = value[:-1]
             print("{}\t{}\t{}".format(doc["id"], match.key, value,))
