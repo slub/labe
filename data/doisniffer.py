@@ -114,6 +114,7 @@ if __name__ == "__main__":
                 value = value[:-1]
             # can rule out barcode directly
             if args.aggressive and ("barcode" in match.key or "dewey" in match.key):
+                print("[skip] {}:{}".format(match.key, value), file=sys.stderr)
                 sniffed = set()
                 break
             sniffed.add(value)
@@ -122,5 +123,10 @@ if __name__ == "__main__":
         if args.update:
             # <dynamicField name="*_str_mv" type="string" indexed="true"
             # stored="true" multiValued="true" docValues="true"/>
+            if len(sniffed) > 1:
+                print(
+                    "[warn] multiple doi: {}".format(", ".join(sniffed)),
+                    file=sys.stderr,
+                )
             doc["doi_str_mv"] = list(sniffed)
             print(json.dumps(doc))
