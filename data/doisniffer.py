@@ -59,13 +59,12 @@ def field_match(key, value, pattern):
             if not match:
                 continue
             yield Match(key + ":marc", value, match)
+    elif isinstance(value, str):
+        for match in pattern.finditer(value):
+            yield Match(key, value, match)
     elif isinstance(value, list):
         for v in value:
             yield from field_match(key, v, pattern)
-    elif isinstance(value, str):
-        matches = list(pattern.finditer(value))
-        for match in matches:
-            yield Match(key, value, match)
     elif isinstance(value, dict):
         for k, v in value.items():
             yield from field_match(k, v, pattern)
@@ -74,14 +73,18 @@ def field_match(key, value, pattern):
 
 
 if __name__ == "__main__":
+    # Q: does a DOI allow slashes in the non-prefix, e.g. "10.123/abc/epdf"
     pat_doi = re.compile(r'10[.][0-9]{2,6}/[^ "]{3,}')
-    pad = 30
     for i, line in enumerate(fileinput.input()):
         doc = json.loads(line)
         for match in field_match(None, doc, pat_doi):
             if not match:
                 continue
-            print(
-                "{}\t{}\t{}".format(doc["id"], match.key, match.match.group(0))
-            )
-
+            value = match.match.group(0)
+            # Postprocess some values
+            if value.endswith("/epdf"):
+                value = value[: len(value) - 5]
+            if value.endswith("."):
+                # 10.1007/978-3-322-84738-6.
+                value = value[:-1]
+            print("{}\t{}\t{}".format(doc["id"], match.key, value,))
