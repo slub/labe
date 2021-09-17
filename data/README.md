@@ -92,6 +92,101 @@ No DOI in metadata, but has DOI example:
 * does this pattern apply to all of JSTOR? no, e.g. 1904 article does not have a DOI: https://www.jstor.org/stable/2375834
 * ieee example: https://ieeexplore.ieee.org/document/1135671, http://doi.org/10.1109/tchmt.1980.1135671
 
+## DOI sniffing
+
+Sniff out DOI, per field.
+
+```
+$ zstdcat -T0 ma.json.zst | parallel --pipe -j 8 --block 10M 'python doisniffer.py'
+```
+
+We get a 3-column file, with ID, field and value.
+
+```
+$ head ma.doi.sniffed.tsv
+0-011506326     fullrecord:marc 10.73/0941
+0-011506326     dewey-full      10.73/0941
+0-011506326     dewey-raw       10.73/0941
+0-011506326     dewey-search    10.73/0941
+0-013497936     barcode_de105   10.2626/18
+0-015609626     barcode_de105   10.5763/18
+0-017646340     barcode_de105   10.1424/18
+0-016998340     fullrecord:marc 10.1007/978-1-4613-0893-5
+0-016998340     ismn    10.1007/978-1-4613-0893-5
+0-016998340     marc024a_ct_mv  10.1007/978-1-4613-0893-5
+```
+
+Found:
+
+* 6247608 entries across 996345 docs; 61 different fields
+
+```
+$ wc -l ma.doi.sniffed.tsv
+6247608
+
+$ cut -f1 ma.doi.sniffed.tsv | sort -u -S50% | wc -l
+996345
+```
+
+There are 959485 unique DOI like strings:
+
+```
+$ cut -f3 ma.doi.sniffed.tsv | sort -u -S50% | wc -l
+959485
+```
+
+Top 30 fields with doi-like strings:
+
+```
+$ cut -f2 ma.doi.sniffed.tsv | sort -S50% | uniq -c | sort -nr | head -30
+2529777 fullrecord:marc
+1573904 spelling
+ 938883 ismn
+ 644602 url
+ 538635 marc024a_ct_mv
+  11091 ctrlnum
+   4836 barcode_de105
+   1726 isbn
+   1346 footnote
+    588 dateSpan
+    389 spellingShingle
+    371 signatur
+    356 contents
+    266 container_reference
+    106 title_in_hierarchy
+     99 dewey-search
+     99 dewey-raw
+     99 dewey-full
+     79 hierarchy_sequence
+     48 multipart_part
+     39 container_title
+     23 title_list_str
+     22 title_full_unstemmed
+     22 title_fullStr
+     22 title_full
+     18 title
+     17 title_auth
+     17 mab_dech1_str_mv
+     12 title_sub
+      8 is_hierarchy_title
+```
+
+Mostly, we have one DOI per ID, only for 14830 records, we have multiple DOI per record.
+
+```
+$ zstdcat -T0 ma.doi.sniffed.tsv.zst | python are_doi_unique_per_record.py | shuf -n 10
+0-1734561769 {'10.4028/www.scientific.net/MSF.894', '10.4028/www.scientific.net/MSF.894*'}
+0-1667801406 {'10.5771/9783845261614/dramas-of-reconciliation', '10.5771/9783845261614'}
+0-173458324X {'10.4028/www.scientific.net/SSP.97-98*', '10.4028/www.scientific.net/SSP.97-98'}
+0-1692685171 {'10.15480/882.2699', '10.1115/1.4045625'}
+0-1734566264 {'10.4028/www.scientific.net/AMM.24-25', '10.4028/www.scientific.net/AMM.24-25*'}
+0-1748014994 {'10.15480/882.2933', '10.1016/j.foodhyd.2020.106132'}
+0-1663386293 {'10.5771/2509-9485-2018-2-313', '10.5771/2509-9485-2018-2-313/methodische-herausforderungen-quantitativer-befragungen-von-gefluechteten-am-beispiel-einer-vorstudie-in-sachsen-jahrgang-2-2018-heft-2'}
+0-1734566701 {'10.4028/www.scientific.net/AST.76*', '10.4028/www.scientific.net/AST.76'}
+0-1689836717 {'10.1186/s40497-019-0168-0', '10.1186/s40497-019-0168-0.pdf'}
+0-1046496972 {'10.26504/rs58.pdf', '10.26504/rs58'}
+```
+
 ## Joining datasets
 
 Options:
