@@ -187,6 +187,12 @@ $ zstdcat -T0 ma.doi.sniffed.tsv.zst | python are_doi_unique_per_record.py | shu
 0-1046496972 {'10.26504/rs58.pdf', '10.26504/rs58'}
 ```
 
+## Enhance dataset with DOI
+
+```
+$ zstdcat -T0 ma.json.zst | parallel --pipe -j 8 --block 10M 'python doisniffer.py --aggressive -u' | zstd -c -T0 > ma_with_doi.json.zst
+```
+
 ## Joining datasets
 
 Options:
