@@ -37,6 +37,7 @@ Slow, about 2 krps.
 
 """
 
+import argparse
 import collections
 import fileinput
 import json
@@ -78,10 +79,28 @@ def field_match(key, value, pattern):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "-i", "--input-file", nargs="?", type=argparse.FileType("r"), default=sys.stdin
+    )
+    parser.add_argument("-t", "--tab", action="store_true", help="generate table")
+    parser.add_argument(
+        "-u", "--update", action="store_true", help="update record inline"
+    )
+    parser.add_argument(
+        "--aggressive", action="store_true", help="filter out mostly like bad doi"
+    )
+    args = parser.parse_args()
+
     # Q: does a DOI allow slashes in the non-prefix, e.g. "10.123/abc/epdf"
+    # A: yes, rare, but that's ok! 10.6094/UNIFR/13040, 10.1051/hel/2019018, ...
     pat_doi = re.compile(r'10[.][0-9]{2,6}/[^ "]{3,}')
-    for i, line in enumerate(fileinput.input()):
+
+    for i, line in enumerate(args.input_file):
         doc = json.loads(line)
+        sniffed = set()
         for match in field_match(None, doc, pat_doi):
             if not match:
                 continue
@@ -93,4 +112,15 @@ if __name__ == "__main__":
                 # 10.1007/978-3-322-84738-6.
                 # 10.4028/www.scientific.net/AMR.429*
                 value = value[:-1]
-            print("{}\t{}\t{}".format(doc["id"], match.key, value,))
+            # can rule out barcode directly
+            if args.aggressive and ("barcode" in match.key or "dewey" in match.key):
+                sniffed = set()
+                break
+            sniffed.add(value)
+            if args.tab:
+                print("{}\t{}\t{}".format(doc["id"], match.key, value,))
+        if args.update:
+            # <dynamicField name="*_str_mv" type="string" indexed="true"
+            # stored="true" multiValued="true" docValues="true"/>
+            doc["doi_str_mv"] = list(sniffed)
+            print(json.dumps(doc))

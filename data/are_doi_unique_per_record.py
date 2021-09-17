@@ -1,5 +1,5 @@
-import fileinput
 import collections
+import fileinput
 
 id_to_doi = collections.defaultdict(set)
 
