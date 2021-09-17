@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 """
-Sniff out DOI from newline delimited JSON.
+Sniff out DOI from newline delimited JSON. This is part of a workaround the
+fact, that there is no explicit DOI field in the index data.
 
 Example usage:
 
