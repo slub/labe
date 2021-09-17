@@ -49,7 +49,8 @@ Match = collections.namedtuple("Match", "key value match")
 
 def field_match(key, value, pattern):
     """
-    Given a root document, all matches of pattern per field.
+    Given a root document, all matches of pattern per field. Also parse
+    "fullrecord" into MARC21 and search each field for the pattern.
     """
     if key == "fullrecord":
         record = marcx.FatRecord(data=value.encode("utf-8"))
