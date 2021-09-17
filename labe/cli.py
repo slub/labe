@@ -21,12 +21,19 @@ import logging
 import os
 import tempfile
 
+from labe.coci import OpenCitationsDataset
 from labe.settings import LOGGING_CONF_FILE, settings
 
 
 def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "-L",
+        "--print-most-recent-download-url",
+        action="store_true",
+        help="show most recent OCI download URL",
     )
     parser.add_argument(
         "--logging-conf-file",
@@ -44,4 +51,6 @@ def main():
 
     # TODO: subcommands, e.g. "status", "run", "gc"
 
-    print("labectl")
+    if args.print_most_recent_download_url:
+        ds = OpenCitationsDataset()
+        print(ds.most_recent_download_url())
