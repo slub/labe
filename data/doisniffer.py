@@ -6,7 +6,7 @@ fact, that there is no explicit DOI field in the index data.
 
 Example usage:
 
-    $ zstdcat -T0 ma.json.zst | parallel --pipe -j 8 --block 10M 'python doisniffer.py'
+    $ zstdcat -T0 ma.json.zst | parallel --pipe -j 8 --block 10M 'python doisniffer.py -t'
     0-011506326     fullrecord:marc 10.73/0941
     0-011506326     dewey-full      10.73/0941
     0-011506326     dewey-raw       10.73/0941
