@@ -41,6 +41,7 @@ import collections
 import fileinput
 import json
 import re
+import sys
 
 import marcx
 
@@ -53,7 +54,11 @@ def field_match(key, value, pattern):
     "fullrecord" into MARC21 and search each field for the pattern.
     """
     if key == "fullrecord":
-        record = marcx.FatRecord(data=value.encode("utf-8"))
+        try:
+            record = marcx.FatRecord(data=value.encode("utf-8"))
+        except UnicodeDecodeError as exc:
+            print("[skip] cannot create MARC record: {}".format(exc), file=sys.stderr)
+            yield None
         for v in record.flatten():
             match = pattern.search(v)
             if not match:
