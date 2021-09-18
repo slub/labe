@@ -33,8 +33,9 @@ Example usage:
     0-021232083     fullrecord:marc 10.13109/9783666532573
     ...
 
-Slow, about 2 krps.
+Slow, about 2 krps. Issues remain:
 
+* 10.1787/agr-outl-data-en上查询。
 """
 
 import argparse
