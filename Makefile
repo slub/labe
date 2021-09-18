@@ -35,3 +35,4 @@ clean:
 	rm -rf labe.egg-info
 	rm -rf labectl
 	find . -name "__pycache__" -exec rm -rf "{}" +
+	rm -rf .pytest_cache
