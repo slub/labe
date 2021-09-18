@@ -137,7 +137,7 @@ $ cut -f3 ma.doi.sniffed.tsv | sort -u -S50% | wc -l
 
 Top 30 fields with doi-like strings:
 
-```
+```sh
 $ cut -f2 ma.doi.sniffed.tsv | sort -S50% | uniq -c | sort -nr | head -30
 2529777 fullrecord:marc
 1573904 spelling
@@ -173,7 +173,7 @@ $ cut -f2 ma.doi.sniffed.tsv | sort -S50% | uniq -c | sort -nr | head -30
 
 Mostly, we have one DOI per ID, only for 14830 records, we have multiple DOI per record.
 
-```
+```sh
 $ zstdcat -T0 ma.doi.sniffed.tsv.zst | python are_doi_unique_per_record.py | shuf -n 10
 0-1734561769 {'10.4028/www.scientific.net/MSF.894', '10.4028/www.scientific.net/MSF.894*'}
 0-1667801406 {'10.5771/9783845261614/dramas-of-reconciliation', '10.5771/9783845261614'}
@@ -213,11 +213,43 @@ to support this approach, e.g.
 * [ ] sort by citing; these will be the outbound refs
 * [ ] sort by cited; these will be the inbound refs
 
+...
+
+Other rough ideas.
+
+> Target schema.
+
+```json
+{
+    "id": "0-123",
+    "doi": "10.123/123",
+    "citing": [{}, {}, ...],
+    "cited": [{}, {}, ...],
+}
+```
+
+For `citing` and `cited` we want not just the DOI, but a few more fields:
+title, authors, year.
+
+May require multiple passes, if no external lookup is used.
+
+* (1) turn OCI dump into an annotated dump, that is for each DOI add the extra information we want
+* (2) iterate over both input and enhanced OCI dump and generate "citing" field
+* (3) iterate over both input and enhanced OCI dump and generate "cited" field
+
+Various sort ops necessary:
+
+* sort OCI dump by citing
+* sort OCI dump by cited
+* sort index data by DOI
+
+So in total: 3 sorts over 100G+ data, 3 passes.
+
 ## OCI dump and sizing
 
 * 6741422v11.zip is 32GB zip compressed; may need a quick transfer into "single file zstd"
 
-```
+```sh
 16,081,617,819 2019-10-21T22_41_20_1-63.zip
    764,296,250 2020-01-13T19_31_19_1-4.zip
  1,231,127,880 2020-04-25T04_48_36_1-5.zip
@@ -235,5 +267,6 @@ Zip to zst dance.
 $ mkdir 6741422v11
 $ unzip -d 6741422v11 6741422v11.zip
 $ for f in $(find 6741422v11 -name "*zip"); do unzip -p $f; done | LC_ALL=C grep -vF 'oci,citing' | zstd -c -T0 > 6741422v11.zst
+# 28m33.617s
 ```
 
