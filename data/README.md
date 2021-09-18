@@ -245,6 +245,8 @@ Various sort ops necessary:
 
 So in total: 3 sorts over 100G+ data, 3 passes.
 
+We may trim down OCI dump before hand to column 2 and 3 only.
+
 ## OCI dump and sizing
 
 * 6741422v11.zip is 32GB zip compressed; may need a quick transfer into "single file zstd"
@@ -268,5 +270,23 @@ $ mkdir 6741422v11
 $ unzip -d 6741422v11 6741422v11.zip
 $ for f in $(find 6741422v11 -name "*zip"); do unzip -p $f; done | LC_ALL=C grep -vF 'oci,citing' | zstd -c -T0 > 6741422v11.zst
 # 28m33.617s
+```
+
+Trim down the OCI dump, with [hck](https://github.com/sstadick/hck):
+
+```sh
+$ time zstdcat -T0 6741422v11.zst | pv -l | hck -d, -f2,3 | zstd -c -T0 > 6741422v11s.zst
+# 9m4.413s
+```
+
+Resulting file is 12G only. Plain iteration:
+
+```sh
+$ time zstdcat -T0 6741422v11s.zst | pv -l > /dev/null
+1.19G 0:02:23 [8.28M/s] [                                                                                                                                                                                        <=>                          ]
+
+real    2m23.432s
+user    2m28.104s
+sys     0m40.814s
 ```
 
