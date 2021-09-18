@@ -212,3 +212,28 @@ to support this approach, e.g.
 * [ ] sort input by DOI
 * [ ] sort by citing; these will be the outbound refs
 * [ ] sort by cited; these will be the inbound refs
+
+## OCI dump and sizing
+
+* 6741422v11.zip is 32GB zip compressed; may need a quick transfer into "single file zstd"
+
+```
+16,081,617,819 2019-10-21T22_41_20_1-63.zip
+   764,296,250 2020-01-13T19_31_19_1-4.zip
+ 1,231,127,880 2020-04-25T04_48_36_1-5.zip
+   518,631,764 2020-06-13T18_18_05_1-2.zip
+   319,781,656 2020-08-20T18_12_28_1-2.zip
+   706,940,736 2020-11-22T17_48_01_1-3.zip
+ 2,283,982,086 2021-01-27T23_11_15_1-9.zip
+ 6,936,692,157 2021-07-06T163745_0-4_1-5.zip
+ 2,764,959,519 2021-08-14T222043_0-4_1-2.zip
+```
+
+Zip to zst dance.
+
+```sh
+$ mkdir 6741422v11
+$ unzip -d 6741422v11 6741422v11.zip
+$ for f in $(find 6741422v11 -name "*zip"); do unzip -p $f; done | LC_ALL=C grep -vF 'oci,citing' | zstd -c -T0 > 6741422v11.zst
+```
+
