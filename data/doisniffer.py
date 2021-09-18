@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 """
-Sniff out DOI from newline delimited JSON. This is part of a workaround the
-fact, that there is no explicit DOI field in the index data.
+Sniff out DOI from newline delimited JSON (from SOLR). Workaround the fact,
+that there is currently no explicit DOI field in the index data.
 
 Example usage:
 
@@ -58,14 +58,14 @@ def field_match(key, value, pattern, parse_marc=True):
     if key == "fullrecord" and parse_marc:
         try:
             record = marcx.FatRecord(data=value.encode("utf-8"))
+            for v in record.flatten():
+                match = pattern.search(v)
+                if not match:
+                    continue
+                yield Match(key + ":marc", value, match)
         except UnicodeDecodeError as exc:
             print("[skip] cannot create MARC record: {}".format(exc), file=sys.stderr)
             yield None
-        for v in record.flatten():
-            match = pattern.search(v)
-            if not match:
-                continue
-            yield Match(key + ":marc", value, match)
     elif isinstance(value, str):
         for match in pattern.finditer(value):
             yield Match(key, value, match)
