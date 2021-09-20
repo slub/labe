@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS map
 	v TEXT
 );
 
--- TODO: factor this out
+-- TODO: factor this out, https://stackoverflow.com/q/1983979/89391
 -- CREATE INDEX IF NOT EXISTS idx_k ON map(k);
 -- CREATE INDEX IF NOT EXISTS idx_v ON map(v);
 `
