@@ -89,8 +89,9 @@ CREATE TABLE IF NOT EXISTS map
 	v TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_k ON map(k);
-CREATE INDEX IF NOT EXISTS idx_v ON map(v);
+-- TODO: factor this out
+-- CREATE INDEX IF NOT EXISTS idx_k ON map(k);
+-- CREATE INDEX IF NOT EXISTS idx_v ON map(v);
 `
 	runSQL = `
 PRAGMA journal_mode = OFF;
