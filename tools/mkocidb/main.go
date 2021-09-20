@@ -55,6 +55,15 @@
 // 10.1200/jco.1990.8.3.527
 // 10.1182/blood.v80.9.2425.2425
 //
+// New issue, when indexing:
+//
+// 2021/09/20 16:51:06 [ok] initialized database -- data.db
+// written 57.6G -- 35.9M/s
+// 2021/09/20 17:18:28 db setup done
+// 2021/09/20 17:18:28 creating index
+// 2021/09/20 17:18:54 signal: killed
+//
+// Trying to "temp_store" pragma: https://sqlite.org/pragma.html, https://sqlite.org/tempfiles.html#tempstore
 package main
 
 import (
@@ -88,7 +97,6 @@ PRAGMA journal_mode = OFF;
 PRAGMA synchronous = 0;
 PRAGMA cache_size = 1000000;
 PRAGMA locking_mode = EXCLUSIVE;
-PRAGMA temp_store = MEMORY;
 
 -- https://stackoverflow.com/q/1983979/89391
 CREATE INDEX IF NOT EXISTS idx_k ON map(k);
