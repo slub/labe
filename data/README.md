@@ -258,7 +258,13 @@ well. But any additional information would blow up the db size (considerably,
 since titles and authors may amount for 10x or more the size of the DOI only).
 
 Note: index creation naturally slows import down; w/o index we get a sustained
-30M/s or higher insert speed.
+30M/s or higher insert speed; about 1B rows inserted w/o index in 28m31.370s.
+
+With post insert index creation, we need 6m36.173s to create a database of 100M
+(99057347, actually) rows, size: 13GB; with sqlite3 memory usage hovering
+around 70% (not sure, if that is an internal limit -- like -S -- or dependent
+on the data, which is larger). Ratio: about 2/5 min for insert/index. Expecting
+80mins for complete dataset.
 
 ----
 
