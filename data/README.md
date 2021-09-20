@@ -257,6 +257,9 @@ and 150GB database size including indexes. We would need the extra blobs as
 well. But any additional information would blow up the db size (considerably,
 since titles and authors may amount for 10x or more the size of the DOI only).
 
+Note: index creation naturally slows import down; w/o index we get a sustained
+30M/s or higher insert speed.
+
 ----
 
 How about using a cache-first approach? Setup some more expensive operation,
