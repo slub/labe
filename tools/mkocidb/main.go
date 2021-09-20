@@ -77,12 +77,6 @@ var (
 	dry        = flag.Bool("d", false, "dry run")
 	outputFile = flag.String("o", "data.db", "output filename")
 	initSQL    = `
-PRAGMA journal_mode = OFF;
-PRAGMA synchronous = 0;
-PRAGMA cache_size = 1000000;
-PRAGMA locking_mode = EXCLUSIVE;
-PRAGMA temp_store = MEMORY;
-
 CREATE TABLE IF NOT EXISTS map
 (
 	k TEXT,
