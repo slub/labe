@@ -76,6 +76,7 @@ import (
 var (
 	dry        = flag.Bool("d", false, "dry run")
 	outputFile = flag.String("o", "data.db", "output filename")
+	bufferSize = flag.Int("B", 64*1<<20, "buffer size")
 	initSQL    = `
 CREATE TABLE IF NOT EXISTS map
 (
@@ -135,8 +136,10 @@ func ByteSize(bytes int64) string {
 		PETABYTE
 		EXABYTE
 	)
-	unit := ""
-	value := float64(bytes)
+	var (
+		unit  = ""
+		value = float64(bytes)
+	)
 	switch {
 	case bytes >= EXABYTE:
 		unit = "E"
@@ -161,30 +164,11 @@ func ByteSize(bytes int64) string {
 	case bytes == 0:
 		return "0B"
 	}
-
 	result := strconv.FormatFloat(value, 'f', 1, 64)
 	result = strings.TrimSuffix(result, ".0")
 	return result + unit
 }
 
-type LoggingWriter struct {
-	i        int
-	numBytes int
-	w        io.Writer
-}
-
-func (w *LoggingWriter) Write(p []byte) (n int, err error) {
-	n, err = w.w.Write(p)
-	if err != nil {
-		return
-	}
-	w.i++
-	w.numBytes += n
-	log.Printf("[%d] wrote %d (%d)", w.i, n, w.numBytes)
-	return
-}
-
-// runScript initializes the database, if necessary
 func runScript(path, script, message string) error {
 	cmd := exec.Command("sqlite3", path)
 	cmd.Stdin = strings.NewReader(script)
@@ -223,6 +207,13 @@ func runImport(r io.Reader, initFile, outputFile string) (int64, error) {
 	return written, copyErr
 }
 
+// Flushf for messages that should stay on a single line.
+func Flushf(s string, vs ...interface{}) {
+	msg := fmt.Sprintf("\r"+s, vs...)
+	fmt.Printf("\r" + strings.Repeat(" ", len(msg)+1))
+	fmt.Printf(msg)
+}
+
 func main() {
 	flag.Parse()
 	if _, err := os.Stat(*outputFile); os.IsNotExist(err) {
@@ -236,7 +227,6 @@ func main() {
 	}
 	var (
 		buf     bytes.Buffer
-		size    = 64 * 1 << 20
 		written int64
 		br      = bufio.NewReader(os.Stdin)
 		started = time.Now()
@@ -252,14 +242,15 @@ func main() {
 		if _, err := buf.Write(b); err != nil {
 			log.Fatal(err)
 		}
-		if buf.Len() > size {
+		if buf.Len() >= *bufferSize {
 			n, err := runImport(&buf, runFile, *outputFile)
 			if err != nil {
 				log.Fatal(err)
 			}
 			written += n
-			fmt.Printf(strings.Repeat(" ", 40))
-			fmt.Printf("\rwritten %s -- %s/s", ByteSize(written), ByteSize(int64(float64(written)/time.Since(started).Seconds())))
+			Flushf("written %s -- %s/s",
+				ByteSize(written),
+				ByteSize(int64(float64(written)/time.Since(started).Seconds())))
 		}
 	}
 	n, err := runImport(&buf, runFile, *outputFile)
@@ -267,8 +258,9 @@ func main() {
 		log.Fatal(err)
 	}
 	written += n
-	fmt.Printf(strings.Repeat(" ", 40))
-	fmt.Printf("\rwritten %s -- %s/s", ByteSize(written), ByteSize(int64(float64(written)/time.Since(started).Seconds())))
+	Flushf("written %s -- %s/s",
+		ByteSize(written),
+		ByteSize(int64(float64(written)/time.Since(started).Seconds())))
 	fmt.Println()
 	log.Printf("db setup done")
 	log.Printf("creating index")
