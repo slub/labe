@@ -247,6 +247,28 @@ So in total: 3 sorts over 100G+ data, 3 passes.
 
 We may trim down OCI dump before hand to column 2 and 3 only.
 
+----
+
+Another approach: turn OCI dump into a minimal, indexed sqlite3 lookup
+database; might be ok to do 70M queries.
+
+A first run with `sqlite3` and 100M rows: 12min to insert (14G); so maybe 5h
+and 150GB database size including indexes. We would need the extra blobs as
+well. But any additional information would blow up the db size (considerably,
+since titles and authors may amount for 10x or more the size of the DOI only).
+
+----
+
+How about using a cache-first approach? Setup some more expensive operation,
+then cache all results and eventually request all data to build up the cache.
+
+> request for identifier -> find DOI -> find related DOI -> find related
+  metadata -> merge -> cache -> serve
+
+Would lower the computation burden for preprocessing and with a warm cache
+would be just as fast.
+
+
 ## OCI dump and sizing
 
 * 6741422v11.zip is 32GB zip compressed; may need a quick transfer into "single file zstd"
@@ -288,5 +310,18 @@ $ time zstdcat -T0 6741422v11s.zst | pv -l > /dev/null
 real    2m23.432s
 user    2m28.104s
 sys     0m40.814s
+```
+
+Sorting test runs:
+
+```sh
+$ time zstdcat -T0 6741422v11s.zst | LC_ALL=C sort -S70% -t $'\t' -k1,1 | zstd -c -T0 > 6741422v11s1.zst
+...
+
+$ time zstdcat -T0 6741422v11s.zst | LC_ALL=C sort -S70% -t $'\t' -k2,2 | zstd -c -T0 > 6741422v11s2.zst
+
+real    37m18.037s
+user    97m5.164s
+sys     6m32.350s
 ```
 
