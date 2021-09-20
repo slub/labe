@@ -63,7 +63,12 @@
 // 2021/09/20 17:18:28 creating index
 // 2021/09/20 17:18:54 signal: killed
 //
-// Trying to "temp_store" pragma: https://sqlite.org/pragma.html, https://sqlite.org/tempfiles.html#tempstore
+// Trying to "temp_store" pragma: https://sqlite.org/pragma.html,
+// https://sqlite.org/tempfiles.html#tempstore
+//
+// Note that the machine this runs on probably needs at least 4K * cache_size
+// free memory; not sure how much performance varies for these ops, if we
+// reduce.
 package main
 
 import (
@@ -95,6 +100,8 @@ CREATE TABLE IF NOT EXISTS map
 	indexSQL = `
 PRAGMA journal_mode = OFF;
 PRAGMA synchronous = 0;
+
+-- https://www.sqlite.org/pragma.html#pragma_cache_size
 PRAGMA cache_size = 1000000;
 PRAGMA locking_mode = EXCLUSIVE;
 
