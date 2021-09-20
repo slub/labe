@@ -8,4 +8,6 @@ ai.url.tsv
 ai_to_doi.tsv
 id_to_doi.db
 id_to_doi.tsv
+index.data
+index.data.*.db
 ma_to_doi.tsv
