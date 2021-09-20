@@ -74,7 +74,6 @@ import (
 )
 
 var (
-	dry        = flag.Bool("d", false, "dry run")
 	outputFile = flag.String("o", "data.db", "output filename")
 	bufferSize = flag.Int("B", 64*1<<20, "buffer size")
 	initSQL    = `
