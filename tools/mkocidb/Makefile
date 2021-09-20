@@ -11,4 +11,7 @@ build:
 .PHONY: clean
 clean:
 	rm -f $(TARGETS)
-	rm -f data.db
+
+.PHONY: purge
+purge:
+	rm -if data.db
