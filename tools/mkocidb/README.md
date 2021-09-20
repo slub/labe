@@ -15,5 +15,14 @@ $ zstdcat -T0 ../../data/6741422v11s.zst | head
 10.1001/amaguidesnewsletters.1997.mayjun01      10.1056/nejm199507133330207
 10.1001/amaguidesnewsletters.1997.mayjun01      10.1378/chest.88.3.376
 
-$ zstdcat -T0 ../../data/6741422v11s.zst | ./mkocidb
+$ time zstdcat -T0 ../../data/6741422v11s1.zst | ./mkocidb
+2021/09/20 17:34:55 [ok] initialized database -- data.db
+written 57.6G -- 41.4M/s
+2021/09/20 17:58:40 db setup done
+2021/09/20 17:58:40 creating index
+2021/09/20 19:07:53 [ok] created index -- data.db
+
+real    92m58.885s
+user    79m56.305s
+sys     10m0.852s
 ```

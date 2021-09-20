@@ -334,3 +334,53 @@ user    97m5.164s
 sys     6m32.350s
 ```
 
+## Design Sketch
+
+Three-db setup:
+
+* id to doi mapping (sqlite, mublob)
+* doi to inbound and outbound doi (mkocidb)
+* doi to data (mublob)
+
+If we could query the indices directly for the doi, we could get rid of two
+databases.
+
+1. Create id to doi mapping from raw index data.
+
+```sh
+$ zstdcat -T0 ai.json.zst | jq -rc 'select(.url | length > 0) | [.id, .url[0]] | @tsv' | grep "doi.org" | \
+    sed -e 's@http://dx.doi.org/@@;s@https://dx.doi.org/@@;s@http://doi.org/@@;s@https://doi.org/@@;s@\/\/@\/@' > ai_id_doi.tsv
+```
+
+Or:
+
+```sh
+$ zstdcat -T0 ma_with_doi.json.zst| jq -rc 'select(.doi_str_mv | length > 0) | [.id, .doi_str_mv[]] | @tsv' > ma_id_doi.tsv
+```
+
+Parallel:
+
+```sh
+$ time zstdcat -T0 ai.json.zst | pv -l | parallel -j 8 --pipe --block 10M \
+    "jq -rc 'select(.url | length > 0) | [.id, .url[0]] | @tsv'" | grep "doi.org" | \
+    sed -e 's@http://dx.doi.org/@@;s@https://dx.doi.org/@@;s@http://doi.org/@@;s@https://doi.org/@@;s@\/\/@\/@' > id_to_doi.tsv
+```
+
+2. Run mkocidb over reduced OCI data.
+
+```sh
+$ time zstdcat -T0 ../../data/6741422v11s1.zst | ./mkocidb
+2021/09/20 17:34:55 [ok] initialized database -- data.db
+written 57.6G -- 41.4M/s
+2021/09/20 17:58:40 db setup done
+2021/09/20 17:58:40 creating index
+2021/09/20 19:07:53 [ok] created index -- data.db
+
+real    92m58.885s
+user    79m56.305s
+sys     10m0.852s
+```
+
+3. Create doi to data lookup service.
+
+* TODO
