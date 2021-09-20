@@ -88,10 +88,17 @@ CREATE TABLE IF NOT EXISTS map
 	k TEXT,
 	v TEXT
 );
+`
+	indexSQL = `
+PRAGMA journal_mode = OFF;
+PRAGMA synchronous = 0;
+PRAGMA cache_size = 1000000;
+PRAGMA locking_mode = EXCLUSIVE;
+PRAGMA temp_store = MEMORY;
 
--- TODO: factor this out, https://stackoverflow.com/q/1983979/89391
--- CREATE INDEX IF NOT EXISTS idx_k ON map(k);
--- CREATE INDEX IF NOT EXISTS idx_v ON map(v);
+-- https://stackoverflow.com/q/1983979/89391
+CREATE INDEX IF NOT EXISTS idx_k ON map(k);
+CREATE INDEX IF NOT EXISTS idx_v ON map(v);
 `
 	runSQL = `
 PRAGMA journal_mode = OFF;
@@ -183,18 +190,15 @@ func (w *LoggingWriter) Write(p []byte) (n int, err error) {
 	return
 }
 
-// setupDatabase initializes the database, if necessary
-func setupDatabase(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		cmd := exec.Command("sqlite3", path)
-		cmd.Stdin = strings.NewReader(initSQL)
-		err := cmd.Run()
-		if err == nil {
-			log.Printf("[ok] initialized database at %s", path)
-		}
-		return err
+// runScript initializes the database, if necessary
+func runScript(path, script, message string) error {
+	cmd := exec.Command("sqlite3", path)
+	cmd.Stdin = strings.NewReader(script)
+	err := cmd.Run()
+	if err == nil {
+		log.Printf("[ok] %s -- %s", message, path)
 	}
-	return nil
+	return err
 }
 
 func runImport(r io.Reader, initFile, outputFile string) (int64, error) {
@@ -227,8 +231,10 @@ func runImport(r io.Reader, initFile, outputFile string) (int64, error) {
 
 func main() {
 	flag.Parse()
-	if err := setupDatabase(*outputFile); err != nil {
-		log.Fatal(err)
+	if _, err := os.Stat(*outputFile); os.IsNotExist(err) {
+		if err := runScript(*outputFile, initSQL, "initialized database"); err != nil {
+			log.Fatal(err)
+		}
 	}
 	runFile, err := TempFileReader(strings.NewReader(runSQL))
 	if err != nil {
@@ -271,4 +277,8 @@ func main() {
 	fmt.Printf("\rwritten %s -- %s/s", ByteSize(written), ByteSize(int64(float64(written)/time.Since(started).Seconds())))
 	fmt.Println()
 	log.Printf("db setup done")
+	log.Printf("creating index")
+	if err := runScript(*outputFile, indexSQL, "created index"); err != nil {
+		log.Fatal(err)
+	}
 }
