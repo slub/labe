@@ -254,6 +254,13 @@ func Flushf(s string, vs ...interface{}) {
 	fmt.Printf(msg)
 }
 
+// HumanSpeed returns a human readable throughput number, e.g. 10MB/s,
+// 12.3kB/s, etc.
+func HumanSpeed(bytesWritten int64, elapsedSeconds float64) string {
+	speed := float64(bytesWritten) / elapsedSeconds
+	return fmt.Sprintf("%s/s", ByteSize(int64(speed)))
+}
+
 func main() {
 	flag.Parse()
 	if _, err := os.Stat(*outputFile); os.IsNotExist(err) {
@@ -266,10 +273,11 @@ func main() {
 		log.Fatal(err)
 	}
 	var (
+		br      = bufio.NewReader(os.Stdin)
 		buf     bytes.Buffer
 		written int64
-		br      = bufio.NewReader(os.Stdin)
 		started = time.Now()
+		elapsed float64
 	)
 	for {
 		b, err := br.ReadBytes('\n')
@@ -288,9 +296,8 @@ func main() {
 				log.Fatal(err)
 			}
 			written += n
-			Flushf("written %s -- %s/s",
-				ByteSize(written),
-				ByteSize(int64(float64(written)/time.Since(started).Seconds())))
+			elapsed = time.Since(started).Seconds()
+			Flushf("written %s -- %s", ByteSize(written), HumanSpeed(written, elapsed))
 		}
 	}
 	n, err := runImport(&buf, runFile, *outputFile)
@@ -298,11 +305,10 @@ func main() {
 		log.Fatal(err)
 	}
 	written += n
-	Flushf("written %s -- %s/s",
-		ByteSize(written),
-		ByteSize(int64(float64(written)/time.Since(started).Seconds())))
+	elapsed = time.Since(started).Seconds()
+	Flushf("written %s -- %s", ByteSize(written), HumanSpeed(written, elapsed))
 	fmt.Println()
-	log.Printf("db setup done")
+	log.Printf("import done")
 	log.Printf("creating index")
 	if err := runScript(*outputFile, indexSQL, "created index"); err != nil {
 		log.Fatal(err)
