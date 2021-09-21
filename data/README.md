@@ -383,4 +383,12 @@ sys     10m0.852s
 
 3. Create doi to data lookup service.
 
-* TODO
+```sh
+$ time microblob -create-db-only -key id index.data
+INFO[0000] creating db index.data.832a9151.db ...
+  97% |███████████████████████████████████████ | [46s:1s]            Killed
+
+real    46m17.090s
+user    124m13.662s
+sys     5m50.253s
+```
