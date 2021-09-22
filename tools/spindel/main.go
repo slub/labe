@@ -45,6 +45,32 @@
 // user    16m58.769s
 // sys     14m19.567s
 //
+// Somewhat predictable performance, with the slowest out of 100K requests:
+//
+// 696     0.7669515       ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAxNi8wMDAzLTQ5MTYoNjMpOTAwNzgtMg
+// 990     0.767538368     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAyMS9jcjk2MDAxN3Q
+// 947     0.782944785     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEwMy9waHlzcmV2bGV0dC4xMy40Nzk
+// 877     0.792816803     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEyNi9zY2llbmNlLjc3MzIzODI
+// 1020    0.805743207     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMi9zaW0uNDA4NQ
+// 926     0.826975227     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjEwMzI5MTMxMDA
+// 956     0.841350091     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTM2NC9qb3NhYi4xMy4wMDA0ODE
+// 923     0.861391752     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA1Ni9uZWptb2EwNjE4OTQ
+// 1137    0.878462042     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEwMy9waHlzcmV2YS40My4yMDQ2
+// 929     0.934591869     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEyNi9zY2llbmNlLjI3Ny41MzMyLjE2NTk
+// 1144    1.032953765     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAyMS9qcDk3MzE4MjE
+// 1500    1.163330572     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAxNi8wMDIyLTI4MzYoNzQpOTAwMzEteA
+// 1352    1.208945268     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzNy8xMDQwLTM1OTAuNC4xLjI2
+// 1129    1.230243451     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE0Ni9hbm51cmV2LmJpLjY0LjA3MDE5NS4wMDA1MjU
+// 1463    1.276817506     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzNy8wMDMzLTI5MDkuODcuMi4yNDU
+// 1600    1.413687315     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAyMS9qYTk4MzQ5NHg
+// 1915    1.426443495     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAyMS9jcjA1MDk5Mng
+// 1954    1.529097444     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA4Ni8yNjE3MDM
+// 2198    1.973452902     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
+// 1775    2.225739231     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
+// 2568    2.449228354     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
+// 4462    3.477182936     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
+// 8893    8.461666468     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
+//
 package main
 
 import (
@@ -76,6 +102,9 @@ var (
 
 // Map is a generic lookup table.
 type Map struct {
+	//
+	// Somewhat predictable performance, with the slowest out of 100K requests:
+
 	Key   string `db:"k"`
 	Value string `db:"v"`
 }
