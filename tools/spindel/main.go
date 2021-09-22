@@ -10,6 +10,23 @@
 // user    0m2.366s
 // sys     0m18.477s
 //
+// Some stats.
+//
+// 3       0.007706688     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAyMy9iOmZyYWMuMDAwMDAzMTA5My44NTA2MS5jOQ
+// 2       0.003119393     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE0My9wdHBzLjE1NC4xNTQ
+// 31      0.032643698     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAxNi9zMDAwMy0zNDcyKDgwKTgwMDI2LTE
+// 74      0.056817144     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMi9hZG1hLjIwMDUwMDk2Mw
+// 24      0.026795839     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
+// 11      0.011584241     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEzNC9zMDAzNzQ0NjYxNTAyMDAyMA
+// 9       0.020058694     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA2My8xLjQ5MjIxNDI
+// 5       0.006531584     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA4MC8wMjc3MzgxODkwODA1MDMwNw
+// 828     1.042512224     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
+// 166     0.210055634     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA4Ni8xNDMzMjM
+// 35      0.049543236     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA4OC8xNzQ4LTMxOTAvYWJhYmIw
+// 12      0.01719839      ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA4OC8xNzU1LTEzMTUvNTg4LzMvMDMyMDIx
+// 15      0.024281162     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMzk5MTc4
+// 18      0.018429985     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAxNi8wMzc4LTUxNzMoODApOTAxMzgtNg
+//
 package main
 
 import (
@@ -116,6 +133,22 @@ func (s *server) handleIndex() http.HandlerFunc {
 }
 
 func (s *server) handleQuery() http.HandlerFunc {
+	type benchStat = struct {
+		Identifier     string    `json:"id"`
+		Started        time.Time `json:"started"`
+		BlobCount      int       `json:"blob_count"`
+		ElapsedSeconds struct {
+			IdentifierDatabaseLookup float64 `json:"identifier_database"`
+			OciDatabaseLookup        float64 `json:"oci_database"`
+			IndexDataLookup          float64 `json:"index_data"`
+			Total                    float64 `json:"total"`
+		} `json:"elapsed_s"`
+		ElapsedRatio struct {
+			IdentifierDatabaseLookup float64 `json:"identifier_database"`
+			OciDatabaseLookup        float64 `json:"oci_database"`
+			IndexDataLookup          float64 `json:"index_data"`
+		} `json:"elapsed_r"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		// (1) resolve id to doi
@@ -124,8 +157,10 @@ func (s *server) handleQuery() http.HandlerFunc {
 		// (4) lookup all ids
 		// (5) assemble result
 		started := time.Now()
+		stat := benchStat{Started: started}
 
 		id := vars["id"]
+		stat.Identifier = id
 		// (1)
 		var m Map
 		if err := s.identifierDatabase.Get(&m, "SELECT * FROM map WHERE k = ?", id); err != nil {
@@ -146,6 +181,7 @@ func (s *server) handleQuery() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		stat.ElapsedSeconds.IdentifierDatabaseLookup = time.Since(started).Seconds()
 		// log.Println(m)
 		// log.Println(citing)
 		// log.Println(cited)
@@ -177,6 +213,7 @@ func (s *server) handleQuery() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		stat.ElapsedSeconds.OciDatabaseLookup = time.Since(started).Seconds()
 		// log.Println(ids) // the keys are our local ids
 		var blobs []string
 		for _, v := range ids {
@@ -194,7 +231,21 @@ func (s *server) handleQuery() http.HandlerFunc {
 			}
 			blobs = append(blobs, string(b))
 		}
-		log.Printf("collected index data for %s [%d] in %v", id, len(blobs), time.Since(started))
+		stat.BlobCount = len(blobs)
+		stat.ElapsedSeconds.IndexDataLookup = time.Since(started).Seconds()
+		// log.Printf("collected index data for %s [%d] in %v", id, len(blobs), time.Since(started))
+		// XXX: calculate ratio
+		stat.ElapsedSeconds.Total = time.Since(started).Seconds()
+		stat.ElapsedRatio.IdentifierDatabaseLookup = stat.ElapsedSeconds.IdentifierDatabaseLookup / stat.ElapsedSeconds.Total
+		stat.ElapsedRatio.OciDatabaseLookup = (stat.ElapsedSeconds.OciDatabaseLookup -
+			stat.ElapsedSeconds.IdentifierDatabaseLookup) / stat.ElapsedSeconds.Total
+		stat.ElapsedRatio.IndexDataLookup = (stat.ElapsedSeconds.IndexDataLookup -
+			stat.ElapsedSeconds.OciDatabaseLookup) / stat.ElapsedSeconds.Total
+		enc := json.NewEncoder(w)
+		if err := enc.Encode(stat); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
