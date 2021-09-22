@@ -10,8 +10,21 @@
 // user    0m2.366s
 // sys     0m18.477s
 //
-// Some stats.
+// Some stats; 179 rps, random requests, no parallel requests within the
+// server (e.g. no parallel index data requests).
 //
+// 256G index data, minimal caching.
+//
+// $ pcstat index.data
+// +------------+----------------+------------+-----------+---------+
+// | Name       | Size (bytes)   | Pages      | Cached    | Percent |
+// |------------+----------------+------------+-----------+---------|
+// | index.data | 256360643273   | 62588048   | 885414    | 001.415 |
+// +------------+----------------+------------+-----------+---------+
+//
+// $ time cat 100K.ids | parallel -j 10 "curl -s http://localhost:3000/q/{}" | jq -rc '[.blob_count, .elapsed_s.total, .id] | @tsv'
+//
+// ...
 // 3       0.007706688     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAyMy9iOmZyYWMuMDAwMDAzMTA5My44NTA2MS5jOQ
 // 2       0.003119393     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE0My9wdHBzLjE1NC4xNTQ
 // 31      0.032643698     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAxNi9zMDAwMy0zNDcyKDgwKTgwMDI2LTE
@@ -26,6 +39,11 @@
 // 12      0.01719839      ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA4OC8xNzU1LTEzMTUvNTg4LzMvMDMyMDIx
 // 15      0.024281162     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMzk5MTc4
 // 18      0.018429985     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAxNi8wMzc4LTUxNzMoODApOTAxMzgtNg
+// ...
+//
+// real    9m18.799s
+// user    16m58.769s
+// sys     14m19.567s
 //
 package main
 
