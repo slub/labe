@@ -78,7 +78,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -179,7 +178,7 @@ func (s *server) routes() {
 
 func (s *server) handleIndex() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, "spindel")
+		fmt.Fprintf(w, "spindel %v %v", Version, Buildtime)
 	}
 }
 
@@ -454,6 +453,6 @@ func main() {
 		os.Exit(0)
 	}
 	srv.routes()
-	log.Printf("spindel http://%s", *listen)
+	log.Printf("spindel %s %s http://%s", Version, Buildtime, *listen)
 	log.Fatal(http.ListenAndServe(*listen, srv))
 }
