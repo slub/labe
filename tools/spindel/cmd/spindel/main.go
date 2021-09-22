@@ -1,8 +1,6 @@
 // $ spindel -info | jq .
 // 2021/09/22 18:04:51 ⚑ querying three data stores ...
 // {
-//   "buildtime": "2021-09-22T16:02:57Z",
-//   "version": "307ca40",
 //   "identifier_database_count": 56879665,
 //   "oci_database_count": 1119201441,
 //   "index_data_count": 61529978
