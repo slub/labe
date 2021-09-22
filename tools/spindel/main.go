@@ -1,6 +1,13 @@
+// $ spindel -info | jq .
+// {
+//   "IdentifierDatabaseCount": 56879665,
+//   "OciDatabaseCount": 1119201441
+// }
 package main
 
 import (
+	"database/sql"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -14,6 +21,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -21,6 +29,7 @@ var (
 	ociDatabasePath        = flag.String("O", "o.db", "oci as a datbase path")
 	indexDataBaseURL       = flag.String("D", "http://localhost:8820", "index data lookup base URL")
 	listen                 = flag.String("l", "localhost:3000", "host and port to listen on")
+	showInfo               = flag.Bool("info", false, "show db info only")
 )
 
 // Map is a generic lookup table.
@@ -34,6 +43,58 @@ type server struct {
 	ociDatabase        *sqlx.DB
 	indexDataService   string
 	router             *mux.Router
+}
+
+func (s *server) Info() error {
+	var (
+		info = struct {
+			IdentifierDatabaseCount int `json:"identifier_database_count"`
+			OciDatabaseCount        int `json:"oci_database_count"`
+			IndexDataCount          int `json:"index_data_count"`
+		}{}
+		row *sql.Row
+		g   errgroup.Group
+	)
+
+	var funcs = []func() error{
+		func() error {
+			row = s.identifierDatabase.QueryRow("SELECT count(*) FROM map")
+			return row.Scan(&info.IdentifierDatabaseCount)
+		},
+		func() error {
+			row = s.ociDatabase.QueryRow("SELECT count(*) FROM map")
+			return row.Scan(&info.OciDatabaseCount)
+		},
+		func() error {
+			resp, err := http.Get(fmt.Sprintf("%s/count", s.indexDataService))
+			if err != nil {
+				return err
+			}
+			defer resp.Body.Close()
+			dec := json.NewDecoder(resp.Body)
+			var countResp = struct {
+				Count int `json:"count"`
+			}{}
+			if err := dec.Decode(&countResp); err != nil {
+				return err
+			}
+			info.IndexDataCount = countResp.Count
+			return nil
+		},
+	}
+	for _, f := range funcs {
+		g.Go(f)
+	}
+	log.Println("⚑ querying three data stores ...")
+	if err := g.Wait(); err != nil {
+		return err
+	}
+	b, err := json.Marshal(info)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(b))
+	return nil
 }
 
 func (s *server) routes() {
@@ -272,6 +333,12 @@ func main() {
 	}
 	if err := srv.Ping(); err != nil {
 		log.Fatal(err)
+	}
+	if *showInfo {
+		if err := srv.Info(); err != nil {
+			log.Fatal(err)
+		}
+		os.Exit(0)
 	}
 	srv.routes()
 	log.Printf("spindel http://%s", *listen)
