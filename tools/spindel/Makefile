@@ -9,9 +9,12 @@ GOLDFLAGS += -w -s
 GOFLAGS = -ldflags "$(GOLDFLAGS)"
 GOFILES = $(shell find . -name *.go)
 
+.PHONY: all
+all: $(TARGETS)
+
 .PHONY: build
-spindel: $(GOFILES)
-	go build -ldflags "$(GOLDFLAGS)" .
+%: cmd/%/main.go server.go set/set.go
+	go build -o $@ -ldflags "$(GOLDFLAGS)" $<
 
 .PHONY: clean
 clean:
