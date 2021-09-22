@@ -1,14 +1,12 @@
-// $ time spindel -info | jq .
-// 2021/09/22 13:56:54 ⚑ querying three data stores ...
+// $ spindel -info | jq .
+// 2021/09/22 18:04:51 ⚑ querying three data stores ...
 // {
+//   "buildtime": "2021-09-22T16:02:57Z",
+//   "version": "307ca40",
 //   "identifier_database_count": 56879665,
 //   "oci_database_count": 1119201441,
 //   "index_data_count": 61529978
 // }
-//
-// real    0m20.467s
-// user    0m2.366s
-// sys     0m18.477s
 //
 // Some stats; 179 rps, random requests, no parallel requests within the
 // server (e.g. no parallel index data requests).
