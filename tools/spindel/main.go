@@ -1,8 +1,15 @@
-// $ spindel -info | jq .
+// $ time spindel -info | jq .
+// 2021/09/22 13:56:54 ⚑ querying three data stores ...
 // {
-//   "IdentifierDatabaseCount": 56879665,
-//   "OciDatabaseCount": 1119201441
+//   "identifier_database_count": 56879665,
+//   "oci_database_count": 1119201441,
+//   "index_data_count": 61529978
 // }
+//
+// real    0m20.467s
+// user    0m2.366s
+// sys     0m18.477s
+//
 package main
 
 import (
