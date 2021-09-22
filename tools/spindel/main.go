@@ -122,40 +122,44 @@ type server struct {
 func (s *server) Info() error {
 	var (
 		info = struct {
-			IdentifierDatabaseCount int `json:"identifier_database_count"`
-			OciDatabaseCount        int `json:"oci_database_count"`
-			IndexDataCount          int `json:"index_data_count"`
-		}{}
-		row *sql.Row
-		g   errgroup.Group
+			Buildtime               string `json:"buildtime"`
+			Version                 string `json:"version"`
+			IdentifierDatabaseCount int    `json:"identifier_database_count"`
+			OciDatabaseCount        int    `json:"oci_database_count"`
+			IndexDataCount          int    `json:"index_data_count"`
+		}{
+			Buildtime: Buildtime,
+			Version:   Version,
+		}
+		row   *sql.Row
+		g     errgroup.Group
+		funcs = []func() error{
+			func() error {
+				row = s.identifierDatabase.QueryRow("SELECT count(*) FROM map")
+				return row.Scan(&info.IdentifierDatabaseCount)
+			},
+			func() error {
+				row = s.ociDatabase.QueryRow("SELECT count(*) FROM map")
+				return row.Scan(&info.OciDatabaseCount)
+			},
+			func() error {
+				resp, err := http.Get(fmt.Sprintf("%s/count", s.indexDataService))
+				if err != nil {
+					return err
+				}
+				defer resp.Body.Close()
+				dec := json.NewDecoder(resp.Body)
+				var countResp = struct {
+					Count int `json:"count"`
+				}{}
+				if err := dec.Decode(&countResp); err != nil {
+					return err
+				}
+				info.IndexDataCount = countResp.Count
+				return nil
+			},
+		}
 	)
-
-	var funcs = []func() error{
-		func() error {
-			row = s.identifierDatabase.QueryRow("SELECT count(*) FROM map")
-			return row.Scan(&info.IdentifierDatabaseCount)
-		},
-		func() error {
-			row = s.ociDatabase.QueryRow("SELECT count(*) FROM map")
-			return row.Scan(&info.OciDatabaseCount)
-		},
-		func() error {
-			resp, err := http.Get(fmt.Sprintf("%s/count", s.indexDataService))
-			if err != nil {
-				return err
-			}
-			defer resp.Body.Close()
-			dec := json.NewDecoder(resp.Body)
-			var countResp = struct {
-				Count int `json:"count"`
-			}{}
-			if err := dec.Decode(&countResp); err != nil {
-				return err
-			}
-			info.IndexDataCount = countResp.Count
-			return nil
-		},
-	}
 	for _, f := range funcs {
 		g.Go(f)
 	}
