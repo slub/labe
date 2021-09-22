@@ -202,6 +202,7 @@ func (s *Server) handleQuery() http.HandlerFunc {
 		response.Extra.CitedCount = len(response.Cited)
 		response.Extra.Took = time.Since(started).Seconds()
 		// Put it on the wire.
+		w.Header().Add("Content-Type", "application/json")
 		enc := json.NewEncoder(w)
 		if err := enc.Encode(response); err != nil {
 			httpErrLog(w, err)
