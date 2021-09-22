@@ -93,6 +93,9 @@
 // 75%        0.034356
 // max        7.140881
 //
+// Another way to see performance.
+//
+// $ cat fixtures/100K.ids | parallel -j 40 "curl -s http://localhost:3000/q/{}" | pv -l > /dev/null
 package main
 
 import (
