@@ -69,6 +69,32 @@
 // 4462    3.477182936     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
 // 8893    8.461666468     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
 //
+// In a testrun with 100K ids, 99% of the request finish in less than 0.18s,
+// 95% of the requests finish in less than 0.09s.
+//
+// In [14]: pd.read_csv("fixtures/t.tsv", header=None, names=["t"]).quantile([1, 0.99, 0.95, 0.75, 0.5, 0.25, 0])
+// Out[14]:
+//              t
+// 1.00  7.140881
+// 0.99  0.188159
+// 0.95  0.091745
+// 0.75  0.034356
+// 0.50  0.016230
+// 0.25  0.006562
+// 0.00  0.000510
+//
+// In [15]: pd.read_csv("fixtures/t.tsv", header=None, names=["t"]).describe()
+// Out[15]:
+//                   t
+// count  64860.000000
+// mean       0.029028
+// std        0.060780
+// min        0.000510
+// 25%        0.006562
+// 50%        0.016230
+// 75%        0.034356
+// max        7.140881
+//
 package main
 
 import (
