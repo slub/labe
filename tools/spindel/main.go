@@ -98,6 +98,10 @@ var (
 	indexDataBaseURL       = flag.String("D", "http://localhost:8820", "index data lookup base URL")
 	listen                 = flag.String("l", "localhost:3000", "host and port to listen on")
 	showInfo               = flag.Bool("info", false, "show db info only")
+	showVersion            = flag.Bool("version", false, "show version")
+
+	Version   string
+	Buildtime string
 )
 
 // Map is a generic lookup table.
@@ -416,6 +420,10 @@ func (s Set) Sorted() (result []string) {
 
 func main() {
 	flag.Parse()
+	if *showVersion {
+		fmt.Printf("spindel %v %v\n", Version, Buildtime)
+		os.Exit(0)
+	}
 	if _, err := os.Stat(*identifierDatabasePath); os.IsNotExist(err) {
 		log.Fatal(err)
 	}
