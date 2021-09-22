@@ -214,6 +214,9 @@ func (s *server) handleIndex() http.HandlerFunc {
 	}
 }
 
+// handleQuery does all the lookups, but that should elsewhere, in a more
+// testable place. Also, reuse some existing stats library. Also TODO:
+// parallelize all backend requests and think up schema for delivery.
 func (s *server) handleQuery() http.HandlerFunc {
 	type benchStat = struct {
 		Identifier     string    `json:"id"`
@@ -254,6 +257,9 @@ func (s *server) handleQuery() http.HandlerFunc {
 			doi    = m.Value
 			citing []Map
 			cited  []Map
+			dois   []string
+			ids    []Map
+			blobs  []string
 		)
 		if err := s.ociDatabase.Select(&citing, "SELECT * FROM map WHERE k = ?", doi); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -264,13 +270,7 @@ func (s *server) handleQuery() http.HandlerFunc {
 			return
 		}
 		stat.ElapsedSeconds.IdentifierDatabaseLookup = time.Since(started).Seconds()
-		// log.Println(m)
-		// log.Println(citing)
-		// log.Println(cited)
-		// log.Println(time.Since(started)) // 3-12ms
-
 		// (3)
-		var dois []string
 		for _, v := range citing {
 			dois = append(dois, v.Key)
 			dois = append(dois, v.Value)
@@ -280,8 +280,10 @@ func (s *server) handleQuery() http.HandlerFunc {
 			dois = append(dois, v.Value)
 		}
 		ss := FromSlice(dois)
-		// log.Printf("%d dois to lookup", ss.Len())
 		if ss.IsEmpty() {
+			// This is where the difference in the benchmark runs comes from,
+			// e.g. 64860/100000; estimated ratio 64% of records with DOI will
+			// have some reference information.
 			return
 		}
 		query, args, err := sqlx.In("SELECT * FROM map WHERE v IN (?)", ss.Slice())
@@ -290,14 +292,11 @@ func (s *server) handleQuery() http.HandlerFunc {
 			return
 		}
 		query = s.identifierDatabase.Rebind(query)
-		var ids []Map
 		if err := s.identifierDatabase.Select(&ids, query, args...); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		stat.ElapsedSeconds.OciDatabaseLookup = time.Since(started).Seconds()
-		// log.Println(ids) // the keys are our local ids
-		var blobs []string
 		for _, v := range ids {
 			link := fmt.Sprintf("%s/%s", s.indexDataService, v.Key)
 			resp, err := http.Get(link)
@@ -314,15 +313,15 @@ func (s *server) handleQuery() http.HandlerFunc {
 			blobs = append(blobs, string(b))
 		}
 		stat.BlobCount = len(blobs)
+		// TODO: factor this out
 		stat.ElapsedSeconds.IndexDataLookup = time.Since(started).Seconds()
-		// log.Printf("collected index data for %s [%d] in %v", id, len(blobs), time.Since(started))
-		// XXX: calculate ratio
 		stat.ElapsedSeconds.Total = time.Since(started).Seconds()
 		stat.ElapsedRatio.IdentifierDatabaseLookup = math.Round(stat.ElapsedSeconds.IdentifierDatabaseLookup/stat.ElapsedSeconds.Total*100) / 100
 		stat.ElapsedRatio.OciDatabaseLookup = math.Round(((stat.ElapsedSeconds.OciDatabaseLookup-
 			stat.ElapsedSeconds.IdentifierDatabaseLookup)/stat.ElapsedSeconds.Total)*100) / 100
 		stat.ElapsedRatio.IndexDataLookup = math.Round(((stat.ElapsedSeconds.IndexDataLookup-
 			stat.ElapsedSeconds.OciDatabaseLookup)/stat.ElapsedSeconds.Total)*100) / 100
+		// Just return the stats for now.
 		enc := json.NewEncoder(w)
 		if err := enc.Encode(stat); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
