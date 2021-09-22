@@ -80,6 +80,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"sort"
@@ -101,6 +102,35 @@ var (
 
 	Version   string
 	Buildtime string
+
+	Banner string = `
+      ___           ___                     ___                         ___
+     /\__\         /\  \                   /\  \         _____         /\__\
+    /:/ _/_       /::\  \     ___          \:\  \       /::\  \       /:/ _/_
+   /:/ /\  \     /:/\:\__\   /\__\          \:\  \     /:/\:\  \     /:/ /\__\
+  /:/ /::\  \   /:/ /:/  /  /:/__/      _____\:\  \   /:/  \:\__\   /:/ /:/ _/_   ___     ___
+ /:/_/:/\:\__\ /:/_/:/  /  /::\  \     /::::::::\__\ /:/__/ \:|__| /:/_/:/ /\__\ /\  \   /\__\
+ \:\/:/ /:/  / \:\/:/  /   \/\:\  \__  \:\~~\~~\/__/ \:\  \ /:/  / \:\/:/ /:/  / \:\  \ /:/  /
+  \::/ /:/  /   \::/__/     ~~\:\/\__\  \:\  \        \:\  /:/  /   \::/_/:/  /   \:\  /:/  /
+   \/_/:/  /     \:\  \        \::/  /   \:\  \        \:\/:/  /     \:\/:/  /     \:\/:/  /
+     /:/  /       \:\__\       /:/  /     \:\__\        \::/  /       \::/  /       \::/  /
+     \/__/         \/__/       \/__/       \/__/         \/__/         \/__/         \/__/
+
+spindel is an experimental api server for labe; it works with three databases:
+
+* an sqlite3 catalog id to doi translation table (11GB)
+* an sqlite3 version of OCI (145GB)
+* a key-value store mapping catalog ids to catalog entities (239GB)
+
+Each database may be updated separately, with separate processes; e.g.
+currently we use the experimental mkocidb command turn (k, v) TSV files into
+sqlite3 lookup databases.
+
+Examples:
+
+http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
+http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
+`
 )
 
 // Map is a generic lookup table.
@@ -290,11 +320,11 @@ func (s *server) handleQuery() http.HandlerFunc {
 		// log.Printf("collected index data for %s [%d] in %v", id, len(blobs), time.Since(started))
 		// XXX: calculate ratio
 		stat.ElapsedSeconds.Total = time.Since(started).Seconds()
-		stat.ElapsedRatio.IdentifierDatabaseLookup = stat.ElapsedSeconds.IdentifierDatabaseLookup / stat.ElapsedSeconds.Total
-		stat.ElapsedRatio.OciDatabaseLookup = (stat.ElapsedSeconds.OciDatabaseLookup -
-			stat.ElapsedSeconds.IdentifierDatabaseLookup) / stat.ElapsedSeconds.Total
-		stat.ElapsedRatio.IndexDataLookup = (stat.ElapsedSeconds.IndexDataLookup -
-			stat.ElapsedSeconds.OciDatabaseLookup) / stat.ElapsedSeconds.Total
+		stat.ElapsedRatio.IdentifierDatabaseLookup = math.Round(stat.ElapsedSeconds.IdentifierDatabaseLookup/stat.ElapsedSeconds.Total*100) / 100
+		stat.ElapsedRatio.OciDatabaseLookup = math.Round(((stat.ElapsedSeconds.OciDatabaseLookup-
+			stat.ElapsedSeconds.IdentifierDatabaseLookup)/stat.ElapsedSeconds.Total)*100) / 100
+		stat.ElapsedRatio.IndexDataLookup = math.Round(((stat.ElapsedSeconds.IndexDataLookup-
+			stat.ElapsedSeconds.OciDatabaseLookup)/stat.ElapsedSeconds.Total)*100) / 100
 		enc := json.NewEncoder(w)
 		if err := enc.Encode(stat); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -457,6 +487,7 @@ func main() {
 		os.Exit(0)
 	}
 	srv.routes()
-	log.Printf("spindel %s %s http://%s", Version, Buildtime, *listen)
+	log.Printf("spindel starting %s %s http://%s", Version, Buildtime, *listen)
+	fmt.Fprintln(os.Stderr, Banner)
 	log.Fatal(http.ListenAndServe(*listen, srv))
 }
