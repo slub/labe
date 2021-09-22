@@ -19,7 +19,7 @@ import (
 type Server struct {
 	IdentifierDatabase *sqlx.DB
 	OciDatabase        *sqlx.DB
-	IndexDataService   string
+	IndexDataService   string // TODO: make this slightly more abstract.
 	Router             *mux.Router
 }
 
@@ -113,20 +113,24 @@ func (s *Server) handleQuery() http.HandlerFunc {
 		// (4) lookup all ids
 		// (5) assemble result
 		var (
-			started = time.Now()
-			id      = vars["id"] // the local identifier
-			doi     string       // the DOI for a given identifier
-			citing  []Map        // rows containing paper references (value is the reference item)
-			cited   []Map        // rows containing inbound relations (key is the citing id)
-			dois    []string     // all related doi
-			ids     []Map        // local identifiers
-			blobs   []string     // index data blobs
+			started  = time.Now()
+			id       = vars["id"] // the local identifier
+			doi      string       // the DOI for a given identifier
+			citing   []Map        // rows containing paper references (value is the reference item)
+			cited    []Map        // rows containing inbound relations (key is the citing id)
+			ids      []Map        // local identifiers
+			outbound = set.New()
+			inbound  = set.New()
+			response = Response{
+				Identifier: id,
+			}
 		)
 		// (1) Get the DOI for the local id; or get out.
 		if err := s.IdentifierDatabase.Get(&doi, "SELECT v FROM map WHERE k = ?", id); err != nil {
 			httpErrLog(w, err)
 			return
 		}
+		response.DOI = doi
 		// (2) With the DOI, find outbound (citing) and inbound (cited)
 		// references in the OCI database.
 		if err := s.OciDatabase.Select(&citing, "SELECT * FROM map WHERE k = ?", doi); err != nil {
@@ -140,19 +144,20 @@ func (s *Server) handleQuery() http.HandlerFunc {
 		// (3) We want to collect the unique set of DOI to get the complete
 		// indexed documents.
 		for _, v := range citing {
-			dois = append(dois, []string{v.Key, v.Value}...)
+			outbound.Add(v.Value)
 		}
 		for _, v := range cited {
-			dois = append(dois, []string{v.Key, v.Value}...)
+			inbound.Add(v.Key)
 		}
-		ss := set.FromSlice(dois)
+		ss := outbound.Union(inbound)
 		if ss.IsEmpty() {
 			// This is where the difference in the benchmark runs comes from,
 			// e.g. 64860/100000; estimated ratio 64% of records with DOI will
 			// have some reference information.
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		// We now need to map back the DOI to the internal identifiers. That's
+		// (4) We now need to map back the DOI to the internal identifiers. That's
 		// probably a more expensive query.
 		query, args, err := sqlx.In("SELECT * FROM map WHERE v IN (?)", ss.Slice())
 		if err != nil {
@@ -164,10 +169,11 @@ func (s *Server) handleQuery() http.HandlerFunc {
 			httpErrLog(w, err)
 			return
 		}
-		// For each identifier we want the full metadata. We use an local copy
-		// of the index. We could also ask a life index here.
-		blobStarted := time.Now()
+		// (5) At this point, we need to assemble the result. For each
+		// identifier we want the full metadata. We use an local copy of the
+		// index. We could also ask a life index here.
 		for _, v := range ids {
+			// Access the data, here we use the blob, but we could ask SOLR, too.
 			link := fmt.Sprintf("%s/%s", s.IndexDataService, v.Key)
 			resp, err := http.Get(link)
 			if err != nil {
@@ -175,19 +181,29 @@ func (s *Server) handleQuery() http.HandlerFunc {
 				return
 			}
 			defer resp.Body.Close()
+			if resp.StatusCode != 200 {
+				continue
+			}
 			b, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
 				httpErrLog(w, err)
 				return
 			}
-			blobs = append(blobs, string(b))
+			// We have the blob and the {k: local, v: doi} values, so all we
+			// should need.
+			switch {
+			case outbound.Contains(v.Value):
+				response.Citing = append(response.Citing, b)
+			case inbound.Contains(v.Value):
+				response.Cited = append(response.Cited, b)
+			}
 		}
-		log.Printf("blob lookup took: %v", time.Since(blobStarted))
+		response.Extra.CitingCount = len(response.Citing)
+		response.Extra.CitedCount = len(response.Cited)
+		response.Extra.Took = time.Since(started).Seconds()
+		// Put it on the wire.
 		enc := json.NewEncoder(w)
-		if err := enc.Encode(map[string]interface{}{
-			"blobs":     len(blobs),
-			"elapsed_s": time.Since(started).Seconds(),
-		}); err != nil {
+		if err := enc.Encode(response); err != nil {
 			httpErrLog(w, err)
 			return
 		}
