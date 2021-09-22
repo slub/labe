@@ -487,7 +487,7 @@ func main() {
 		os.Exit(0)
 	}
 	srv.routes()
-	log.Printf("spindel starting %s %s http://%s", Version, Buildtime, *listen)
 	fmt.Fprintln(os.Stderr, Banner)
+	log.Printf("spindel starting %s %s http://%s", Version, Buildtime, *listen)
 	log.Fatal(http.ListenAndServe(*listen, srv))
 }
