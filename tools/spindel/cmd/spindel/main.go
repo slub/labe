@@ -99,6 +99,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -182,7 +183,8 @@ func main() {
 		log.Fatal(err)
 	}
 	if *showInfo {
-		if err := srv.Info(); err != nil {
+		ctx := context.Background()
+		if err := srv.Info(ctx); err != nil {
 			log.Fatal(err)
 		}
 		os.Exit(0)

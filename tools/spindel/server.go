@@ -1,6 +1,7 @@
 package spindel
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -24,7 +25,7 @@ type Server struct {
 	Router             *mux.Router
 }
 
-func (s *Server) Info() error {
+func (s *Server) Info(ctx context.Context) error {
 	var (
 		info = struct {
 			IdentifierDatabaseCount int `json:"identifier_database_count"`
@@ -32,18 +33,17 @@ func (s *Server) Info() error {
 			IndexDataCount          int `json:"index_data_count"`
 		}{}
 		row   *sql.Row
-		g     errgroup.Group
 		funcs = []func() error{
 			func() error {
-				row = s.IdentifierDatabase.QueryRow("SELECT count(*) FROM map")
+				row = s.IdentifierDatabase.QueryRowContext(ctx, "SELECT count(*) FROM map")
 				return row.Scan(&info.IdentifierDatabaseCount)
 			},
 			func() error {
-				row = s.OciDatabase.QueryRow("SELECT count(*) FROM map")
+				row = s.OciDatabase.QueryRowContext(ctx, "SELECT count(*) FROM map")
 				return row.Scan(&info.OciDatabaseCount)
 			},
 			func() error {
-				resp, err := http.Get(fmt.Sprintf("%s/count", s.IndexDataService))
+				resp, err := http.Get(fmt.Sprintf("%s/count", s.IndexDataService)) // TODO: better client
 				if err != nil {
 					return err
 				}
@@ -60,6 +60,7 @@ func (s *Server) Info() error {
 			},
 		}
 	)
+	g, ctx := errgroup.WithContext(ctx)
 	for _, f := range funcs {
 		g.Go(f)
 	}
@@ -106,7 +107,6 @@ func httpErrLog(w http.ResponseWriter, err error) {
 // parallelize all backend requests and think up schema for delivery.
 func (s *Server) handleQuery() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
 		// Outline
 		// (1) resolve id to doi
 		// (2) lookup related doi via oci
@@ -114,7 +114,9 @@ func (s *Server) handleQuery() http.HandlerFunc {
 		// (4) lookup all ids
 		// (5) assemble result
 		var (
+			ctx      = r.Context()
 			started  = time.Now()
+			vars     = mux.Vars(r)
 			id       = vars["id"] // the local identifier
 			doi      string       // the DOI for a given identifier
 			citing   []Map        // rows containing paper references (value is the reference item)
@@ -127,18 +129,18 @@ func (s *Server) handleQuery() http.HandlerFunc {
 			}
 		)
 		// (1) Get the DOI for the local id; or get out.
-		if err := s.IdentifierDatabase.Get(&doi, "SELECT v FROM map WHERE k = ?", id); err != nil {
+		if err := s.IdentifierDatabase.GetContext(ctx, &doi, "SELECT v FROM map WHERE k = ?", id); err != nil {
 			httpErrLog(w, err)
 			return
 		}
 		response.DOI = doi
 		// (2) With the DOI, find outbound (citing) and inbound (cited)
 		// references in the OCI database.
-		if err := s.OciDatabase.Select(&citing, "SELECT * FROM map WHERE k = ?", doi); err != nil {
+		if err := s.OciDatabase.SelectContext(ctx, &citing, "SELECT * FROM map WHERE k = ?", doi); err != nil {
 			httpErrLog(w, err)
 			return
 		}
-		if err := s.OciDatabase.Select(&cited, "SELECT * FROM map WHERE v = ?", doi); err != nil {
+		if err := s.OciDatabase.SelectContext(ctx, &cited, "SELECT * FROM map WHERE v = ?", doi); err != nil {
 			httpErrLog(w, err)
 			return
 		}
@@ -166,7 +168,7 @@ func (s *Server) handleQuery() http.HandlerFunc {
 			return
 		}
 		query = s.IdentifierDatabase.Rebind(query)
-		if err := s.IdentifierDatabase.Select(&ids, query, args...); err != nil {
+		if err := s.IdentifierDatabase.SelectContext(ctx, &ids, query, args...); err != nil {
 			httpErrLog(w, err)
 			return
 		}
@@ -176,7 +178,7 @@ func (s *Server) handleQuery() http.HandlerFunc {
 		for _, v := range ids {
 			// Access the data, here we use the blob, but we could ask SOLR, too.
 			link := fmt.Sprintf("%s/%s", s.IndexDataService, v.Key)
-			resp, err := http.Get(link)
+			resp, err := http.Get(link) // TODO: a better client
 			if err != nil {
 				httpErrLog(w, err)
 				return
