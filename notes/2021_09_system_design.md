@@ -1,5 +1,9 @@
 # Ideas on system design
 
+Mix of ideas regarding system design, architecture.
+
+## Unsorted
+
 Raw inputs.
 
 ```
@@ -35,7 +39,7 @@ Alternative third-party projects.
 * [DVC](https://dvc.org/) for handling versions of the raw inputs and pipelines
 * [taskfile.dev](https://taskfile.dev/#/)
 
-## Design issues
+## Some design issues
 
 * [ ] we need SOLR data with DOI; might need external service to have best DOI
   coverage; how much is actually lost in the SOLR schema?
@@ -66,3 +70,30 @@ May contain more information about the cited and citing entities (e.g. title,
 authors, year, ...) to minimize additional requests. In fact: we want *only
 one* request to get information about all linkage (inbound, outbound) - this
 may be a few or a few thousand records. Opportinities for caching.
+
+## Design proposal: Minimal Preprocessing
+
+Core ideas: do not preprocess the data that much, but assemble result at request time.
+
+An example implementation with [mkocidb](../tools/mkocidb/) and
+[spindel](../tools/spindel/) works with three databases (could also be tables):
+
+* local **id** to **doi** mapping (and vice versa) (12G)
+* a copy of **doi-doi** edges from OCI corpus (155G)
+* store of index data, accessibly by local **id** (256G)
+
+In total currently 423G, might be more with bigger OCI dumps and extended index
+cache.
+
+Upsides of this approach:
+
+* each dataset can be updated separetely, with minimal effort (replace (db) file and signal reload)
+* less preprocessing complexity; we need OCI -> sqlite, index data -> sqlite
+  and index data -> microblob (or something else); three operations; each of
+  which could be independently replaced or optimized
+* can adjust final output more easily, not reprocessing required
+
+Challenges:
+
+* live assembly needs to be performant
+
