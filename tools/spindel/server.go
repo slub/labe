@@ -32,7 +32,10 @@ func (s *Server) Info(ctx context.Context) error {
 			OciDatabaseCount        int `json:"oci_database_count"`
 			IndexDataCount          int `json:"index_data_count"`
 		}{}
-		row   *sql.Row
+		row    *sql.Row
+		client = http.Client{
+			Timeout: 120 * time.Second,
+		}
 		funcs = []func() error{
 			func() error {
 				row = s.IdentifierDatabase.QueryRowContext(ctx, "SELECT count(*) FROM map")
@@ -43,7 +46,11 @@ func (s *Server) Info(ctx context.Context) error {
 				return row.Scan(&info.OciDatabaseCount)
 			},
 			func() error {
-				resp, err := http.Get(fmt.Sprintf("%s/count", s.IndexDataService)) // TODO: better client
+				req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/count", s.IndexDataService), nil)
+				if err != nil {
+					return err
+				}
+				resp, err := client.Do(req)
 				if err != nil {
 					return err
 				}
@@ -106,6 +113,30 @@ func httpErrLog(w http.ResponseWriter, err error) {
 // testable place. Also, reuse some existing stats library. Also TODO:
 // parallelize all backend requests and think up schema for delivery.
 func (s *Server) handleQuery() http.HandlerFunc {
+	client := http.Client{
+		Timeout: 5 * time.Second,
+	}
+	// Map is a generic lookup table. We use it together with sqlite3.
+	type Map struct {
+		Key   string `db:"k"`
+		Value string `db:"v"`
+	}
+	// Response contains a subset of index data fused with citation data.
+	type Response struct {
+		// The local identifier.
+		ID string `json:"id"`
+		// The DOI for the local identifier.
+		DOI string `json:"doi"`
+		// We want to safe time not doing any serialization, if we do not need it.
+		Citing []json.RawMessage `json:"citing"`
+		Cited  []json.RawMessage `json:"cited"`
+		// Some extra information for now, may not need these.
+		Extra struct {
+			Took        float64 `json:"took"`
+			CitingCount int     `json:"citing_count"`
+			CitedCount  int     `json:"cited_count"`
+		} `json:"extra"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Outline
 		// (1) resolve id to doi
@@ -117,30 +148,27 @@ func (s *Server) handleQuery() http.HandlerFunc {
 			ctx      = r.Context()
 			started  = time.Now()
 			vars     = mux.Vars(r)
-			id       = vars["id"] // the local identifier
-			doi      string       // the DOI for a given identifier
-			citing   []Map        // rows containing paper references (value is the reference item)
-			cited    []Map        // rows containing inbound relations (key is the citing id)
-			ids      []Map        // local identifiers
+			citing   []Map // rows containing paper references (value is the reference item)
+			cited    []Map // rows containing inbound relations (key is the citing id)
+			ids      []Map // local identifiers
 			outbound = set.New()
 			inbound  = set.New()
 			response = Response{
-				Identifier: id,
+				ID: vars["id"], // the local identifier
 			}
 		)
 		// (1) Get the DOI for the local id; or get out.
-		if err := s.IdentifierDatabase.GetContext(ctx, &doi, "SELECT v FROM map WHERE k = ?", id); err != nil {
+		if err := s.IdentifierDatabase.GetContext(ctx, &response.DOI, "SELECT v FROM map WHERE k = ?", response.ID); err != nil {
 			httpErrLog(w, err)
 			return
 		}
-		response.DOI = doi
 		// (2) With the DOI, find outbound (citing) and inbound (cited)
 		// references in the OCI database.
-		if err := s.OciDatabase.SelectContext(ctx, &citing, "SELECT * FROM map WHERE k = ?", doi); err != nil {
+		if err := s.OciDatabase.SelectContext(ctx, &citing, "SELECT * FROM map WHERE k = ?", response.DOI); err != nil {
 			httpErrLog(w, err)
 			return
 		}
-		if err := s.OciDatabase.SelectContext(ctx, &cited, "SELECT * FROM map WHERE v = ?", doi); err != nil {
+		if err := s.OciDatabase.SelectContext(ctx, &cited, "SELECT * FROM map WHERE v = ?", response.DOI); err != nil {
 			httpErrLog(w, err)
 			return
 		}
@@ -178,7 +206,7 @@ func (s *Server) handleQuery() http.HandlerFunc {
 		for _, v := range ids {
 			// Access the data, here we use the blob, but we could ask SOLR, too.
 			link := fmt.Sprintf("%s/%s", s.IndexDataService, v.Key)
-			resp, err := http.Get(link) // TODO: a better client
+			resp, err := client.Get(link) // TODO: a better client
 			if err != nil {
 				httpErrLog(w, err)
 				return
