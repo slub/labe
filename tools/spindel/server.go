@@ -154,7 +154,7 @@ func (s *Server) handleQuery() http.HandlerFunc {
 		if ss.IsEmpty() {
 			// This is where the difference in the benchmark runs comes from,
 			// e.g. 64860/100000; estimated ratio 64% of records with DOI will
-			// have some reference information.
+			// have some reference information. TODO: dig a bit deeper.
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
