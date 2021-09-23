@@ -16,6 +16,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// Server wraps various data stores.
 type Server struct {
 	IdentifierDatabase *sqlx.DB
 	OciDatabase        *sqlx.DB
