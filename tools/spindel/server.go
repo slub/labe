@@ -154,7 +154,9 @@ func (s *Server) handleQuery() http.HandlerFunc {
 			outbound = set.New()
 			inbound  = set.New()
 			response = Response{
-				ID: vars["id"], // the local identifier
+				ID:     vars["id"], // the local identifier
+				Citing: []json.RawMessage{},
+				Cited:  []json.RawMessage{},
 			}
 		)
 		// (1) Get the DOI for the local id; or get out.

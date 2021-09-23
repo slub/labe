@@ -147,8 +147,16 @@ sqlite3 lookup databases.
 
 Examples:
 
-http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
-http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
+- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
+- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
+
+Bulk requests:
+
+    curl -sL https://git.io/JzVmJ |
+    parallel -j 40 "curl -s http://localhost:3000/q/{}" |
+    jq -rc '[.id, .doi, .extra.citing_count, .extra.cited_count] | @tsv'
+
+     --------8<--------
 `
 )
 
