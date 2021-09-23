@@ -156,7 +156,7 @@ Bulk requests:
     parallel -j 40 "curl -s http://localhost:3000/q/{}" |
     jq -rc '[.id, .doi, .extra.citing_count, .extra.cited_count] | @tsv'
 
-     --------8<--------
+    --------8<--------
 `
 )
 
