@@ -1,33 +1,27 @@
 # Spindel
 
-Experimental server component, takes requests for a given id and returns a
-result fused from OCI and index data.
+Experimental API server, takes requests for a given id and returns a
+result fused from OCI citations and index data.
 
 ```
-...
-2021/09/21 02:53:16 collected index data [5] in 3.036816ms
-2021/09/21 02:53:16 collected index data [11] in 6.869166ms
-2021/09/21 02:53:16 collected index data [2] in 1.185632ms
-2021/09/21 02:53:16 collected index data [2] in 1.166771ms
-2021/09/21 02:53:16 collected index data [10] in 8.747793ms
-2021/09/21 02:53:16 collected index data [23] in 12.346432ms
-2021/09/21 02:53:16 collected index data [7] in 7.802048ms
-2021/09/21 02:53:16 collected index data [2] in 2.692582ms
-2021/09/21 02:53:16 collected index data [11] in 9.17858ms
-2021/09/21 02:53:16 collected index data [2] in 2.144578ms
-2021/09/21 02:53:16 collected index data [6] in 3.260219ms
-2021/09/21 02:53:16 collected index data [2] in 2.032299ms
-2021/09/21 02:53:16 collected index data [1] in 1.674624ms
-2021/09/21 02:53:16 collected index data [7] in 5.187803ms
-2021/09/21 02:53:16 collected index data [12] in 7.830833ms
-2021/09/21 02:53:16 collected index data [3] in 3.162915ms
-2021/09/21 02:53:16 collected index data [1] in 1.187905ms
-2021/09/21 02:53:16 collected index data [27] in 36.192769ms
-2021/09/21 02:53:16 collected index data [2] in 3.705713ms
-2021/09/21 02:53:16 collected index data [117] in 100.405148ms
-2021/09/21 02:53:16 collected index data [6] in 4.352993ms
-2021/09/21 02:53:16 collected index data [2] in 1.761375ms
-2021/09/21 02:53:16 collected index data [6] in 4.905046ms
-2021/09/21 02:53:16 collected index data [571] in 406.627909ms
-2021/09/21 02:53:16 collected index data [426] in 320.899426ms
+ai-49-aHR0cD...TAuMTEwNC9wc...    10.1104/pp.88.4.1411           0   33   0.011371553
+ai-49-aHR0cD...TAuMTc1NzYva...    10.17576/jsm-2019-4808-23      0   3    0.002403981
+ai-49-aHR0cD...TAuMTYxNC93d...    10.1614/wt-08-045.1            19  12   0.006658463
+ai-49-aHR0cD...TAuMzg5Ny96b...    10.3897/zookeys.449.6813       0   1    0.000609854
+ai-49-aHR0cD...TAuMTA4OC8xN...    10.1088/1757-899x/768/5/052105 2   0    0.000913447
+ai-49-aHR0cD...TAuNTgxMS9jc...    10.5811/cpcem.2019.7.43632     1   0    0.047257667
+ai-49-aHR0cD...TAuMTEwMy9wa...    10.1103/physrevc.49.3061       27  4    0.008262996
+ai-49-aHR0cD...TAuMTM3MS9qb...    10.1371/journal.pone.0077786   38  15   0.018779194
+ai-49-aHR0cD...TAuMTAwMi9sZ...    10.1002/ldr.3400040418         2   0    0.000982242
+ai-49-aHR0cD...TAuMTEwMy9wa...    10.1103/physrevlett.81.3187    15  14   0.007743473
+ai-49-aHR0cD...TAuMTAwMi9ub...    10.1002/nme.1620300822         7   6    0.004755116
+ai-49-aHR0cD...TAuMTM3MS9qb...    10.1371/journal.pcbi.1002234   54  4    0.018582831
+ai-49-aHR0cD...TAuMTAxNi8wM...    10.1016/0165-4896(94)00731-4   5   4    0.004127696
+ai-49-aHR0cD...TAuMTA5My9qe...    10.1093/jxb/49.318.21          0   0    0.000267756
+ai-49-aHR0cD...TAuMTE0Mi9zM...    10.1142/s0218126619500051      22  2    0.006445901
+ai-49-aHR0cD...TAuNzg2MS9jb...    10.7861/clinmedicine.17-4-332  13  8    0.005840636
+ai-49-aHR0cD...TAuMTM3My9jb...    10.1373/clinchem.2013.204446   20  11   0.011903923
+ai-49-aHR0cD...TAuMTE0My9qa...    10.1143/jjap.9.958             0   7    0.002963267
+ai-49-aHR0cD...TAuMTAyMS9hb...    10.1021/am8001605              29  64   0.022973696
+ai-49-aHR0cD...TAuMTIwNy9zM...    10.1207/s15326934crj1401_1     0   21   0.056867545
 ```
