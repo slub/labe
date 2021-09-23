@@ -3,7 +3,6 @@ package spindel
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -14,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	"github.com/miku/labe/tools/spindel/set"
+	"github.com/segmentio/encoding/json"
 	"golang.org/x/sync/errgroup"
 )
 
