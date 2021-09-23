@@ -127,9 +127,14 @@ func (s *Server) handleQuery() http.HandlerFunc {
 		ID string `json:"id"`
 		// The DOI for the local identifier.
 		DOI string `json:"doi"`
-		// We want to safe time not doing any serialization, if we do not need it.
-		Citing []json.RawMessage `json:"citing"`
-		Cited  []json.RawMessage `json:"cited"`
+		// We want to save time not doing any serialization, if we do not need it.
+		Citing []json.RawMessage `json:"citing,omitempty"`
+		Cited  []json.RawMessage `json:"cited,omitempty"`
+		// TODO: add docs for non-source items.
+		Unmatched struct {
+			Citing []json.RawMessage `json:"citing,omitempty"`
+			Cited  []json.RawMessage `json:"cited,omitempty"`
+		} `json:"ummatched"`
 		// Some extra information for now, may not need these.
 		Extra struct {
 			Took        float64 `json:"took"`
@@ -154,23 +159,24 @@ func (s *Server) handleQuery() http.HandlerFunc {
 			outbound = set.New()
 			inbound  = set.New()
 			response = Response{
-				ID:     vars["id"], // the local identifier
-				Citing: []json.RawMessage{},
-				Cited:  []json.RawMessage{},
+				ID: vars["id"], // the local identifier
 			}
 		)
 		// (1) Get the DOI for the local id; or get out.
-		if err := s.IdentifierDatabase.GetContext(ctx, &response.DOI, "SELECT v FROM map WHERE k = ?", response.ID); err != nil {
+		if err := s.IdentifierDatabase.GetContext(ctx, &response.DOI,
+			"SELECT v FROM map WHERE k = ?", response.ID); err != nil {
 			httpErrLog(w, err)
 			return
 		}
 		// (2) With the DOI, find outbound (citing) and inbound (cited)
 		// references in the OCI database.
-		if err := s.OciDatabase.SelectContext(ctx, &citing, "SELECT * FROM map WHERE k = ?", response.DOI); err != nil {
+		if err := s.OciDatabase.SelectContext(ctx, &citing,
+			"SELECT * FROM map WHERE k = ?", response.DOI); err != nil {
 			httpErrLog(w, err)
 			return
 		}
-		if err := s.OciDatabase.SelectContext(ctx, &cited, "SELECT * FROM map WHERE v = ?", response.DOI); err != nil {
+		if err := s.OciDatabase.SelectContext(ctx, &cited,
+			"SELECT * FROM map WHERE v = ?", response.DOI); err != nil {
 			httpErrLog(w, err)
 			return
 		}
