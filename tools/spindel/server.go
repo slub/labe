@@ -250,10 +250,12 @@ func (s *Server) handleQuery() http.HandlerFunc {
 	}
 }
 
+// ServeHTTP turns the server into an HTTP handler.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.Router.ServeHTTP(w, r)
 }
 
+// Ping returns an error, if any of the datastores are not available.
 func (s *Server) Ping() error {
 	if err := s.IdentifierDatabase.Ping(); err != nil {
 		return err
