@@ -40,3 +40,21 @@ func TestSet(t *testing.T) {
 	r.Clear()
 	is.Equal(r.Len(), 0)
 }
+
+func TestSetDifference(t *testing.T) {
+	is := is.New(t)
+	s := New()
+	s.Add("1")
+	s.Add("2")
+	s.Add("3")
+
+	r := New()
+	r.Add("2")
+	r.Add("3")
+
+	u := s.Difference(r)
+	is.Equal(u.Len(), 1)
+	is.True(u.Contains("1"))
+	is.True(!u.Contains("2"))
+	is.True(!u.Contains("3"))
+}

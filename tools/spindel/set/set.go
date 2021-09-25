@@ -85,6 +85,16 @@ func (s Set) Union(t Set) Set {
 	return u
 }
 
+func (s Set) Difference(t Set) Set {
+	u := New()
+	for k := range s {
+		if !t.Contains(k) {
+			u.Add(k)
+		}
+	}
+	return u
+}
+
 // Slice returns all elements as a slice.
 func (s Set) Slice() (result []string) {
 	for k := range s {
