@@ -5,11 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
-	"path"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -18,83 +15,33 @@ import (
 	"github.com/segmentio/encoding/json"
 )
 
-var ErrBlobNotFound = errors.New("blob not found")
-
-// Fetcher fetches a blob of data for a given identifier.
-type Fetcher interface {
-	Ping() error
-	Fetch(id string) ([]byte, error)
-}
-
-// BlobServer implements access to a running microblob instance.
-type BlobServer struct {
-	BaseURL string
-}
-
-func (bs *BlobServer) Ping() error {
-	resp, err := http.Get(bs.BaseURL)
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("blobserver: expected 200 OK, got: %v", resp.Status)
-	}
-	return nil
-}
-
-// Fetch constructs a URL from a template and retrieves the blob.
-func (bs *BlobServer) Fetch(id string) ([]byte, error) {
-	u, err := url.Parse(bs.BaseURL)
-	if err != nil {
-		return nil, err
-	}
-	u.Path = path.Join(u.Path, id)
-	resp, err := http.Get(u.String())
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return nil, ErrBlobNotFound
-	}
-	return ioutil.ReadAll(resp.Body)
-}
-
-// Server wraps various data stores.
+// Server wraps three data sources required for index and citation data fusion.
+// The IdentifierDatabase is a map from local identifier (e.g. 0-1238201) to
+// DOI, the OciDatabase contains citing and cited relationsships from OCI data
+// dump and IndexData allows to fetch a metadata blob from a service, e.g. a
+// key value store like microblob.
 type Server struct {
 	IdentifierDatabase *sqlx.DB
 	OciDatabase        *sqlx.DB
-	IndexDataFetcher   Fetcher
+	IndexData          Fetcher
 	Router             *mux.Router
 }
 
+// Routes sets up route.
 func (s *Server) Routes() {
 	s.Router.HandleFunc("/", s.handleIndex())
 	s.Router.HandleFunc("/q/{id}", s.handleQuery())
+}
+
+// ServeHTTP turns the server into an HTTP handler.
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.Router.ServeHTTP(w, r)
 }
 
 func (s *Server) handleIndex() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "spindel")
 	}
-}
-
-// httpErrLogStatus logs the error and returns.
-func httpErrLogStatus(w http.ResponseWriter, err error, status int) {
-	log.Printf("failed [%d]: %v", status, err)
-	http.Error(w, err.Error(), status)
-}
-
-// httpErrLog tries to infer an appropriate status code.
-func httpErrLog(w http.ResponseWriter, err error) {
-	var status = http.StatusInternalServerError
-	if errors.Is(err, context.Canceled) {
-		return
-	}
-	if errors.Is(err, sql.ErrNoRows) {
-		status = http.StatusNotFound
-	}
-	httpErrLogStatus(w, err, status)
 }
 
 // handleQuery does all the lookups, but that should elsewhere, in a more
@@ -134,15 +81,17 @@ func (s *Server) handleQuery() http.HandlerFunc {
 		// (5) include unmatched ids
 		// (6) assemble result
 		var (
-			ctx      = r.Context()
-			started  = time.Now()
-			vars     = mux.Vars(r)
-			citing   []Map // rows containing paper references (value is the reference item)
-			cited    []Map // rows containing inbound relations (key is the citing id)
-			ids      []Map // local identifiers
-			outbound = set.New()
-			inbound  = set.New()
-			response = &Response{
+			ctx          = r.Context()
+			started      = time.Now()
+			vars         = mux.Vars(r)
+			citing       []Map // rows containing paper references (value is the reference item)
+			cited        []Map // rows containing inbound relations (key is the citing id)
+			ids          []Map // local identifiers
+			outbound     = set.New()
+			inbound      = set.New()
+			matched      []string    // dangling DOI that have no local id
+			unmatchedSet = set.New() // all unmatched doi
+			response     = &Response{
 				ID: vars["id"], // the local identifier
 			}
 		)
@@ -193,10 +142,6 @@ func (s *Server) handleQuery() http.HandlerFunc {
 			return
 		}
 		// (5) Here, we can find unmatched items.
-		var (
-			matched      []string    // dnagling DOI that have no local id
-			unmatchedSet = set.New() // all unmatched doi
-		)
 		for _, v := range ids {
 			matched = append(matched, v.Value)
 		}
@@ -215,7 +160,7 @@ func (s *Server) handleQuery() http.HandlerFunc {
 		// index. We could also ask a life index here.
 		for _, v := range ids {
 			// Access the data, here we use the blob, but we could ask SOLR, too.
-			b, err := s.IndexDataFetcher.Fetch(v.Key)
+			b, err := s.IndexData.Fetch(v.Key)
 			if errors.Is(err, ErrBlobNotFound) {
 				continue
 			}
@@ -247,11 +192,6 @@ func (s *Server) handleQuery() http.HandlerFunc {
 	}
 }
 
-// ServeHTTP turns the server into an HTTP handler.
-func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.Router.ServeHTTP(w, r)
-}
-
 // Ping returns an error, if any of the datastores are not available.
 func (s *Server) Ping() error {
 	if err := s.IdentifierDatabase.Ping(); err != nil {
@@ -260,8 +200,26 @@ func (s *Server) Ping() error {
 	if err := s.OciDatabase.Ping(); err != nil {
 		return err
 	}
-	if err := s.IndexDataFetcher.Ping(); err != nil {
+	if err := s.IndexData.Ping(); err != nil {
 		return fmt.Errorf("could not reach index data service [microblob]: %w", err)
 	}
 	return nil
+}
+
+// httpErrLogStatus logs the error and returns.
+func httpErrLogStatus(w http.ResponseWriter, err error, status int) {
+	log.Printf("failed [%d]: %v", status, err)
+	http.Error(w, err.Error(), status)
+}
+
+// httpErrLog tries to infer an appropriate status code.
+func httpErrLog(w http.ResponseWriter, err error) {
+	var status = http.StatusInternalServerError
+	if errors.Is(err, context.Canceled) {
+		return
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		status = http.StatusNotFound
+	}
+	httpErrLogStatus(w, err, status)
 }

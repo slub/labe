@@ -177,7 +177,7 @@ func main() {
 	srv := &spindel.Server{
 		IdentifierDatabase: identifierDatabase,
 		OciDatabase:        ociDatabase,
-		IndexDataFetcher:   &spindel.BlobServer{BaseURL: *blobServerURL},
+		IndexData:          &spindel.BlobServer{BaseURL: *blobServerURL},
 		Router:             mux.NewRouter(),
 	}
 	srv.Routes()
