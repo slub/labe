@@ -1,10 +1,6 @@
-// $ spindel -info | jq .
-// 2021/09/22 18:04:51 ⚑ querying three data stores ...
-// {
-//   "identifier_database_count": 56879665,
-//   "oci_database_count": 1119201441,
-//   "index_data_count": 61529978
-// }
+// An experimental API server for catalog and citation data.
+//
+// Notes
 //
 // Some stats; 179 rps, random requests, no parallel requests within the
 // server (e.g. no parallel index data requests).
@@ -99,7 +95,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -115,9 +110,8 @@ import (
 var (
 	identifierDatabasePath = flag.String("I", "i.db", "identifier database path")
 	ociDatabasePath        = flag.String("O", "o.db", "oci as a datbase path")
-	indexDataBaseURL       = flag.String("D", "http://localhost:8820", "index data lookup base URL")
+	blobServerURL          = flag.String("bs", "http://localhost:8820/", "blob server url")
 	listen                 = flag.String("l", "localhost:3000", "host and port to listen on")
-	showInfo               = flag.Bool("info", false, "show db info only")
 	showVersion            = flag.Bool("version", false, "show version")
 
 	Version   string
@@ -183,19 +177,12 @@ func main() {
 	srv := &spindel.Server{
 		IdentifierDatabase: identifierDatabase,
 		OciDatabase:        ociDatabase,
-		IndexDataService:   *indexDataBaseURL,
+		IndexDataFetcher:   &spindel.BlobServer{BaseURL: *blobServerURL},
 		Router:             mux.NewRouter(),
 	}
 	srv.Routes()
 	if err := srv.Ping(); err != nil {
 		log.Fatal(err)
-	}
-	if *showInfo {
-		ctx := context.Background()
-		if err := srv.Info(ctx); err != nil {
-			log.Fatal(err)
-		}
-		os.Exit(0)
 	}
 	fmt.Fprintln(os.Stderr, Banner)
 	log.Printf("spindel starting %s %s http://%s",

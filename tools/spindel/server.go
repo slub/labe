@@ -8,79 +8,64 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
+	"path"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	"github.com/miku/labe/tools/spindel/set"
 	"github.com/segmentio/encoding/json"
-	"golang.org/x/sync/errgroup"
 )
+
+var ErrBlobNotFound = errors.New("blob not found")
+
+// Fetcher fetches a blob of data for a given identifier.
+type Fetcher interface {
+	Ping() error
+	Fetch(id string) ([]byte, error)
+}
+
+// BlobServer implements access to a running microblob instance.
+type BlobServer struct {
+	BaseURL string
+}
+
+func (bs *BlobServer) Ping() error {
+	resp, err := http.Get(bs.BaseURL)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("blobserver: expected 200 OK, got: %v", resp.Status)
+	}
+	return nil
+}
+
+// Fetch constructs a URL from a template and retrieves the blob.
+func (bs *BlobServer) Fetch(id string) ([]byte, error) {
+	u, err := url.Parse(bs.BaseURL)
+	if err != nil {
+		return nil, err
+	}
+	u.Path = path.Join(u.Path, id)
+	resp, err := http.Get(u.String())
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return nil, ErrBlobNotFound
+	}
+	return ioutil.ReadAll(resp.Body)
+}
 
 // Server wraps various data stores.
 type Server struct {
 	IdentifierDatabase *sqlx.DB
 	OciDatabase        *sqlx.DB
-	IndexDataService   string // TODO: make this slightly more abstract.
+	IndexDataFetcher   Fetcher
 	Router             *mux.Router
-}
-
-func (s *Server) Info(ctx context.Context) error {
-	var (
-		info = struct {
-			IdentifierDatabaseCount int `json:"identifier_database_count"`
-			OciDatabaseCount        int `json:"oci_database_count"`
-			IndexDataCount          int `json:"index_data_count"`
-		}{}
-		row    *sql.Row
-		client = http.Client{
-			Timeout: 120 * time.Second,
-		}
-		funcs = []func() error{
-			func() error {
-				row = s.IdentifierDatabase.QueryRowContext(ctx, "SELECT count(*) FROM map")
-				return row.Scan(&info.IdentifierDatabaseCount)
-			},
-			func() error {
-				row = s.OciDatabase.QueryRowContext(ctx, "SELECT count(*) FROM map")
-				return row.Scan(&info.OciDatabaseCount)
-			},
-			func() error {
-				req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/count", s.IndexDataService), nil)
-				if err != nil {
-					return err
-				}
-				resp, err := client.Do(req)
-				if err != nil {
-					return err
-				}
-				defer resp.Body.Close()
-				dec := json.NewDecoder(resp.Body)
-				var countResp = struct {
-					Count int `json:"count"`
-				}{}
-				if err := dec.Decode(&countResp); err != nil {
-					return err
-				}
-				info.IndexDataCount = countResp.Count
-				return nil
-			},
-		}
-	)
-	g, ctx := errgroup.WithContext(ctx)
-	for _, f := range funcs {
-		g.Go(f)
-	}
-	log.Println("⚑ querying three data stores ...")
-	if err := g.Wait(); err != nil {
-		return err
-	}
-	b, err := json.Marshal(info)
-	if err != nil {
-		return err
-	}
-	fmt.Println(string(b))
-	return nil
 }
 
 func (s *Server) Routes() {
@@ -103,6 +88,9 @@ func httpErrLogStatus(w http.ResponseWriter, err error, status int) {
 // httpErrLog tries to infer an appropriate status code.
 func httpErrLog(w http.ResponseWriter, err error) {
 	var status = http.StatusInternalServerError
+	if errors.Is(err, context.Canceled) {
+		return
+	}
 	if errors.Is(err, sql.ErrNoRows) {
 		status = http.StatusNotFound
 	}
@@ -110,45 +98,41 @@ func httpErrLog(w http.ResponseWriter, err error) {
 }
 
 // handleQuery does all the lookups, but that should elsewhere, in a more
-// testable place. Also, reuse some existing stats library. Also TODO:
-// parallelize all backend requests and think up schema for delivery.
+// testable place. Also, reuse some existing stats library. Also TODO: optimize
+// backend requests and think up schema for delivery.
 func (s *Server) handleQuery() http.HandlerFunc {
-	client := http.Client{
-		Timeout: 5 * time.Second,
-	}
 	// Map is a generic lookup table. We use it together with sqlite3.
 	type Map struct {
 		Key   string `db:"k"`
 		Value string `db:"v"`
 	}
 	// Response contains a subset of index data fused with citation data.
+	// Citing and cited documents are unparsed. For unmatched docs, we keep
+	// only transmit the DOI, e.g. as {"doi": "10.123/123"}.
 	type Response struct {
-		// The local identifier.
-		ID string `json:"id"`
-		// The DOI for the local identifier.
-		DOI string `json:"doi"`
-		// We want to save time not doing any serialization, if we do not need it.
-		Citing []json.RawMessage `json:"citing,omitempty"`
-		Cited  []json.RawMessage `json:"cited,omitempty"`
-		// TODO: add docs for non-source items.
+		ID        string            `json:"id"`
+		DOI       string            `json:"doi"`
+		Citing    []json.RawMessage `json:"citing,omitempty"`
+		Cited     []json.RawMessage `json:"cited,omitempty"`
 		Unmatched struct {
 			Citing []json.RawMessage `json:"citing,omitempty"`
 			Cited  []json.RawMessage `json:"cited,omitempty"`
-		} `json:"ummatched"`
-		// Some extra information for now, may not need these.
+		} `json:"unmatched"`
 		Extra struct {
-			Took        float64 `json:"took"`
-			CitingCount int     `json:"citing_count"`
-			CitedCount  int     `json:"cited_count"`
+			Took                 float64 `json:"took"`
+			UnmatchedCitingCount int     `json:"unmatched_citing_count"`
+			UnmatchedCitedCount  int     `json:"unmatched_cited_count"`
+			CitingCount          int     `json:"citing_count"`
+			CitedCount           int     `json:"cited_count"`
 		} `json:"extra"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Outline
 		// (1) resolve id to doi
 		// (2) lookup related doi via oci
 		// (3) resolve doi to ids
 		// (4) lookup all ids
-		// (5) assemble result
+		// (5) include unmatched ids
+		// (6) assemble result
 		var (
 			ctx      = r.Context()
 			started  = time.Now()
@@ -158,7 +142,7 @@ func (s *Server) handleQuery() http.HandlerFunc {
 			ids      []Map // local identifiers
 			outbound = set.New()
 			inbound  = set.New()
-			response = Response{
+			response = &Response{
 				ID: vars["id"], // the local identifier
 			}
 		)
@@ -208,22 +192,33 @@ func (s *Server) handleQuery() http.HandlerFunc {
 			httpErrLog(w, err)
 			return
 		}
-		// (5) At this point, we need to assemble the result. For each
+		// (5) Here, we can find unmatched items.
+		var (
+			matched      []string    // dnagling DOI that have no local id
+			unmatchedSet = set.New() // all unmatched doi
+		)
+		for _, v := range ids {
+			matched = append(matched, v.Value)
+		}
+		unmatchedSet = ss.Difference(set.FromSlice(matched))
+		for k := range unmatchedSet {
+			if outbound.Contains(k) {
+				response.Unmatched.Cited = append(response.Unmatched.Cited,
+					[]byte(fmt.Sprintf(`{"doi": %q}`, k)))
+			} else {
+				response.Unmatched.Citing = append(response.Unmatched.Citing,
+					[]byte(fmt.Sprintf(`{"doi": %q}`, k)))
+			}
+		}
+		// (6) At this point, we need to assemble the result. For each
 		// identifier we want the full metadata. We use an local copy of the
 		// index. We could also ask a life index here.
 		for _, v := range ids {
 			// Access the data, here we use the blob, but we could ask SOLR, too.
-			link := fmt.Sprintf("%s/%s", s.IndexDataService, v.Key)
-			resp, err := client.Get(link) // TODO: a better client
-			if err != nil {
-				httpErrLog(w, err)
-				return
-			}
-			defer resp.Body.Close()
-			if resp.StatusCode != 200 {
+			b, err := s.IndexDataFetcher.Fetch(v.Key)
+			if errors.Is(err, ErrBlobNotFound) {
 				continue
 			}
-			b, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
 				httpErrLog(w, err)
 				return
@@ -239,6 +234,8 @@ func (s *Server) handleQuery() http.HandlerFunc {
 		}
 		response.Extra.CitingCount = len(response.Citing)
 		response.Extra.CitedCount = len(response.Cited)
+		response.Extra.UnmatchedCitingCount = len(response.Unmatched.Citing)
+		response.Extra.UnmatchedCitedCount = len(response.Unmatched.Cited)
 		response.Extra.Took = time.Since(started).Seconds()
 		// Put it on the wire.
 		w.Header().Add("Content-Type", "application/json")
@@ -263,12 +260,8 @@ func (s *Server) Ping() error {
 	if err := s.OciDatabase.Ping(); err != nil {
 		return err
 	}
-	resp, err := http.Get(s.IndexDataService)
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("index data service: %s", resp.Status)
+	if err := s.IndexDataFetcher.Ping(); err != nil {
+		return fmt.Errorf("could not reach index data service [microblob]: %w", err)
 	}
 	return nil
 }
