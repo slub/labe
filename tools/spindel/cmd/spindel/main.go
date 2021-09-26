@@ -92,6 +92,23 @@
 // Another way to see performance.
 //
 // $ cat fixtures/100K.ids | parallel -j 40 "curl -s http://localhost:3000/q/{}" | pv -l > /dev/null
+//
+// Alternative sqlite3 index store. Even unoptimized slightly faster.
+//
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE0Ni9hbm51cmV2LmJpLjY0LjA3MDE5NS4wMDA1MjU  0    1128  0.699212362
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzNy8xMDQwLTM1OTAuNC4xLjI2                 0    1350  0.825507965
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAyMS9jcjA1MDk5Mng                          558  1356  0.860744752
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzNy8wMDMzLTI5MDkuODcuMi4yNDU              0    1461  0.879090792
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzOC80MzQ2Ng                               20   1060  0.89260545
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAyMS9qYTk4MzQ5NHg                          0    1599  0.956337087
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAxNi8wMDIyLTI4MzYoNzQpOTAwMzEteA           26   1473  0.99648035
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA4Ni8yNjE3MDM                              0    1953  1.188313433
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw                   0    1774  1.412984889
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx                             0    2197  1.455840794
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU                      0    2567  1.818761813
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA                   0    4461  2.337560631
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3                 11   8881  6.080010918
+//
 package main
 
 import (
@@ -110,7 +127,8 @@ import (
 var (
 	identifierDatabasePath = flag.String("I", "i.db", "identifier database path")
 	ociDatabasePath        = flag.String("O", "o.db", "oci as a datbase path")
-	blobServerURL          = flag.String("bs", "http://localhost:8820/", "blob server url")
+	blobServerURL          = flag.String("bs", "", "blob server url")
+	sqliteBlobPath         = flag.String("Q", "", "sqlite3 blob index path")
 	listen                 = flag.String("l", "localhost:3000", "host and port to listen on")
 	showVersion            = flag.Bool("version", false, "show version")
 
@@ -174,10 +192,19 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	var fetcher spindel.Fetcher
+	switch {
+	case *blobServerURL != "":
+		fetcher = &spindel.BlobServer{BaseURL: *blobServerURL}
+	case *sqliteBlobPath != "":
+		fetcher = &spindel.SqliteBlob{Path: *sqliteBlobPath}
+	default:
+		log.Fatal("need blob server or sqlite3 database")
+	}
 	srv := &spindel.Server{
 		IdentifierDatabase: identifierDatabase,
 		OciDatabase:        ociDatabase,
-		IndexData:          &spindel.BlobServer{BaseURL: *blobServerURL},
+		IndexData:          fetcher,
 		Router:             mux.NewRouter(),
 	}
 	srv.Routes()
