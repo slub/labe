@@ -1,0 +1,8 @@
+github.com/klauspost/cpuid/v2 v2.0.6 h1:dQ5ueTiftKxp0gyjKSx5+8BtPWkyQbd95m8Gys/RarI=
+github.com/klauspost/cpuid/v2 v2.0.6/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=
+github.com/miku/parallel v0.0.0-20210205192328-1a799ab70294 h1:cBuGVVGw8u1EyRPb+ijf9g/ffT+FSdFCX4fuZnjmOZc=
+github.com/miku/parallel v0.0.0-20210205192328-1a799ab70294/go.mod h1:xw37BJ8SoJr6SGn1Y2AJBsc3EsOU+EuXAuRj5VB1+RI=
+github.com/segmentio/asm v1.0.1 h1:g9VK62hXylgXI4yJV+dLTu/1j7kTxG9bkUSYBxL9dpg=
+github.com/segmentio/asm v1.0.1/go.mod h1:4EUJGaKsB8ImLUwOGORVsNd9vTRDeh44JGsY4aKp5I4=
+github.com/segmentio/encoding v0.2.21 h1:hlRQz3Pv+/mBj+jqr46TVqqv6AuTwvP5aAxQ0Usd4gY=
+github.com/segmentio/encoding v0.2.21/go.mod h1:kF1db1oBuYxMvLR3RXrZJchRdBKrS+1J/hL63p5hekI=
