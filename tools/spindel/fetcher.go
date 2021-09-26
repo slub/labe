@@ -18,9 +18,12 @@ var (
 	}
 )
 
+type Pinger interface {
+	Ping() error
+}
+
 // Fetcher fetches a blob of data for a given identifier.
 type Fetcher interface {
-	Ping() error
 	Fetch(id string) ([]byte, error)
 }
 

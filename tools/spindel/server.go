@@ -200,8 +200,12 @@ func (s *Server) Ping() error {
 	if err := s.OciDatabase.Ping(); err != nil {
 		return err
 	}
-	if err := s.IndexData.Ping(); err != nil {
-		return fmt.Errorf("could not reach index data service [microblob]: %w", err)
+	if pinger, ok := s.IndexData.(Pinger); ok {
+		if err := pinger.Ping(); err != nil {
+			return fmt.Errorf("could not reach index data service: %w", err)
+		}
+	} else {
+		log.Printf("index data service: unknown status")
 	}
 	return nil
 }
