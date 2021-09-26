@@ -120,26 +120,31 @@ import (
 var (
 	outputFile = flag.String("o", "data.db", "output filename")
 	bufferSize = flag.Int("B", 64*1<<20, "buffer size")
-	initSQL    = `
+	indexMode  = flag.Int("I", 3, "index mode: 0=none, 1=k, 2=v, 3=kv")
+
+	initSQL = `
 CREATE TABLE IF NOT EXISTS map
 (
 	k TEXT,
 	v TEXT
 );
 `
-	indexSQL = `
+	keyIndexSQL = `
 PRAGMA journal_mode = OFF;
 PRAGMA synchronous = 0;
-
--- https://www.sqlite.org/pragma.html#pragma_cache_size
+PRAGMA cache_size = 1000000;
+PRAGMA locking_mode = EXCLUSIVE;
+CREATE INDEX IF NOT EXISTS idx_k ON map(k);
+`
+	valueIndexSQL = `
+PRAGMA journal_mode = OFF;
+PRAGMA synchronous = 0;
 PRAGMA cache_size = 1000000;
 PRAGMA locking_mode = EXCLUSIVE;
 
--- https://stackoverflow.com/q/1983979/89391
-CREATE INDEX IF NOT EXISTS idx_k ON map(k);
 CREATE INDEX IF NOT EXISTS idx_v ON map(v);
 `
-	runSQL = `
+	importSQL = `
 PRAGMA journal_mode = OFF;
 PRAGMA synchronous = 0;
 PRAGMA cache_size = 1000000;
@@ -272,7 +277,7 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	runFile, err := TempFileReader(strings.NewReader(runSQL))
+	runFile, err := TempFileReader(strings.NewReader(importSQL))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -314,7 +319,21 @@ func main() {
 	fmt.Println()
 	log.Printf("import done")
 	log.Printf("creating index")
-	if err := runScript(*outputFile, indexSQL, "created index"); err != nil {
-		log.Fatal(err)
+	var indexScripts []string
+	switch *indexMode {
+	case 0:
+	case 1:
+		indexScripts = append(indexScripts, keyIndexSQL)
+	case 2:
+		indexScripts = append(indexScripts, valueIndexSQL)
+	case 3:
+		indexScripts = append(indexScripts, keyIndexSQL)
+		indexScripts = append(indexScripts, valueIndexSQL)
+	}
+	for i, script := range indexScripts {
+		msg := fmt.Sprintf("%d/%d created index", i+1, len(indexScripts))
+		if err := runScript(*outputFile, script, msg); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
