@@ -28,6 +28,7 @@ type Pinger interface {
 // Fetcher fetches a blob of data for a given identifier.
 type Fetcher interface {
 	Fetch(id string) ([]byte, error)
+	FetchSet(ids ...string) ([][]byte, error)
 }
 
 // BlobServer implements access to a running microblob instance.
@@ -55,6 +56,21 @@ func (bs *BlobServer) Fetch(id string) ([]byte, error) {
 	}
 	u.Path = path.Join(u.Path, id)
 	return fetchURL(u.String())
+}
+
+func (bs *BlobServer) FetchSet(ids ...string) (result [][]byte, err error) {
+	for _, id := range ids {
+		v, err := bs.Fetch(id)
+		if errors.Is(err, ErrBlobNotFound) {
+			result = append(result, []byte{})
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, v)
+	}
+	return result, nil
 }
 
 func fetchURL(u string) ([]byte, error) {
@@ -97,7 +113,7 @@ func (b *SqliteBlob) Fetch(id string) (p []byte, err error) {
 	return []byte(s), nil
 }
 
-func (b *SqliteBlob) FetchSet(ids []string) (p [][]byte, err error) {
+func (b *SqliteBlob) FetchSet(ids ...string) (p [][]byte, err error) {
 	query, args, err := sqlx.In("SELECT * FROM map WHERE v IN (?)", ids)
 	if err != nil {
 		return nil, err

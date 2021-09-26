@@ -25,6 +25,9 @@ type Server struct {
 	OciDatabase        *sqlx.DB
 	IndexData          Fetcher
 	Router             *mux.Router
+
+	// Testing feature.
+	FeatureFetchSet bool
 }
 
 // Routes sets up route.
@@ -158,23 +161,44 @@ func (s *Server) handleQuery() http.HandlerFunc {
 		// (6) At this point, we need to assemble the result. For each
 		// identifier we want the full metadata. We use an local copy of the
 		// index. We could also ask a life index here.
-		for _, v := range ids {
-			// Access the data, here we use the blob, but we could ask SOLR, too.
-			b, err := s.IndexData.Fetch(v.Key)
-			if errors.Is(err, ErrBlobNotFound) {
-				continue
+		switch {
+		default:
+			var keys []string
+			for _, v := range ids {
+				keys = append(keys, v.Key)
 			}
+			vs, err := s.IndexData.FetchSet(keys...)
 			if err != nil {
 				httpErrLog(w, err)
 				return
 			}
-			// We have the blob and the {k: local, v: doi} values, so all we
-			// should need.
-			switch {
-			case outbound.Contains(v.Value):
-				response.Citing = append(response.Citing, b)
-			case inbound.Contains(v.Value):
-				response.Cited = append(response.Cited, b)
+			for i, v := range ids {
+				switch {
+				case outbound.Contains(v.Value):
+					response.Citing = append(response.Citing, vs[i])
+				case inbound.Contains(v.Value):
+					response.Cited = append(response.Cited, vs[i])
+				}
+			}
+		case !s.FeatureFetchSet:
+			for _, v := range ids {
+				// Access the data, here we use the blob, but we could ask SOLR, too.
+				b, err := s.IndexData.Fetch(v.Key)
+				if errors.Is(err, ErrBlobNotFound) {
+					continue
+				}
+				if err != nil {
+					httpErrLog(w, err)
+					return
+				}
+				// We have the blob and the {k: local, v: doi} values, so all we
+				// should need.
+				switch {
+				case outbound.Contains(v.Value):
+					response.Citing = append(response.Citing, b)
+				case inbound.Contains(v.Value):
+					response.Cited = append(response.Cited, b)
+				}
 			}
 		}
 		response.Extra.CitingCount = len(response.Citing)

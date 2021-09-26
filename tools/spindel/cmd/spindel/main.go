@@ -109,6 +109,26 @@
 // ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA                   0    4461  2.337560631
 // ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3                 11   8881  6.080010918
 //
+// One sql query.
+//
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMi9pamMuMjkxMDU0MDQxMw                   665   10   0.626366921
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA1Ni9uZWptb2EwNjE4OTQ                      905   17   0.634581836
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEzNy8wMTA1MDAz                             587   2    0.679079214
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAyMS9qcDk3MzE4MjE                          1119  24   0.697614807
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEyNi9zY2llbmNlLjI3Ny41MzMyLjE2NTk          928   0    0.724675178
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE0Ni9hbm51cmV2LmJpLjY0LjA3MDE5NS4wMDA1MjU  1128  0    0.741423984
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAyMS9jcjA1MDk5Mng                          1356  558  0.871165314
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzNy8xMDQwLTM1OTAuNC4xLjI2                 1350  0    0.960690559
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzOC80MzQ2Ng                               1060  20   0.968587647
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAyMS9qYTk4MzQ5NHg                          1599  0    1.004478166
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzNy8wMDMzLTI5MDkuODcuMi4yNDU              1461  0    1.009825454
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAxNi8wMDIyLTI4MzYoNzQpOTAwMzEteA           1473  26   1.03845787
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA4Ni8yNjE3MDM                              1953  0    1.209649958
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw                   1774  0    1.3164763449999999
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU                      2567  0    1.840246227
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA                   4461  0    2.690623817
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3                 8881  11   5.718691781
+//
 package main
 
 import (
