@@ -94,6 +94,10 @@
 //  16   4  78   2   0|  56k 1550M|2373B   94B|   0     0 |4868  9010
 //  11   4  81   3   0| 867M  253M|  80k 2615B|   0    36k|7978    10k
 // ...
+// More on sqlite3 pragmas:
+//
+// https://www.sqlite.org/pragma.html
+// https://stackoverflow.com/q/1983979/89391
 //
 package main
 

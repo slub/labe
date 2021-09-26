@@ -392,3 +392,14 @@ real    46m17.090s
 user    124m13.662s
 sys     5m50.253s
 ```
+
+## Alternative index data stores
+
+First run with [microblob](https://github.com/miku/microblob), which turned out
+to be ok, given that for some items it does dozens or hundreds.
+
+Other options:
+
+* sqlite3
+* mysql
+* pg
