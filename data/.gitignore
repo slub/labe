@@ -11,3 +11,4 @@ id_to_doi.tsv
 index.data
 index.data.*.db
 ma_to_doi.tsv
+index.db
