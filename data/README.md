@@ -411,11 +411,23 @@ Trying sqlite3 first:
 $ time cat index.data | ../tools/tabbedjson/tabbedjson | ../tools/mkocidb/mkocidb -I 1 -o index.db
 ```
 
-We could also compress the value, since we only index the key.
+We could also compress the value, since we only index the key (TODO: when only
+indexing the key, we should use BLOB instead of TEXT;
+https://www.sqlite.org/datatype3.html).
 
 ```
-$ time cat index.data | ../tools/tabbedjson/tabbedjson -C | ../tools/mkocidb/mkocidb -I 1 -o index.db
-```
+$ time cat index.data | ../tools/tabbedjson/tabbedjson | ../tools/mkocidb/mkocidb -I 1 -o index.db
+2021/09/26 21:25:50 [ok] initialized database -- index.db
+written 242.5G -- 91.5M/s
+2021/09/26 22:11:03 import done
+2021/09/26 22:11:03 creating index
+2021/09/26 22:32:47 [ok] 1/1 created index -- index.db
 
-TODO: when only indexing the key, we should use BLOB instead of TEXT; https://www.sqlite.org/datatype3.html.
+real    66m57.477s
+user    63m15.071s
+sys     31m44.145s
+
+$ ls -lah index.db
+.rw-r--r-- 353G tir 26 Sep 22:32 index.db
+```
 
