@@ -403,3 +403,19 @@ Other options:
 * sqlite3
 * mysql
 * pg
+* es
+
+Trying sqlite3 first:
+
+```
+$ time cat index.data | ../tools/tabbedjson/tabbedjson | ../tools/mkocidb/mkocidb -I 1 -o index.db
+```
+
+We could also compress the value, since we only index the key.
+
+```
+$ time cat index.data | ../tools/tabbedjson/tabbedjson -C | ../tools/mkocidb/mkocidb -I 1 -o index.db
+```
+
+TODO: when only indexing the key, we should use BLOB instead of TEXT; https://www.sqlite.org/datatype3.html.
+
