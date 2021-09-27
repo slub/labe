@@ -18,6 +18,9 @@ var (
 	ErrBlobNotFound   = errors.New("blob not found")
 	ErrBackendsFailed = errors.New("all backends failed")
 	client            = http.Client{
+		// We use the client to fetch data from backends. Often, we request one
+		// item after another and there will be a 5 second timeout per request,
+		// not for the whole operation.
 		Timeout: 5 * time.Second,
 	}
 )
@@ -151,7 +154,8 @@ func (b *SolrBlob) Fetch(id string) ([]byte, error) {
 	return fetchURL(link)
 }
 
-// FetchSet fetches a number of blobs given their ids.
+// FetchSet fetches a number of blobs given their ids. TODO: optimize this,
+// e.g. via `(id:1 OR id:2 OR id:3 OR id:4)` or the like.
 func (b *SolrBlob) FetchSet(ids ...string) (result [][]byte, err error) {
 	for _, id := range ids {
 		v, err := b.Fetch(id)
