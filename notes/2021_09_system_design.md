@@ -250,3 +250,39 @@ finc-39-crai006505362012num156193402  10.3406/crai.2012.93402            0   0  
 finc-39-estat033614541998num31612647  10.3406/estat.1998.2647            0   5   0.006353544
 ```
 
+### Index data access abstraction
+
+We can abstract the index data (blob) access, e.g. like:
+
+```go
+// Fetcher fetches one or more blobs given their identifiers.
+type Fetcher interface {
+	Fetch(id string) ([]byte, error)
+	FetchSet(ids ...string) ([][]byte, error)
+}
+```
+
+Turning an identifier (or multiple ids) into blobs. We currently have:
+
+* microblob
+* sqlite3 (w/o compression)
+* solr
+
+Helper to turn solr data dump into SQL ingestable tabular form,
+[tabbedjson](https://github.com/GROSSWEBER/labe/tree/main/tools/tabbedjson)
+(supports a form of compression).
+
+Next abstraction would be to turn a path into a data source name and allow
+mysql, pg, sqlite. The mkocidb tool would need to be adapted (e.g. `LOAD DATA
+LOW_PRIORITY LOCAL INFILE ...` for mysql, etc).
+
+Make `mkocidb` a slightly more generic tool, e.g. "turn any TSV into a lookup
+database" with various adapters and performance tweaks; possible names:
+`mkkvs`, `tabkvs`, `tabtokvs`, ...
+
+### Multiple data stores
+
+We could support multiple databases, e.g. a query goes to each of the data
+stores and results get fused, e.g. we could have two sources for OCI and
+refcat. Again, each with independent update cycles.
+
