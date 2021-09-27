@@ -286,3 +286,6 @@ We could support multiple databases, e.g. a query goes to each of the data
 stores and results get fused, e.g. we could have two sources for OCI and
 refcat. Again, each with independent update cycles.
 
+### A diagram
+
+![](Labe.png)
