@@ -137,6 +137,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
@@ -189,6 +190,16 @@ Bulk requests
  _|_|_|    _|_|_|    _|  _|    _|    _|_|_|    _|_|_|  _|
            _|
            _|
+
+Examples
+
+- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
+- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
+- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
+- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
+- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
+- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
+- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
 `
 )
 
@@ -236,7 +247,7 @@ func main() {
 	if err := srv.Ping(); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Fprintln(os.Stderr, Banner)
+	fmt.Fprintln(os.Stderr, strings.Replace(Banner, `{{ .listenAddr }}`, *listenAddr, -1))
 	log.Printf("spindel starting %s %s http://%s",
 		Version, Buildtime, *listenAddr)
 	log.Fatal(http.ListenAndServe(*listenAddr, srv))
