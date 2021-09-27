@@ -26,7 +26,7 @@ type Server struct {
 	IndexData          Fetcher
 	Router             *mux.Router
 
-	// Testing feature.
+	// Testing feature, fixed for now; just for development. TODO: remove this.
 	FeatureFetchSet bool
 }
 
@@ -150,12 +150,14 @@ func (s *Server) handleQuery() http.HandlerFunc {
 		}
 		unmatchedSet = ss.Difference(set.FromSlice(matched))
 		for k := range unmatchedSet {
+			// We shortcut and do not use a proper JSON marshaller to save a
+			// bit of time. TODO: may switch to proper JSON encoding, if other
+			// parts are more optimized.
+			b := []byte(fmt.Sprintf(`{"doi": %q}`, k))
 			if outbound.Contains(k) {
-				response.Unmatched.Cited = append(response.Unmatched.Cited,
-					[]byte(fmt.Sprintf(`{"doi": %q}`, k)))
+				response.Unmatched.Cited = append(response.Unmatched.Cited, b)
 			} else {
-				response.Unmatched.Citing = append(response.Unmatched.Citing,
-					[]byte(fmt.Sprintf(`{"doi": %q}`, k)))
+				response.Unmatched.Citing = append(response.Unmatched.Citing, b)
 			}
 		}
 		// (6) At this point, we need to assemble the result. For each
@@ -163,6 +165,8 @@ func (s *Server) handleQuery() http.HandlerFunc {
 		// index. We could also ask a life index here.
 		switch {
 		default:
+			// Try to fetch all documents with a single transaction. It is up
+			// to the backend to implement optimizations.
 			var keys []string
 			for _, v := range ids {
 				keys = append(keys, v.Key)
@@ -181,6 +185,9 @@ func (s *Server) handleQuery() http.HandlerFunc {
 				}
 			}
 		case !s.FeatureFetchSet:
+			// TODO: either keep only this approach or get rid of this
+			// approach, as it is a special case of the fetch multiple docs at
+			// once approach.
 			for _, v := range ids {
 				// Access the data, here we use the blob, but we could ask SOLR, too.
 				b, err := s.IndexData.Fetch(v.Key)
