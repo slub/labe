@@ -2,7 +2,7 @@
 
 ```sh
 $ tabbedjson -h
-Usage of ./tabbedjson:
+Usage of tabbedjson:
   -C    compress value; gz+b64
   -T    emit table showing possible savings through compression
 ```
