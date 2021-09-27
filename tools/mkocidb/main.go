@@ -73,9 +73,13 @@ import (
 )
 
 var (
-	outputFile = flag.String("o", "data.db", "output filename")
-	bufferSize = flag.Int("B", 64*1<<20, "buffer size")
-	indexMode  = flag.Int("I", 3, "index mode: 0=none, 1=k, 2=v, 3=kv")
+	Version   string
+	Buildtime string
+
+	showVersion = flag.Bool("version", false, "show version and exit")
+	outputFile  = flag.String("o", "data.db", "output filename")
+	bufferSize  = flag.Int("B", 64*1<<20, "buffer size")
+	indexMode   = flag.Int("I", 3, "index mode: 0=none, 1=k, 2=v, 3=kv")
 
 	initSQL = `
 CREATE TABLE IF NOT EXISTS map
@@ -227,6 +231,10 @@ func HumanSpeed(bytesWritten int64, elapsedSeconds float64) string {
 
 func main() {
 	flag.Parse()
+	if *showVersion {
+		fmt.Printf("mkocidb %s %s", Version, Buildtime)
+		os.Exit(0)
+	}
 	if _, err := os.Stat(*outputFile); os.IsNotExist(err) {
 		if err := runScript(*outputFile, initSQL, "initialized database"); err != nil {
 			log.Fatal(err)
