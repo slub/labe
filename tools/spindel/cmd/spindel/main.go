@@ -227,6 +227,10 @@ Examples
 `
 )
 
+func withReadOnly(path string) string {
+	return fmt.Sprintf("file:%s?mode=ro", path)
+}
+
 func main() {
 	flag.Usage = func() {
 		fmt.Printf(strings.Replace(Help, `{{ .listenAddr }}`, *listenAddr, -1))
@@ -244,11 +248,11 @@ func main() {
 	if _, err := os.Stat(*ociDatabasePath); os.IsNotExist(err) {
 		log.Fatal(err)
 	}
-	identifierDatabase, err := sqlx.Open("sqlite3", *identifierDatabasePath)
+	identifierDatabase, err := sqlx.Open("sqlite3", withReadOnly(*identifierDatabasePath))
 	if err != nil {
 		log.Fatal(err)
 	}
-	ociDatabase, err := sqlx.Open("sqlite3", *ociDatabasePath)
+	ociDatabase, err := sqlx.Open("sqlite3", withReadOnly(*ociDatabasePath))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -262,7 +266,7 @@ func main() {
 		if _, err := os.Stat(*sqliteBlobPath); os.IsNotExist(err) {
 			log.Fatal(err)
 		}
-		indexDatabase, err := sqlx.Open("sqlite3", *sqliteBlobPath)
+		indexDatabase, err := sqlx.Open("sqlite3", withReadOnly(*sqliteBlobPath))
 		if err != nil {
 			log.Fatal(err)
 		}
