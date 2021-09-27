@@ -149,50 +149,55 @@ var (
 	ociDatabasePath        = flag.String("O", "o.db", "oci as a datbase path")
 	blobServerURL          = flag.String("bs", "", "blob server url")
 	sqliteBlobPath         = flag.String("Q", "", "sqlite3 blob index path")
-	listen                 = flag.String("l", "localhost:3000", "host and port to listen on")
+	listenAddr             = flag.String("l", "localhost:3000", "host and port to listen on")
 	showVersion            = flag.Bool("version", false, "show version")
 
 	Version   string
 	Buildtime string
-	Banner    string = `
-      ___           ___                     ___                         ___
-     /\__\         /\  \                   /\  \         _____         /\__\
-    /:/ _/_       /::\  \     ___          \:\  \       /::\  \       /:/ _/_
-   /:/ /\  \     /:/\:\__\   /\__\          \:\  \     /:/\:\  \     /:/ /\__\
-  /:/ /::\  \   /:/ /:/  /  /:/__/      _____\:\  \   /:/  \:\__\   /:/ /:/ _/_   ___     ___
- /:/_/:/\:\__\ /:/_/:/  /  /::\  \     /::::::::\__\ /:/__/ \:|__| /:/_/:/ /\__\ /\  \   /\__\
- \:\/:/ /:/  / \:\/:/  /   \/\:\  \__  \:\~~\~~\/__/ \:\  \ /:/  / \:\/:/ /:/  / \:\  \ /:/  /
-  \::/ /:/  /   \::/__/     ~~\:\/\__\  \:\  \        \:\  /:/  /   \::/_/:/  /   \:\  /:/  /
-   \/_/:/  /     \:\  \        \::/  /   \:\  \        \:\/:/  /     \:\/:/  /     \:\/:/  /
-     /:/  /       \:\__\       /:/  /     \:\__\        \::/  /       \::/  /       \::/  /
-     \/__/         \/__/       \/__/       \/__/         \/__/         \/__/         \/__/
+	Help      string = `usage: spindel [-I FILE] [-O FILE] [-bs URL] [-Q FILE] [-l ADDR] [-version]
 
-spindel is an experimental api server for labe; it works with three databases:
+spindel is an experimental api server for labe; it works with three data stores.
 
-* an sqlite3 catalog id to doi translation table (11GB)
-* an sqlite3 version of OCI (145GB)
-* a key-value store mapping catalog ids to catalog entities (239GB)
+* (1) an sqlite3 catalog id to doi translation table (11GB)
+* (2) an sqlite3 version of OCI (145GB)
+* (3) a key-value store mapping catalog ids to catalog entities (two
+      implementations: 256GB microblob, 353GB sqlite3)
 
 Each database may be updated separately, with separate processes; e.g.
 currently we use the experimental mkocidb command turn (k, v) TSV files into
 sqlite3 lookup databases.
 
-Examples:
+Examples
 
-- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
-- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
+- http://%s/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
+- http://%s/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
 
-Bulk requests:
+Bulk requests
 
-    curl -sL https://git.io/JzVmJ |
-    parallel -j 40 "curl -s http://localhost:3000/q/{}" |
-    jq -rc '[.id, .doi, .extra.citing_count, .extra.cited_count] | @tsv'
+    $ curl -sL https://git.io/JzVmJ |
+    parallel -j 40 "curl -s http://%s/q/{}" |
+    jq -rc '[.id, .doi, .extra.citing_count, .extra.cited_count, .extra.took] | @tsv'
 
-    --------8<--------
+`
+
+	Banner string = `
+
+   _|_|_|            _|                  _|            _|
+ _|        _|_|_|        _|_|_|      _|_|_|    _|_|    _|
+   _|_|    _|    _|  _|  _|    _|  _|    _|  _|_|_|_|  _|
+       _|  _|    _|  _|  _|    _|  _|    _|  _|        _|
+ _|_|_|    _|_|_|    _|  _|    _|    _|_|_|    _|_|_|  _|
+           _|
+           _|
 `
 )
 
 func main() {
+	flag.Usage = func() {
+		fmt.Printf(Help, *listenAddr, *listenAddr, *listenAddr)
+		fmt.Println("Flags\n")
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 	if *showVersion {
 		fmt.Printf("spindel %v %v\n", Version, Buildtime)
@@ -219,7 +224,7 @@ func main() {
 	case *sqliteBlobPath != "":
 		fetcher = &spindel.SqliteBlob{Path: *sqliteBlobPath}
 	default:
-		log.Fatal("need blob server or sqlite3 database")
+		log.Fatal("need blob server (-bs) or sqlite3 database (-Q)")
 	}
 	srv := &spindel.Server{
 		IdentifierDatabase: identifierDatabase,
@@ -233,6 +238,6 @@ func main() {
 	}
 	fmt.Fprintln(os.Stderr, Banner)
 	log.Printf("spindel starting %s %s http://%s",
-		Version, Buildtime, *listen)
-	log.Fatal(http.ListenAndServe(*listen, srv))
+		Version, Buildtime, *listenAddr)
+	log.Fatal(http.ListenAndServe(*listenAddr, srv))
 }
