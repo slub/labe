@@ -232,7 +232,7 @@ func HumanSpeed(bytesWritten int64, elapsedSeconds float64) string {
 func main() {
 	flag.Parse()
 	if *showVersion {
-		fmt.Printf("mkocidb %s %s", Version, Buildtime)
+		fmt.Printf("mkocidb %s %s\n", Version, Buildtime)
 		os.Exit(0)
 	}
 	if _, err := os.Stat(*outputFile); os.IsNotExist(err) {
