@@ -4,6 +4,11 @@
 
 Prototyping citation data flows.
 
+```sh
+$ du -hs .
+839G
+```
+
 # Notes
 
 Install dev dependencies.
