@@ -174,7 +174,7 @@ var (
 
 	Version   string
 	Buildtime string
-	Help      string = `usage: spindel [-I FILE] [-O FILE] [-bs URL] [-Q FILE] [-l ADDR] [-version]
+	Help      string = `usage: spindel [-I FILE] [-O FILE] [-bs URL] [-Q FILE] [-S URL] [-l ADDR] [-version]
 
 spindel is an experimental api server for labe; it works with three data stores.
 
@@ -268,7 +268,7 @@ func main() {
 		}
 		fetcher = &spindel.SqliteBlob{DB: indexDatabase}
 	default:
-		log.Fatal("need blob server (-bs) or sqlite3 database (-Q)")
+		log.Fatal("need blob server (-bs), sqlite3 database (-Q) or solr (-S)")
 	}
 	srv := &spindel.Server{
 		IdentifierDatabase: identifierDatabase,
