@@ -1,5 +1,7 @@
 # Spindel
 
+![](static/52227_spindle_sm.gif)
+
 Experimental API server, takes requests for a given id and returns a
 result fused from OCI citations and index data.
 
@@ -25,3 +27,4 @@ ai-49-aHR0cD...TAuMTE0My9qa...    10.1143/jjap.9.958             0   7    0.0029
 ai-49-aHR0cD...TAuMTAyMS9hb...    10.1021/am8001605              29  64   0.022973696
 ai-49-aHR0cD...TAuMTIwNy9zM...    10.1207/s15326934crj1401_1     0   21   0.056867545
 ```
+
