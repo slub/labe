@@ -39,6 +39,8 @@
     * [ ] tools to generate suitable data stores (e.g. via OCI, a copy of solr, etc.)
     * [ ] a service unit for the server
     * [ ] implement HTTP cache policy
+    * [ ] implement some logging strategy
+    * [ ] 12-factor app considerations, e.g. switch to envconfig
     * [ ] some frontend like nginx
     * [ ] an ansible playbook for tools and service
 
