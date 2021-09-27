@@ -170,13 +170,18 @@ sqlite3 lookup databases.
 
 Examples
 
-- http://%s/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
-- http://%s/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
+- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
+- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
+- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
+- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
+- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
+- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
+- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
 
 Bulk requests
 
     $ curl -sL https://git.io/JzVmJ |
-    parallel -j 40 "curl -s http://%s/q/{}" |
+    parallel -j 40 "curl -s http://{{ .listenAddr }}/q/{}" |
     jq -rc '[.id, .doi, .extra.citing_count, .extra.cited_count, .extra.took] | @tsv'
 
 `
@@ -205,7 +210,7 @@ Examples
 
 func main() {
 	flag.Usage = func() {
-		fmt.Printf(Help, *listenAddr, *listenAddr, *listenAddr)
+		fmt.Printf(strings.Replace(Help, `{{ .listenAddr }}`, *listenAddr, -1))
 		fmt.Println("Flags\n")
 		flag.PrintDefaults()
 	}
