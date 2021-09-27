@@ -109,7 +109,7 @@
 // ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA                   0    4461  2.337560631
 // ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3                 11   8881  6.080010918
 //
-// One sql query.
+// One sql query with "in" clause; seemingly not too that much of a difference.
 //
 // ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMi9pamMuMjkxMDU0MDQxMw                   665   10   0.626366921
 // ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA1Ni9uZWptb2EwNjE4OTQ                      905   17   0.634581836
@@ -128,6 +128,24 @@
 // ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU                      2567  0    1.840246227
 // ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA                   4461  0    2.690623817
 // ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3                 8881  11   5.718691781
+//
+// Solr id queries are surprisingly expensive.
+//
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMi9pamMuMjkxMDU0MDQxMw    10      665     40.102183975
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9hYmlvLjIwMDAuNDc1Mw    17      425     40.284360471
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAxNi9qLm1zZXIuMjAwOS4wMy4wMDE       0       447     40.311937977
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE2MS8wMS5jaXIuOTMuMS43      3       568     40.401925034
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA2My8xLjQ4NjQ3Nzg   20      819     40.764142995
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA4OC8wOTU0LTM4OTkvNDIvMTIvMTI1MDA1  87      9       43.384139584
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEwMy9waHlzcmV2bGV0dC42Ny45Mzc       15      610     44.236279892
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAxNi9zMDE0MC02NzM2KDAyKTA5MDg4LTg   21      636     44.343999438
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEwMy9waHlzcmV2bGV0dC4xMy40Nzk       0       946     45.504724379
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAyMS9jcjk2MDAxN3Q   288     701     45.76471719
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEyNi9zY2llbmNlLjE1NzM5MjYw  0       759     46.569540665
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA4MC8wMTYyMTQ1OS4xOTk0LjEwNDc2ODE4  31      652     56.894786746
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzOC80MzQ2Ng        20      1060    69.66376108
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEwMy9waHlzcmV2YS40My4yMDQ2  10      1126    73.831349012
+// ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAxNi8wMDIyLTI4MzYoNzQpOTAwMzEteA    26      1473    77.451487135
 //
 package main
 
@@ -148,8 +166,9 @@ import (
 var (
 	identifierDatabasePath = flag.String("I", "i.db", "identifier database path")
 	ociDatabasePath        = flag.String("O", "o.db", "oci as a datbase path")
-	blobServerURL          = flag.String("bs", "", "blob server url")
+	blobServerURL          = flag.String("bs", "", "blob server URL")
 	sqliteBlobPath         = flag.String("Q", "", "sqlite3 blob index path")
+	solrBlobPath           = flag.String("S", "", "solr blob URL")
 	listenAddr             = flag.String("l", "localhost:3000", "host and port to listen on")
 	showVersion            = flag.Bool("version", false, "show version")
 
@@ -235,10 +254,19 @@ func main() {
 	}
 	var fetcher spindel.Fetcher
 	switch {
+	case *solrBlobPath != "":
+		fetcher = &spindel.SolrBlob{BaseURL: *solrBlobPath}
 	case *blobServerURL != "":
 		fetcher = &spindel.BlobServer{BaseURL: *blobServerURL}
 	case *sqliteBlobPath != "":
-		fetcher = &spindel.SqliteBlob{Path: *sqliteBlobPath}
+		if _, err := os.Stat(*sqliteBlobPath); os.IsNotExist(err) {
+			log.Fatal(err)
+		}
+		indexDatabase, err := sqlx.Open("sqlite3", *sqliteBlobPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fetcher = &spindel.SqliteBlob{DB: indexDatabase}
 	default:
 		log.Fatal("need blob server (-bs) or sqlite3 database (-Q)")
 	}
