@@ -1,16 +1,7 @@
 // mkocidb takes two columns and turns it into an indexed sqlite3 database.
 // Example: Help to query an OCI data dump offline.
 //
-// TODO: sqlite pipe is gone, before stdin is done; maybe we need to import in
-// smaller chunks
-//
-// 2021/09/20 10:36:01 [2301] wrote 1048576 (2412773376)
-// 2021/09/20 10:36:01 [2302] wrote 1048576 (2413821952)
-// 2021/09/20 10:36:01 copy failed: write |1: broken pipe
-//
-// A chucked insert seems to mitigate this issue.
-//
-// $ time ./mkocidb < sample-m.tsv
+// $ time mkocidb < sample-m.tsv
 // 2021/09/20 13:13:55 [ok] initialized database at data.db
 // written 5G -- 6.6M/s
 //
@@ -28,43 +19,7 @@
 // 10.1002/1097-0142(19821101)50:9<1683::aid-cncr2820500904>3.0.co;2-x
 // 10.1002/1097-0142(19860215)57:4<718::aid-cncr2820570406>3.0.co;2-p
 // 10.1056/nejm199004123221504
-// 10.1093/jnci/80.17.1412
-// 10.1016/0163-7258(85)90021-x
-// 10.1016/0006-2952(85)90543-x
-// 10.1200/jco.1993.11.8.1523
-// 10.1126/science.7973634
-// 10.1073/pnas.91.14.6674
-// 10.1111/j.1749-6632.1985.tb17191.x
-// 10.1182/blood.v70.6.1824.1824
-// 10.1172/jci113437
-// 10.1002/ajh.2830320206
-// 10.1182/blood.v69.1.109.109
-// 10.1182/blood.v79.10.2555.2555
-// 10.1002/1097-0142(19800801)46:3<455::aid-cncr2820460306>3.0.co;2-n
-// 10.1007/bf00262739
-// 10.1200/jco.1995.13.5.1089
-// 10.1007/s002800050256
-// 10.1007/bf01117450
-// 10.1002/jps.2600830726
-// 10.1023/a:1018953810705
-// 10.1007/s002800050569
-// 10.1016/0014-2964(78)90253-0
-// 10.1016/s0305-7372(79)80008-0
-// 10.2165/00003088-198916040-00002
-// 10.1200/jco.1994.12.9.1754
-// 10.1200/jco.1990.8.3.527
-// 10.1182/blood.v80.9.2425.2425
-//
-// New issue, when indexing:
-//
-// 2021/09/20 16:51:06 [ok] initialized database -- data.db
-// written 57.6G -- 35.9M/s
-// 2021/09/20 17:18:28 db setup done
-// 2021/09/20 17:18:28 creating index
-// 2021/09/20 17:18:54 signal: killed
-//
-// Trying to "temp_store" pragma: https://sqlite.org/pragma.html,
-// https://sqlite.org/tempfiles.html#tempstore
+// ...
 //
 // Note that the machine this runs on probably needs at least 4K * cache_size
 // free memory; not sure how much performance varies for these ops, if we
