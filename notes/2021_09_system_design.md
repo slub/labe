@@ -289,3 +289,12 @@ refcat. Again, each with independent update cycles.
 ### A diagram
 
 ![](Labe.png)
+
+## Deployment Options
+
+* one package, a couple of executables
+* server is controlled by env vars only
+* command line tools have flags, maybe a single config file
+* service has a systemd unit file
+* one target/command to test, package on dev machine
+* notification email for alerts and updates
