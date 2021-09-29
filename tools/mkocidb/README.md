@@ -26,3 +26,5 @@ real    92m58.885s
 user    79m56.305s
 sys     10m0.852s
 ```
+
+![](static/screencast.gif)
