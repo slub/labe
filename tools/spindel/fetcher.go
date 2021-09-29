@@ -33,7 +33,6 @@ type Pinger interface {
 // Fetcher fetches one or more blobs given their identifiers.
 type Fetcher interface {
 	Fetch(id string) ([]byte, error)
-	FetchSet(ids ...string) ([][]byte, error)
 }
 
 // BlobServer implements access to a running microblob instance.
@@ -63,22 +62,6 @@ func (bs *BlobServer) Fetch(id string) ([]byte, error) {
 	return fetchURL(u.String())
 }
 
-// FetchSet fetches a number of blobs given their ids.
-func (bs *BlobServer) FetchSet(ids ...string) (result [][]byte, err error) {
-	for _, id := range ids {
-		v, err := bs.Fetch(id)
-		if errors.Is(err, ErrBlobNotFound) {
-			result = append(result, []byte{})
-			continue
-		}
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, v)
-	}
-	return result, nil
-}
-
 // fetchURL is a helper to read the response body for given link.
 func fetchURL(u string) ([]byte, error) {
 	resp, err := client.Get(u)
@@ -104,19 +87,6 @@ func (b *SqliteBlob) Fetch(id string) (p []byte, err error) {
 		return nil, err
 	}
 	return []byte(s), nil
-}
-
-// FetchSet fetches a number of blobs given their ids.
-func (b *SqliteBlob) FetchSet(ids ...string) (p [][]byte, err error) {
-	query, args, err := sqlx.In("SELECT * FROM map WHERE v IN (?)", ids)
-	if err != nil {
-		return nil, err
-	}
-	query = b.DB.Rebind(query)
-	if err := b.DB.Select(&p, query, args...); err != nil {
-		return nil, err
-	}
-	return p, nil
 }
 
 // Ping pings the database.
@@ -154,23 +124,6 @@ func (b *SolrBlob) Fetch(id string) ([]byte, error) {
 	return fetchURL(link)
 }
 
-// FetchSet fetches a number of blobs given their ids. TODO: optimize this,
-// e.g. via `(id:1 OR id:2 OR id:3 OR id:4)` or the like.
-func (b *SolrBlob) FetchSet(ids ...string) (result [][]byte, err error) {
-	for _, id := range ids {
-		v, err := b.Fetch(id)
-		if errors.Is(err, ErrBlobNotFound) {
-			result = append(result, []byte{})
-			continue
-		}
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, v)
-	}
-	return result, nil
-}
-
 // FetchGroup allows to run a index data fetch operation in a cascade over a
 // couple of backends.
 type FetchGroup struct {
@@ -199,18 +152,6 @@ func (g *FetchGroup) Fetch(id string) ([]byte, error) {
 			return nil, err
 		} else {
 			return p, nil
-		}
-	}
-	return nil, ErrBackendsFailed
-}
-
-// FetchSet fetches a number of blobs given their ids.
-func (g *FetchGroup) FetchSet(ids ...string) (result [][]byte, err error) {
-	for _, v := range g.Backends {
-		if bs, err := v.FetchSet(ids...); err != nil {
-			return nil, err
-		} else {
-			return bs, nil
 		}
 	}
 	return nil, ErrBackendsFailed

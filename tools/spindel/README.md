@@ -28,3 +28,31 @@ ai-49-aHR0cD...TAuMTAyMS9hb...    10.1021/am8001605              29  64   0.0229
 ai-49-aHR0cD...TAuMTIwNy9zM...    10.1207/s15326934crj1401_1     0   21   0.056867545
 ```
 
+## Fetch or FetchMany
+
+```
+In [13]: df.took.describe()
+Out[13]:
+count    64860.000000
+mean         0.015844
+std          0.038631
+min          0.000371
+25%          0.003467
+50%          0.008700
+75%          0.018176
+max          6.080011
+Name: took, dtype: float64
+
+In [14]: dfin.took.describe()
+Out[14]:
+count    64860.000000
+mean         0.016218
+std          0.038260
+min          0.000321
+25%          0.003560
+50%          0.008910
+75%          0.018594
+max          5.718692
+Name: took, dtype: float64
+
+```
