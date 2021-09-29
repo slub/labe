@@ -170,6 +170,7 @@ var (
 	sqliteBlobPath         = flag.String("Q", "", "sqlite3 blob index path")
 	solrBlobPath           = flag.String("S", "", "solr blob URL")
 	listenAddr             = flag.String("l", "localhost:3000", "host and port to listen on")
+	enableStopWatch        = flag.Bool("W", false, "enable stopwatch")
 	showVersion            = flag.Bool("version", false, "show version")
 
 	Version   string
@@ -279,6 +280,7 @@ func main() {
 		OciDatabase:        ociDatabase,
 		IndexData:          fetcher,
 		Router:             mux.NewRouter(),
+		StopWatchEnabled:   *enableStopWatch,
 	}
 	srv.Routes()
 	if err := srv.Ping(); err != nil {

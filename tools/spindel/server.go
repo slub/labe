@@ -25,9 +25,7 @@ type Server struct {
 	OciDatabase        *sqlx.DB
 	IndexData          Fetcher
 	Router             *mux.Router
-
-	// Testing feature, fixed for now; just for development. TODO: remove this.
-	FeatureFetchSet bool
+	StopWatchEnabled   bool
 }
 
 // Routes sets up route.
@@ -97,13 +95,17 @@ func (s *Server) handleQuery() http.HandlerFunc {
 			response     = &Response{
 				ID: vars["id"], // the local identifier
 			}
+			stopWatch StopWatch
 		)
+		stopWatch.SetEnabled(s.StopWatchEnabled)
+		stopWatch.Recordf("started query for: %s", vars["id"])
 		// (1) Get the DOI for the local id; or get out.
 		if err := s.IdentifierDatabase.GetContext(ctx, &response.DOI,
 			"SELECT v FROM map WHERE k = ?", response.ID); err != nil {
 			httpErrLog(w, err)
 			return
 		}
+		stopWatch.Recordf("found doi for id: %s", response.DOI)
 		// (2) With the DOI, find outbound (citing) and inbound (cited)
 		// references in the OCI database.
 		if err := s.OciDatabase.SelectContext(ctx, &citing,
@@ -111,11 +113,13 @@ func (s *Server) handleQuery() http.HandlerFunc {
 			httpErrLog(w, err)
 			return
 		}
+		stopWatch.Recordf("found %d citing items", len(citing))
 		if err := s.OciDatabase.SelectContext(ctx, &cited,
 			"SELECT * FROM map WHERE v = ?", response.DOI); err != nil {
 			httpErrLog(w, err)
 			return
 		}
+		stopWatch.Recordf("found %d cited items", len(cited))
 		// (3) We want to collect the unique set of DOI to get the complete
 		// indexed documents.
 		for _, v := range citing {
@@ -144,6 +148,7 @@ func (s *Server) handleQuery() http.HandlerFunc {
 			httpErrLog(w, err)
 			return
 		}
+		stopWatch.Recordf("mapped %d dois back to ids", ss.Len())
 		// (5) Here, we can find unmatched items.
 		for _, v := range ids {
 			matched = append(matched, v.Value)
@@ -160,6 +165,7 @@ func (s *Server) handleQuery() http.HandlerFunc {
 				response.Unmatched.Citing = append(response.Unmatched.Citing, b)
 			}
 		}
+		stopWatch.Record("recorded unmatched ids")
 		// (6) At this point, we need to assemble the result. For each
 		// identifier we want the full metadata. We use an local copy of the
 		// index. We could also ask a live index here.
@@ -182,6 +188,7 @@ func (s *Server) handleQuery() http.HandlerFunc {
 				response.Cited = append(response.Cited, b)
 			}
 		}
+		stopWatch.Recordf("fetched %d blob from index data store", len(ids))
 		// Fill extra fields.
 		response.Extra.CitingCount = len(response.Citing)
 		response.Extra.CitedCount = len(response.Cited)
@@ -195,6 +202,8 @@ func (s *Server) handleQuery() http.HandlerFunc {
 			httpErrLog(w, err)
 			return
 		}
+		stopWatch.Record("encoded JSON")
+		stopWatch.LogTable()
 	}
 }
 
