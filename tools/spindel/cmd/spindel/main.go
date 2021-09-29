@@ -14,7 +14,7 @@
 // | index.data | 256360643273   | 62588048   | 885414    | 001.415 |
 // +------------+----------------+------------+-----------+---------+
 //
-// $ time cat 100K.ids | parallel -j 10 "curl -s http://localhost:3000/q/{}" | jq -rc '[.blob_count, .elapsed_s.total, .id] | @tsv'
+// $ time cat 100K.ids | parallel -j 10 "curl -s http://localhost:3000/id/{}" | jq -rc '[.blob_count, .elapsed_s.total, .id] | @tsv'
 //
 // ...
 // 3       0.007706688     ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAyMy9iOmZyYWMuMDAwMDAzMTA5My44NTA2MS5jOQ
@@ -91,7 +91,7 @@
 //
 // Another way to see performance.
 //
-// $ cat fixtures/100K.ids | parallel -j 40 "curl -s http://localhost:3000/q/{}" | pv -l > /dev/null
+// $ cat fixtures/100K.ids | parallel -j 40 "curl -s http://localhost:3000/id/{}" | pv -l > /dev/null
 //
 // Alternative sqlite3 index store. Even unoptimized slightly faster.
 //
@@ -193,18 +193,18 @@ sqlite3 lookup databases.
 
 Examples
 
-- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
-- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
-- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
-- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
-- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
-- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
-- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
+- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
+- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
+- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
+- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
+- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
+- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
+- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
 
 Bulk requests
 
     $ curl -sL https://git.io/JzVmJ |
-    parallel -j 40 "curl -s http://{{ .listenAddr }}/q/{}" |
+    parallel -j 40 "curl -s http://{{ .listenAddr }}/id/{}" |
     jq -rc '[.id, .doi, .extra.citing_count, .extra.cited_count, .extra.took] | @tsv'
 
 `
@@ -221,13 +221,13 @@ Bulk requests
 
 Examples
 
-- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
-- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
-- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
-- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
-- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
-- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
-- http://{{ .listenAddr }}/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
+- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
+- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
+- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
+- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
+- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
+- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
+- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
 `
 )
 

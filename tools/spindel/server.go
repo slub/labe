@@ -17,9 +17,10 @@ import (
 
 // Server wraps three data sources required for index and citation data fusion.
 // The IdentifierDatabase is a map from local identifier (e.g. 0-1238201) to
-// DOI, the OciDatabase contains citing and cited relationsships from OCI data
-// dump and IndexData allows to fetch a metadata blob from a service, e.g. a
-// key value store like microblob.
+// DOI, the OciDatabase contains citing and cited relationsships from OCI/COCI
+// citation corpus and IndexData allows to fetch a metadata blob from a
+// service, e.g. a key value store like microblob, sqlite3, solr, elasticsearch
+// or in memory store.
 type Server struct {
 	IdentifierDatabase *sqlx.DB
 	OciDatabase        *sqlx.DB
@@ -28,15 +29,78 @@ type Server struct {
 	StopWatchEnabled   bool
 }
 
+// Map is a generic lookup table. We use it together with sqlite3.
+type Map struct {
+	Key   string `db:"k"`
+	Value string `db:"v"`
+}
+
+// Response contains a subset of index data fused with citation data.
+// Citing and cited documents are unparsed. For unmatched docs, we keep
+// only transmit the DOI, e.g. as {"doi": "10.123/123"}.
+type Response struct {
+	ID        string            `json:"id"`
+	DOI       string            `json:"doi"`
+	Citing    []json.RawMessage `json:"citing,omitempty"`
+	Cited     []json.RawMessage `json:"cited,omitempty"`
+	Unmatched struct {
+		Citing []json.RawMessage `json:"citing,omitempty"`
+		Cited  []json.RawMessage `json:"cited,omitempty"`
+	} `json:"unmatched"`
+	Extra struct {
+		Took                 float64 `json:"took"`
+		UnmatchedCitingCount int     `json:"unmatched_citing_count"`
+		UnmatchedCitedCount  int     `json:"unmatched_cited_count"`
+		CitingCount          int     `json:"citing_count"`
+		CitedCount           int     `json:"cited_count"`
+	} `json:"extra"`
+}
+
+// updateCounts updates extra fields containing counts.
+func (r *Response) updateCounts() {
+	r.Extra.CitingCount = len(r.Citing)
+	r.Extra.CitedCount = len(r.Cited)
+	r.Extra.UnmatchedCitingCount = len(r.Unmatched.Citing)
+	r.Extra.UnmatchedCitedCount = len(r.Unmatched.Cited)
+}
+
 // Routes sets up route. TODO: we want a direct DOI route as well.
 func (s *Server) Routes() {
 	s.Router.HandleFunc("/", s.handleIndex())
-	s.Router.HandleFunc("/q/{id}", s.handleQuery())
+	s.Router.HandleFunc("/id/{id}", s.handleLocalIdentifier())
+	s.Router.HandleFunc("/doi/{doi}", s.handleDOI())
 }
 
 // ServeHTTP turns the server into an HTTP handler.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.Router.ServeHTTP(w, r)
+}
+
+// edges returns citing (outbound) and citing (inbound) edges for a given DOI.
+func (s *Server) edges(ctx context.Context, doi string) (citing, cited []Map, err error) {
+	if err := s.OciDatabase.SelectContext(ctx, &citing,
+		"SELECT * FROM map WHERE k = ?", doi); err != nil {
+		return nil, nil, err
+	}
+	if err := s.OciDatabase.SelectContext(ctx, &cited,
+		"SELECT * FROM map WHERE v = ?", doi); err != nil {
+		return nil, nil, err
+	}
+	return citing, cited, nil
+}
+
+// mapToLocal takes a list of DOI and returns a slice of Maps containing the
+// local id and DOI.
+func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err error) {
+	query, args, err := sqlx.In("SELECT * FROM map WHERE v IN (?)", dois)
+	if err != nil {
+		return nil, err
+	}
+	query = s.IdentifierDatabase.Rebind(query)
+	if err := s.IdentifierDatabase.SelectContext(ctx, &ids, query, args...); err != nil {
+		return nil, err
+	}
+	return ids, nil
 }
 
 func (s *Server) handleIndex() http.HandlerFunc {
@@ -45,35 +109,29 @@ func (s *Server) handleIndex() http.HandlerFunc {
 	}
 }
 
-// handleQuery does all the lookups, but that should elsewhere, in a more
+// handleDOI currently only redirects to the local id handler.
+func (s *Server) handleDOI() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var (
+			ctx      = r.Context()
+			vars     = mux.Vars(r)
+			response = &Response{
+				DOI: vars["doi"],
+			}
+		)
+		if err := s.IdentifierDatabase.GetContext(ctx, &response.ID,
+			"SELECT k FROM map WHERE v = ?", response.DOI); err != nil {
+			httpErrLog(w, err)
+			return
+		}
+		http.Redirect(w, r, fmt.Sprintf("/id/%s", response.ID), http.StatusTemporaryRedirect)
+	}
+}
+
+// handleLocalIdentifier does all the lookups, but that should elsewhere, in a more
 // testable place. Also, reuse some existing stats library. Also TODO: optimize
 // backend requests and think up schema for delivery.
-func (s *Server) handleQuery() http.HandlerFunc {
-	// Map is a generic lookup table. We use it together with sqlite3.
-	type Map struct {
-		Key   string `db:"k"`
-		Value string `db:"v"`
-	}
-	// Response contains a subset of index data fused with citation data.
-	// Citing and cited documents are unparsed. For unmatched docs, we keep
-	// only transmit the DOI, e.g. as {"doi": "10.123/123"}.
-	type Response struct {
-		ID        string            `json:"id"`
-		DOI       string            `json:"doi"`
-		Citing    []json.RawMessage `json:"citing,omitempty"`
-		Cited     []json.RawMessage `json:"cited,omitempty"`
-		Unmatched struct {
-			Citing []json.RawMessage `json:"citing,omitempty"`
-			Cited  []json.RawMessage `json:"cited,omitempty"`
-		} `json:"unmatched"`
-		Extra struct {
-			Took                 float64 `json:"took"`
-			UnmatchedCitingCount int     `json:"unmatched_citing_count"`
-			UnmatchedCitedCount  int     `json:"unmatched_cited_count"`
-			CitingCount          int     `json:"citing_count"`
-			CitedCount           int     `json:"cited_count"`
-		} `json:"extra"`
-	}
+func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// (1) resolve id to doi
 		// (2) lookup related doi via oci
@@ -85,8 +143,6 @@ func (s *Server) handleQuery() http.HandlerFunc {
 			ctx          = r.Context()
 			started      = time.Now()
 			vars         = mux.Vars(r)
-			citing       []Map // rows containing paper references (value is the reference item)
-			cited        []Map // rows containing inbound relations (key is the citing id)
 			ids          []Map // local identifiers
 			outbound     = set.New()
 			inbound      = set.New()
@@ -106,20 +162,13 @@ func (s *Server) handleQuery() http.HandlerFunc {
 			return
 		}
 		stopWatch.Recordf("found doi for id: %s", response.DOI)
-		// (2) With the DOI, find outbound (citing) and inbound (cited)
-		// references in the OCI database.
-		if err := s.OciDatabase.SelectContext(ctx, &citing,
-			"SELECT * FROM map WHERE k = ?", response.DOI); err != nil {
+		// (2) Get outbound and inbound edges.
+		citing, cited, err := s.edges(ctx, response.DOI)
+		if err != nil {
 			httpErrLog(w, err)
 			return
 		}
-		stopWatch.Recordf("found %d citing items", len(citing))
-		if err := s.OciDatabase.SelectContext(ctx, &cited,
-			"SELECT * FROM map WHERE v = ?", response.DOI); err != nil {
-			httpErrLog(w, err)
-			return
-		}
-		stopWatch.Recordf("found %d cited items", len(cited))
+		stopWatch.Recordf("found %d outbound and %d inbound edges", len(citing), len(cited))
 		// (3) We want to collect the unique set of DOI to get the complete
 		// indexed documents.
 		for _, v := range citing {
@@ -136,20 +185,13 @@ func (s *Server) handleQuery() http.HandlerFunc {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		// (4) We now need to map back the DOI to the internal identifiers. That's
-		// probably a more expensive query.
-		query, args, err := sqlx.In("SELECT * FROM map WHERE v IN (?)", ss.Slice())
-		if err != nil {
-			httpErrLog(w, err)
-			return
-		}
-		query = s.IdentifierDatabase.Rebind(query)
-		if err := s.IdentifierDatabase.SelectContext(ctx, &ids, query, args...); err != nil {
+		// (4) Map relevant DOI back to local identifiers.
+		if ids, err = s.mapToLocal(ctx, ss.Slice()); err != nil {
 			httpErrLog(w, err)
 			return
 		}
 		stopWatch.Recordf("mapped %d dois back to ids", ss.Len())
-		// (5) Here, we can find unmatched items.
+		// (5) Here, we can find unmatched items, via DOI.
 		for _, v := range ids {
 			matched = append(matched, v.Value)
 		}
@@ -170,7 +212,6 @@ func (s *Server) handleQuery() http.HandlerFunc {
 		// identifier we want the full metadata. We use an local copy of the
 		// index. We could also ask a live index here.
 		for _, v := range ids {
-			// Access the data, here we use the blob, but we could ask SOLR, too.
 			b, err := s.IndexData.Fetch(v.Key)
 			if errors.Is(err, ErrBlobNotFound) {
 				continue
@@ -179,8 +220,6 @@ func (s *Server) handleQuery() http.HandlerFunc {
 				httpErrLog(w, err)
 				return
 			}
-			// We have the blob and the {k: local, v: doi} values, so all we
-			// should need.
 			switch {
 			case outbound.Contains(v.Value):
 				response.Citing = append(response.Citing, b)
@@ -189,13 +228,8 @@ func (s *Server) handleQuery() http.HandlerFunc {
 			}
 		}
 		stopWatch.Recordf("fetched %d blob from index data store", len(ids))
-		// Fill extra fields.
-		response.Extra.CitingCount = len(response.Citing)
-		response.Extra.CitedCount = len(response.Cited)
-		response.Extra.UnmatchedCitingCount = len(response.Unmatched.Citing)
-		response.Extra.UnmatchedCitedCount = len(response.Unmatched.Cited)
+		response.updateCounts()
 		response.Extra.Took = time.Since(started).Seconds()
-		// Put it on the wire.
 		w.Header().Add("Content-Type", "application/json")
 		enc := json.NewEncoder(w)
 		if err := enc.Encode(response); err != nil {
