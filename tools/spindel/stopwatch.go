@@ -111,7 +111,7 @@ func (s *StopWatch) Table() string {
 		fmt.Fprintf(w, "> %s\t%d\t%s\t%0.2f\t%s\n", s.id, i, diff, pct, entry.Message)
 	}
 	fmt.Fprintf(w, "> %s\t-\t-\t-\t-\n", s.id)
-	fmt.Fprintf(w, "> %s\tS\t%s\t1.0\ttotal\n", s.id, total)
+	fmt.Fprintf(w, "> %s\tS\t%s\t%0.2f\ttotal\n", s.id, total, 1.0)
 	w.Flush()
 	return buf.String()
 }
