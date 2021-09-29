@@ -84,8 +84,11 @@ Flags
 
 ## Fetch or FetchMany
 
+There seems to be not that much difference between one expensive `IN` and many
+cheap SQL queries in case of sqlite3.
+
 ```
-In [13]: df.took.describe()
+In [13]: df.took.describe() # SELECT .. WHERE k = ...
 Out[13]:
 count    64860.000000
 mean         0.015844
@@ -97,7 +100,7 @@ min          0.000371
 max          6.080011
 Name: took, dtype: float64
 
-In [14]: dfin.took.describe()
+In [14]: dfin.took.describe() # SELECT .. IN ...
 Out[14]:
 count    64860.000000
 mean         0.016218
