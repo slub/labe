@@ -56,3 +56,44 @@ max          5.718692
 Name: took, dtype: float64
 
 ```
+
+## Using a stopwatch
+
+Experimental `-W` flag to trace duration of various operations.
+
+```sh
+$ spindel -W -bs http://localhost:8820
+
+
+   _|_|_|            _|                  _|            _|
+ _|        _|_|_|        _|_|_|      _|_|_|    _|_|    _|
+   _|_|    _|    _|  _|  _|    _|  _|    _|  _|_|_|_|  _|
+       _|  _|    _|  _|  _|    _|  _|    _|  _|        _|
+ _|_|_|    _|_|_|    _|  _|    _|    _|_|_|    _|_|_|  _|
+           _|
+           _|
+
+Examples
+
+- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
+- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
+- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
+- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
+- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
+- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
+- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
+
+2021/09/29 17:35:19 spindel starting 3870a68 2021-09-29T15:34:00Z http://localhost:3000
+2021/09/29 17:35:20 timings for XVlB
+
+> XVlB    0    0s             0.00    started query for: ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA5OC9yc3BhLjE5OTguMDE2NA
+> XVlB    1    397.191µs      0.00    found doi for id: 10.1098/rspa.1998.0164
+> XVlB    2    481.676µs      0.01    found 8 citing items
+> XVlB    3    18.984627ms    0.23    found 456 cited items
+> XVlB    4    13.421306ms    0.16    mapped 464 dois back to ids
+> XVlB    5    494.163µs      0.01    recorded unmatched ids
+> XVlB    6    44.093361ms    0.52    fetched 302 blob from index data store
+> XVlB    7    6.422462ms     0.08    encoded JSON
+> XVlB    -    -              -       -
+> XVlB    S    84.294786ms    1.0     total
+```
