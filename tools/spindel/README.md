@@ -28,6 +28,60 @@ ai-49-aHR0cD...TAuMTAyMS9hb...    10.1021/am8001605              29  64   0.0229
 ai-49-aHR0cD...TAuMTIwNy9zM...    10.1207/s15326934crj1401_1     0   21   0.056867545
 ```
 
+## Usage
+
+```sh
+$ spindel -h
+usage: spindel [-I FILE] [-O FILE] [-bs URL] [-Q FILE] [-S URL] [-l ADDR] [-version]
+
+spindel is an experimental api server for labe; it works with three data stores.
+
+* (1) an sqlite3 catalog id to doi translation table (11GB)
+* (2) an sqlite3 version of OCI (145GB)
+* (3) a key-value store mapping catalog ids to catalog entities (two
+      implementations: 256GB microblob, 353GB sqlite3)
+
+Each database may be updated separately, with separate processes; e.g.
+currently we use the experimental mkocidb command turn (k, v) TSV files into
+sqlite3 lookup databases.
+
+Examples
+
+- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
+- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
+- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
+- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
+- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
+- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
+- http://localhost:3000/q/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
+
+Bulk requests
+
+    $ curl -sL https://git.io/JzVmJ |
+    parallel -j 40 "curl -s http://localhost:3000/q/{}" |
+    jq -rc '[.id, .doi, .extra.citing_count, .extra.cited_count, .extra.took] | @tsv'
+
+Flags
+
+  -I string
+        identifier database path (default "i.db")
+  -L    enable logging
+  -O string
+        oci as a datbase path (default "o.db")
+  -Q string
+        sqlite3 blob index path
+  -S string
+        solr blob URL
+  -W    enable stopwatch
+  -bs string
+        blob server URL
+  -g    enable gzip compression
+  -l string
+        host and port to listen on (default "localhost:3000")
+  -version
+        show version
+```
+
 ## Fetch or FetchMany
 
 ```
@@ -97,3 +151,4 @@ Examples
 > XVlB    -    -              -       -
 > XVlB    S    84.294786ms    1.0     total
 ```
+
