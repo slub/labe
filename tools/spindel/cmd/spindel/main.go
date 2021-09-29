@@ -157,6 +157,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
@@ -171,6 +172,8 @@ var (
 	solrBlobPath           = flag.String("S", "", "solr blob URL")
 	listenAddr             = flag.String("l", "localhost:3000", "host and port to listen on")
 	enableStopWatch        = flag.Bool("W", false, "enable stopwatch")
+	enableGzip             = flag.Bool("g", false, "enable gzip compression")
+	enableLogging          = flag.Bool("L", false, "enable logging")
 	showVersion            = flag.Bool("version", false, "show version")
 
 	Version   string
@@ -289,5 +292,13 @@ func main() {
 	fmt.Fprintln(os.Stderr, strings.Replace(Banner, `{{ .listenAddr }}`, *listenAddr, -1))
 	log.Printf("spindel starting %s %s http://%s",
 		Version, Buildtime, *listenAddr)
-	log.Fatal(http.ListenAndServe(*listenAddr, srv))
+	// Setup middleware.
+	var h http.Handler = srv
+	if *enableGzip {
+		h = handlers.CompressHandler(srv)
+	}
+	if *enableLogging {
+		h = handlers.LoggingHandler(os.Stdout, h)
+	}
+	log.Fatal(http.ListenAndServe(*listenAddr, h))
 }
