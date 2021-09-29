@@ -28,7 +28,7 @@ type Server struct {
 	StopWatchEnabled   bool
 }
 
-// Routes sets up route.
+// Routes sets up route. TODO: we want a direct DOI route as well.
 func (s *Server) Routes() {
 	s.Router.HandleFunc("/", s.handleIndex())
 	s.Router.HandleFunc("/q/{id}", s.handleQuery())
