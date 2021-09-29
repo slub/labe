@@ -87,7 +87,7 @@ Flags
 There seems to be not that much difference between one expensive `IN` and many
 cheap SQL queries in case of sqlite3.
 
-```
+```python
 In [13]: df.took.describe() # SELECT .. WHERE k = ...
 Out[13]:
 count    64860.000000
