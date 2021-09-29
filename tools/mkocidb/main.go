@@ -217,7 +217,9 @@ func runImport(r io.Reader, initFile, outputFile string) (int64, error) {
 
 // Flushf for messages that should stay on a single line.
 func Flushf(s string, vs ...interface{}) {
-	msg := fmt.Sprintf("\r"+s, vs...)
+	// 2021/09/29 15:38:05
+	t := time.Now().Format("2006/01/02 15:04:05")
+	msg := fmt.Sprintf("\r"+t+" [io] "+s, vs...)
 	fmt.Printf("\r" + strings.Repeat(" ", len(msg)+1))
 	fmt.Printf(msg)
 }
@@ -245,11 +247,21 @@ func main() {
 		log.Fatal(err)
 	}
 	var (
-		br      = bufio.NewReader(os.Stdin)
-		buf     bytes.Buffer
-		written int64
-		started = time.Now()
-		elapsed float64
+		br          = bufio.NewReader(os.Stdin)
+		buf         bytes.Buffer
+		written     int64
+		started     = time.Now()
+		elapsed     float64
+		importBatch = func() error {
+			n, err := runImport(&buf, runFile, *outputFile)
+			if err != nil {
+				return err
+			}
+			written += n
+			elapsed = time.Since(started).Seconds()
+			Flushf("written %s · %s", ByteSize(written), HumanSpeed(written, elapsed))
+			return nil
+		}
 	)
 	for {
 		b, err := br.ReadBytes('\n')
@@ -263,28 +275,17 @@ func main() {
 			log.Fatal(err)
 		}
 		if buf.Len() >= *bufferSize {
-			n, err := runImport(&buf, runFile, *outputFile)
-			if err != nil {
+			if err := importBatch(); err != nil {
 				log.Fatal(err)
 			}
-			written += n
-			elapsed = time.Since(started).Seconds()
-			Flushf("written %s -- %s", ByteSize(written), HumanSpeed(written, elapsed))
 		}
 	}
-	n, err := runImport(&buf, runFile, *outputFile)
-	if err != nil {
+	if err := importBatch(); err != nil {
 		log.Fatal(err)
 	}
-	written += n
-	elapsed = time.Since(started).Seconds()
-	Flushf("written %s -- %s", ByteSize(written), HumanSpeed(written, elapsed))
 	fmt.Println()
-	log.Printf("import done")
-	log.Printf("creating index")
 	var indexScripts []string
 	switch *indexMode {
-	case 0:
 	case 1:
 		indexScripts = append(indexScripts, keyIndexSQL)
 	case 2:
@@ -292,6 +293,8 @@ func main() {
 	case 3:
 		indexScripts = append(indexScripts, keyIndexSQL)
 		indexScripts = append(indexScripts, valueIndexSQL)
+	default:
+		log.Printf("no index requested")
 	}
 	for i, script := range indexScripts {
 		msg := fmt.Sprintf("%d/%d created index", i+1, len(indexScripts))
