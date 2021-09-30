@@ -113,10 +113,12 @@ func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err 
 
 func (s *Server) handleIndex() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// TODO: Render docs.
 		fmt.Fprintf(w, "spindel")
 	}
 }
 
+// handleCacheSize returns the number of currently cached items.
 func (s *Server) handleCacheSize() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if s.CacheEnabled {
@@ -131,6 +133,7 @@ func (s *Server) handleCacheSize() http.HandlerFunc {
 	}
 }
 
+// handleCachePurge empties the cache.
 func (s *Server) handleCachePurge() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if s.CacheEnabled {
@@ -189,25 +192,25 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			response     = &Response{
 				ID: vars["id"], // the local identifier
 			}
-			stopWatch StopWatch
+			sw StopWatch
 		)
-		stopWatch.SetEnabled(s.StopWatchEnabled)
-		stopWatch.Recordf("started query for: %s", vars["id"])
+		sw.SetEnabled(s.StopWatchEnabled)
+		sw.Recordf("started query for: %s", vars["id"])
 		// (0) Check cache first.
 		if s.CacheEnabled {
 			v, found := s.cache.Get(vars["id"])
 			if found {
 				if b, ok := v.([]byte); !ok {
 					s.cache.Delete(vars["id"])
-					log.Printf("[cache] remove bogus cache value")
+					log.Printf("[cache] removed bogus cache value")
 				} else {
-					stopWatch.Recordf("retrieved value from cache")
+					sw.Record("retrieved value from cache")
 					if _, err := w.Write(b); err != nil {
 						httpErrLog(w, err)
 						return
 					}
-					stopWatch.Record("used cached value")
-					stopWatch.LogTable()
+					sw.Record("used cached value")
+					sw.LogTable()
 					return
 				}
 			}
@@ -218,14 +221,14 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			httpErrLog(w, err)
 			return
 		}
-		stopWatch.Recordf("found doi for id: %s", response.DOI)
+		sw.Recordf("found doi for id: %s", response.DOI)
 		// (2) Get outbound and inbound edges.
 		citing, cited, err := s.edges(ctx, response.DOI)
 		if err != nil {
 			httpErrLog(w, err)
 			return
 		}
-		stopWatch.Recordf("found %d outbound and %d inbound edges", len(citing), len(cited))
+		sw.Recordf("found %d outbound and %d inbound edges", len(citing), len(cited))
 		// (3) We want to collect the unique set of DOI to get the complete
 		// indexed documents.
 		for _, v := range citing {
@@ -247,7 +250,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			httpErrLog(w, err)
 			return
 		}
-		stopWatch.Recordf("mapped %d dois back to ids", ss.Len())
+		sw.Recordf("mapped %d dois back to ids", ss.Len())
 		// (5) Here, we can find unmatched items, via DOI.
 		for _, v := range ids {
 			matched = append(matched, v.Value)
@@ -264,7 +267,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				response.Unmatched.Citing = append(response.Unmatched.Citing, b)
 			}
 		}
-		stopWatch.Record("recorded unmatched ids")
+		sw.Record("recorded unmatched ids")
 		// (6) At this point, we need to assemble the result. For each
 		// identifier we want the full metadata. We use an local copy of the
 		// index. We could also ask a live index here.
@@ -284,7 +287,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				response.Cited = append(response.Cited, b)
 			}
 		}
-		stopWatch.Recordf("fetched %d blob from index data store", len(ids))
+		sw.Recordf("fetched %d blob from index data store", len(ids))
 		response.updateCounts()
 		response.Extra.Took = time.Since(started).Seconds()
 		// Ganz sicher application/json.
@@ -303,16 +306,16 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				httpErrLog(w, err)
 				return
 			}
-			stopWatch.Record("encoded JSON and cached value")
-			stopWatch.LogTable()
+			sw.Record("encoded JSON and cached value")
+			sw.LogTable()
 		default:
 			enc := json.NewEncoder(w)
 			if err := enc.Encode(response); err != nil {
 				httpErrLog(w, err)
 				return
 			}
-			stopWatch.Record("encoded JSON")
-			stopWatch.LogTable()
+			sw.Record("encoded JSON")
+			sw.LogTable()
 		}
 	}
 }
