@@ -46,7 +46,12 @@
 
 ## Notes
 
-...
+* [ ] deployment, maybe next week; test-frontend
+* [ ] db backup on a network mount
+* [ ] SSHKEY
+* [ ] data acquisition; packaging and deployment; "DEB", systemd, /etc/...; [1TB]
+* [ ] optimization ideas: ETag, Cache-Control, ...; sqlite3; proxy: nginx
+* [ ] data analysis, e.g. OCI
 
 ## S312-2021
 
@@ -62,7 +67,7 @@
 * [ ] data reduction: on the fly, included matched and unmatched items
 * [ ] open citations now 1B+ in size (about 30% larger)
 * [ ] metadata from OCI: but we use metadata from index or just the DOI (for the unmatched items)
-* [ ] definition of `slub_id` [3] - is it just `id`
+* [x] definition of `slub_id` [3] - is it just `id`
 * [ ] REST API: query via `doi` or `id` possible - do we need the metadata of the queries record, too?
 * [ ] delta: do reports per setup (e.g. new OCI dump), then a separate program to compare to reports
 
@@ -71,3 +76,4 @@ Some generic tools we may get out of this:
 * [ ] a fast sqlite3 key-value database builder; inserting and indexing 10M entries takes
       27s - about 370K rows/s; currently mkocidb, but could be made more generic
 
+> miku/mkocidb ... mkkvdb
