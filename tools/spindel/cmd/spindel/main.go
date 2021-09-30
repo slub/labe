@@ -156,6 +156,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -174,6 +175,8 @@ var (
 	enableStopWatch        = flag.Bool("W", false, "enable stopwatch")
 	enableGzip             = flag.Bool("z", false, "enable gzip compression")
 	enableLogging          = flag.Bool("L", false, "enable logging")
+	enableCache            = flag.Bool("C", false, "enable in-memory caching of expensive responses")
+	cacheTriggerDuration   = flag.Duration("Ct", 250*time.Millisecond, "cache trigger duration")
 	showVersion            = flag.Bool("version", false, "show version")
 
 	Version   string
@@ -279,11 +282,13 @@ func main() {
 		log.Fatal("need blob server (-bs), sqlite3 database (-Q) or solr (-S)")
 	}
 	srv := &spindel.Server{
-		IdentifierDatabase: identifierDatabase,
-		OciDatabase:        ociDatabase,
-		IndexData:          fetcher,
-		Router:             mux.NewRouter(),
-		StopWatchEnabled:   *enableStopWatch,
+		IdentifierDatabase:   identifierDatabase,
+		OciDatabase:          ociDatabase,
+		IndexData:            fetcher,
+		Router:               mux.NewRouter(),
+		StopWatchEnabled:     *enableStopWatch,
+		CacheEnabled:         *enableCache,
+		CacheTriggerDuration: *cacheTriggerDuration,
 	}
 	srv.Routes()
 	if err := srv.Ping(); err != nil {

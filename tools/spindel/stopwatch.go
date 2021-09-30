@@ -123,3 +123,11 @@ func (s *StopWatch) Reset() {
 	}
 	s.entries = nil
 }
+
+// Elapsed returns the total elapsed time.
+func (s *StopWatch) Elapsed() time.Duration {
+	if len(s.entries) == 0 {
+		return 0
+	}
+	return time.Now().Sub(s.entries[0].T)
+}

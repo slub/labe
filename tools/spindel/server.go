@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	"github.com/miku/labe/tools/spindel/set"
+	"github.com/patrickmn/go-cache"
 	"github.com/segmentio/encoding/json"
 )
 
@@ -22,11 +23,14 @@ import (
 // service, e.g. a key value store like microblob, sqlite3, solr, elasticsearch
 // or in memory store.
 type Server struct {
-	IdentifierDatabase *sqlx.DB
-	OciDatabase        *sqlx.DB
-	IndexData          Fetcher
-	Router             *mux.Router
-	StopWatchEnabled   bool
+	IdentifierDatabase   *sqlx.DB
+	OciDatabase          *sqlx.DB
+	IndexData            Fetcher
+	Router               *mux.Router
+	StopWatchEnabled     bool
+	CacheEnabled         bool
+	CacheTriggerDuration time.Duration
+	cache                *cache.Cache
 }
 
 // Map is a generic lookup table. We use it together with sqlite3.
@@ -53,6 +57,7 @@ type Response struct {
 		UnmatchedCitedCount  int     `json:"unmatched_cited_count"`
 		CitingCount          int     `json:"citing_count"`
 		CitedCount           int     `json:"cited_count"`
+		Cached               bool    `json:"cached"`
 	} `json:"extra"`
 }
 
@@ -67,6 +72,8 @@ func (r *Response) updateCounts() {
 // Routes sets up route. TODO: we want a direct DOI route as well.
 func (s *Server) Routes() {
 	s.Router.HandleFunc("/", s.handleIndex())
+	s.Router.HandleFunc("/cache/size", s.handleCacheSize())
+	s.Router.HandleFunc("/cache", s.handleCachePurge()).Methods("DELETE")
 	s.Router.HandleFunc("/id/{id}", s.handleLocalIdentifier())
 	s.Router.HandleFunc("/doi/{doi:.*}", s.handleDOI())
 }
@@ -109,6 +116,29 @@ func (s *Server) handleIndex() http.HandlerFunc {
 	}
 }
 
+func (s *Server) handleCacheSize() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if s.CacheEnabled {
+			err := json.NewEncoder(w).Encode(map[string]interface{}{
+				"count": s.cache.ItemCount(),
+			})
+			if err != nil {
+				httpErrLog(w, err)
+				return
+			}
+		}
+	}
+}
+
+func (s *Server) handleCachePurge() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if s.CacheEnabled {
+			s.cache.Flush()
+			log.Println("flushed cached")
+		}
+	}
+}
+
 // handleDOI currently only redirects to the local id handler.
 func (s *Server) handleDOI() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -134,6 +164,13 @@ func (s *Server) handleDOI() http.HandlerFunc {
 // testable place. Also, reuse some existing stats library. Also TODO: optimize
 // backend requests and think up schema for delivery.
 func (s *Server) handleLocalIdentifier() http.HandlerFunc {
+	// We only care about caching here.
+	if s.CacheEnabled {
+		s.cache = cache.New(72*time.Hour, 8*time.Hour)
+		if s.CacheTriggerDuration == 0 {
+			s.CacheTriggerDuration = 250 * time.Millisecond
+		}
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		// (1) resolve id to doi
 		// (2) lookup related doi via oci
@@ -157,6 +194,25 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		)
 		stopWatch.SetEnabled(s.StopWatchEnabled)
 		stopWatch.Recordf("started query for: %s", vars["id"])
+		// (0) Check cache first.
+		if s.CacheEnabled {
+			v, found := s.cache.Get(vars["id"])
+			if found {
+				if b, ok := v.([]byte); !ok {
+					s.cache.Delete(vars["id"])
+					log.Printf("[cache] remove bogus cache value")
+				} else {
+					stopWatch.Recordf("retrieved value from cache")
+					if _, err := w.Write(b); err != nil {
+						httpErrLog(w, err)
+						return
+					}
+					stopWatch.Record("used cached value")
+					stopWatch.LogTable()
+					return
+				}
+			}
+		}
 		// (1) Get the DOI for the local id; or get out.
 		if err := s.IdentifierDatabase.GetContext(ctx, &response.DOI,
 			"SELECT v FROM map WHERE k = ?", response.ID); err != nil {
@@ -232,14 +288,33 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		stopWatch.Recordf("fetched %d blob from index data store", len(ids))
 		response.updateCounts()
 		response.Extra.Took = time.Since(started).Seconds()
+		// Ganz sicher application/json.
 		w.Header().Add("Content-Type", "application/json")
-		enc := json.NewEncoder(w)
-		if err := enc.Encode(response); err != nil {
-			httpErrLog(w, err)
-			return
+		// (7) If this request was expensive, cache it.
+		switch {
+		case time.Since(started) > s.CacheTriggerDuration:
+			response.Extra.Cached = true
+			b, err := json.Marshal(response)
+			if err != nil {
+				httpErrLog(w, err)
+				return
+			}
+			s.cache.Set(vars["id"], b, 8*time.Hour)
+			if _, err := w.Write(b); err != nil {
+				httpErrLog(w, err)
+				return
+			}
+			stopWatch.Record("encoded JSON and cached value")
+			stopWatch.LogTable()
+		default:
+			enc := json.NewEncoder(w)
+			if err := enc.Encode(response); err != nil {
+				httpErrLog(w, err)
+				return
+			}
+			stopWatch.Record("encoded JSON")
+			stopWatch.LogTable()
 		}
-		stopWatch.Record("encoded JSON")
-		stopWatch.LogTable()
 	}
 }
 

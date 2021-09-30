@@ -8,11 +8,12 @@ require (
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/matryer/is v1.4.0
 	github.com/mattn/go-sqlite3 v1.14.8
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/segmentio/encoding v0.2.21
 )
 
 require (
 	github.com/felixge/httpsnoop v1.0.1 // indirect
-	github.com/klauspost/cpuid/v2 v2.0.6 // indirect
+	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
 	github.com/segmentio/asm v1.0.1 // indirect
 )
