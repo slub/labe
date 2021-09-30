@@ -234,6 +234,7 @@ Examples
 `
 )
 
+// withReadOnly opens a sqlite database in read-only mode.
 func withReadOnly(path string) string {
 	return fmt.Sprintf("file:%s?mode=ro", path)
 }
@@ -249,6 +250,7 @@ func main() {
 		fmt.Printf("spindel %v %v\n", Version, Buildtime)
 		os.Exit(0)
 	}
+	// Setup database connections.
 	if _, err := os.Stat(*identifierDatabasePath); os.IsNotExist(err) {
 		log.Fatal(err)
 	}
@@ -263,6 +265,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// Setup index data fetcher.
 	var fetcher spindel.Fetcher
 	switch {
 	case *solrBlobPath != "":
@@ -281,6 +284,7 @@ func main() {
 	default:
 		log.Fatal("need blob server (-bs), sqlite3 database (-Q) or solr (-S)")
 	}
+	// Setup server.
 	srv := &spindel.Server{
 		IdentifierDatabase:   identifierDatabase,
 		OciDatabase:          ociDatabase,
@@ -291,13 +295,14 @@ func main() {
 		CacheTriggerDuration: *cacheTriggerDuration,
 	}
 	srv.Routes()
+	// Basic reachability checks.
 	if err := srv.Ping(); err != nil {
 		log.Fatal(err)
 	}
+	// Print banner.
 	fmt.Fprintln(os.Stderr, strings.Replace(Banner, `{{ .listenAddr }}`, *listenAddr, -1))
-	log.Printf("spindel starting %s %s http://%s",
-		Version, Buildtime, *listenAddr)
-	// Setup middleware.
+	log.Printf("spindel starting %s %s http://%s", Version, Buildtime, *listenAddr)
+	// Add middleware.
 	var h http.Handler = srv
 	if *enableGzip {
 		h = handlers.CompressHandler(srv)
