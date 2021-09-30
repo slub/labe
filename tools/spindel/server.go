@@ -68,7 +68,7 @@ func (r *Response) updateCounts() {
 func (s *Server) Routes() {
 	s.Router.HandleFunc("/", s.handleIndex())
 	s.Router.HandleFunc("/id/{id}", s.handleLocalIdentifier())
-	s.Router.HandleFunc("/doi/{doi}", s.handleDOI())
+	s.Router.HandleFunc("/doi/{doi:.*}", s.handleDOI())
 }
 
 // ServeHTTP turns the server into an HTTP handler.
@@ -124,7 +124,9 @@ func (s *Server) handleDOI() http.HandlerFunc {
 			httpErrLog(w, err)
 			return
 		}
-		http.Redirect(w, r, fmt.Sprintf("/id/%s", response.ID), http.StatusTemporaryRedirect)
+		target := fmt.Sprintf("/id/%s", response.ID)
+		w.Header().Set("Content-Type", "text/plain") // disable http snippet
+		http.Redirect(w, r, target, http.StatusTemporaryRedirect)
 	}
 }
 
