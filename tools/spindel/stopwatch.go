@@ -31,16 +31,15 @@ type Entry struct {
 //
 // 2021/09/29 17:22:40 timings for hTHc
 //
-// > hTHc    0    0s             0.00    started query for: ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA5OC9yc3BhLjE5OTguMDE2NA
-// > hTHc    1    383.502µs      0.01    found doi for id: 10.1098/rspa.1998.0164
-// > hTHc    2    478.925µs      0.01    found 8 citing items
-// > hTHc    3    14.477959ms    0.32    found 456 cited items
-// > hTHc    4    10.778333ms    0.24    mapped 464 dois back to ids
-// > hTHc    5    396.743µs      0.01    recorded unmatched ids
-// > hTHc    6    13.375994ms    0.29    fetched 302 blob from index data store
-// > hTHc    7    5.782197ms     0.13    encoded JSON
-// > hTHc    -    -              -       -
-// > hTHc    S    45.673653ms    1.0     total
+// > XVlB    0    0s              0.00    started query for: ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
+// > XVlB    1    134.532µs       0.00    found doi for id: 10.1210/jc.2011-0385
+// > XVlB    2    67.918529ms     0.24    found 0 outbound and 4628 inbound edges
+// > XVlB    3    32.293723ms     0.12    mapped 4628 dois back to ids
+// > XVlB    4    3.358704ms      0.01    recorded unmatched ids
+// > XVlB    5    68.636671ms     0.25    fetched 2567 blob from index data store
+// > XVlB    6    105.771005ms    0.38    encoded JSON
+// > XVlB    -    -               -       -
+// > XVlB    S    278.113164ms    1.00    total
 //
 // By default a stopwatch is disabled, which means all functions will be noops,
 // use SetEnabled to toggle mode.
@@ -51,6 +50,8 @@ type StopWatch struct {
 	enabled bool
 }
 
+// SetEnabled enables or disables the stopwatch. If disabled, any call will be
+// a noop.
 func (s *StopWatch) SetEnabled(enabled bool) {
 	s.Lock()
 	defer s.Unlock()
@@ -59,9 +60,6 @@ func (s *StopWatch) SetEnabled(enabled bool) {
 
 // Record records a message.
 func (s *StopWatch) Record(msg string) {
-	if !s.enabled {
-		return
-	}
 	s.Recordf(msg)
 }
 
@@ -79,6 +77,22 @@ func (s *StopWatch) Recordf(msg string, vs ...interface{}) {
 		T:       time.Now(),
 		Message: fmt.Sprintf(msg, vs...),
 	})
+}
+
+// Reset resets the stopwatch.
+func (s *StopWatch) Reset() {
+	if !s.enabled {
+		return
+	}
+	s.entries = nil
+}
+
+// Elapsed returns the total elapsed time.
+func (s *StopWatch) Elapsed() time.Duration {
+	if len(s.entries) == 0 {
+		return 0
+	}
+	return time.Now().Sub(s.entries[0].T)
 }
 
 // LogTable write a table using standard library log facilities.
@@ -114,20 +128,4 @@ func (s *StopWatch) Table() string {
 	fmt.Fprintf(w, "> %s\tS\t%s\t%0.2f\ttotal\n", s.id, total, 1.0)
 	w.Flush()
 	return buf.String()
-}
-
-// Reset resets the stopwatch.
-func (s *StopWatch) Reset() {
-	if !s.enabled {
-		return
-	}
-	s.entries = nil
-}
-
-// Elapsed returns the total elapsed time.
-func (s *StopWatch) Elapsed() time.Duration {
-	if len(s.entries) == 0 {
-		return 0
-	}
-	return time.Now().Sub(s.entries[0].T)
 }
