@@ -30,6 +30,7 @@ type Server struct {
 	StopWatchEnabled     bool
 	CacheEnabled         bool
 	CacheTriggerDuration time.Duration
+	CacheTTL             time.Duration
 	cache                *cache.Cache
 }
 
@@ -164,12 +165,10 @@ func (s *Server) handleDOI() http.HandlerFunc {
 // testable place. Also, reuse some existing stats library. Also TODO: optimize
 // backend requests and think up schema for delivery.
 func (s *Server) handleLocalIdentifier() http.HandlerFunc {
-	// We only care about caching here.
+	// We only care about caching here. TODO: we could use a closure for the
+	// cache here (and not store it directly on the server).
 	if s.CacheEnabled {
-		s.cache = cache.New(72*time.Hour, 8*time.Hour)
-		if s.CacheTriggerDuration == 0 {
-			s.CacheTriggerDuration = 250 * time.Millisecond
-		}
+		s.cache = cache.New(72*time.Hour, s.CacheTTL)
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		// (1) resolve id to doi
