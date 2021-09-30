@@ -1,39 +1,8 @@
 # Meeting Minutes
 
-> 2021-09-30, 1300, JN, MC
+> 2021-10-07, 1300, ...
 
 ## Topics
-
-* [x] abstract "id-to-index-document" a bit more; layered approach, e.g. live
-  (all to solr); prefetch (solrdump/microblob/sqlite3/pg); caching (after each
-  request); with a TTL; maybe some url with a wildcard for id, e.g.
-  "http://hello.world/r/{{ id }}"
-
-> We have 3+1 backends, sqlite3, microblob, solr; can add mysql or pg as well
-> with a little adapter; sqlite3 (fetchall) seems the most performant so far;
-> we could also group backends for cascading or hedged requests
-
-* [x] support non-source items, e.g.
-
-```json
-{
-    ...
-    "matched": {          |
-        "citing": ...     | ... index schema (any, could be just an id)
-        "cited": ...      |
-    },                    |
-
-    "unmatched": {        | maybe PDA, etc
-        "citing": ...     | ... doi
-        "cited": ...      |
-    }                     |
-    ...
-}
-```
-
-> implemented, a current example: [https://i.imgur.com/uJAWsAE.png](https://i.imgur.com/uJAWsAE.png)
-
-![](uJAWsAE.png)
 
 * [ ] prepare deployment; VM in progress; 8; 16; 500G; debian 10; systemd unit
     * [ ] tools to generate suitable data stores (e.g. via OCI, a copy of solr, etc.)
@@ -43,15 +12,16 @@
     * [ ] 12-factor app considerations, e.g. switch to envconfig
     * [ ] some frontend like nginx
     * [ ] an ansible playbook for tools and service
-
-## Notes
-
 * [ ] deployment, maybe next week; test-frontend
 * [ ] db backup on a network mount
 * [ ] SSHKEY
 * [ ] data acquisition; packaging and deployment; "DEB", systemd, /etc/...; [1TB]
 * [ ] optimization ideas: ETag, Cache-Control, ...; sqlite3; proxy: nginx
 * [ ] data analysis, e.g. OCI
+
+## Notes
+
+...
 
 ## S312-2021
 
@@ -65,10 +35,10 @@
 * [ ] automatic pipeline: put commands into cronjob; run commands manually
 * [ ] query index for DOI: not supported, we use workarounds
 * [ ] data reduction: on the fly, included matched and unmatched items
-* [ ] open citations now 1B+ in size (about 30% larger)
+* [x] open citations now 1B+ in size (about 30% larger)
 * [ ] metadata from OCI: but we use metadata from index or just the DOI (for the unmatched items)
 * [x] definition of `slub_id` [3] - is it just `id`
-* [ ] REST API: query via `doi` or `id` possible - do we need the metadata of the queries record, too?
+* [x] REST API: query via `doi` or `id` possible - do we need the metadata of the queries record, too?
 * [ ] delta: do reports per setup (e.g. new OCI dump), then a separate program to compare to reports
 
 Some generic tools we may get out of this:
