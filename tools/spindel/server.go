@@ -292,7 +292,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		w.Header().Add("Content-Type", "application/json")
 		// (7) If this request was expensive, cache it.
 		switch {
-		case time.Since(started) > s.CacheTriggerDuration:
+		case s.CacheEnabled && time.Since(started) > s.CacheTriggerDuration:
 			response.Extra.Cached = true
 			b, err := json.Marshal(response)
 			if err != nil {
