@@ -178,7 +178,7 @@ var (
 
 	Version   string
 	Buildtime string
-	Help      string = `usage: spindel [-I FILE] [-O FILE] [-bs URL] [-Q FILE] [-S URL] [-l ADDR] [-version]
+	Help      string = `usage: spindel [OPTION]
 
 spindel is an experimental api server for labe; it works with three data stores.
 
