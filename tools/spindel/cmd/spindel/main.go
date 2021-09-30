@@ -172,7 +172,7 @@ var (
 	solrBlobPath           = flag.String("S", "", "solr blob URL")
 	listenAddr             = flag.String("l", "localhost:3000", "host and port to listen on")
 	enableStopWatch        = flag.Bool("W", false, "enable stopwatch")
-	enableGzip             = flag.Bool("g", false, "enable gzip compression")
+	enableGzip             = flag.Bool("z", false, "enable gzip compression")
 	enableLogging          = flag.Bool("L", false, "enable logging")
 	showVersion            = flag.Bool("version", false, "show version")
 

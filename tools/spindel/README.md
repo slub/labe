@@ -31,8 +31,7 @@ ai-49-aHR0cD...TAuMTIwNy9zM...    10.1207/s15326934crj1401_1     0   21   0.0568
 ## Usage
 
 ```sh
-$ spindel -h
-usage: spindel [-I FILE] [-O FILE] [-bs URL] [-Q FILE] [-S URL] [-l ADDR] [-version]
+usage: spindel [OPTION]
 
 spindel is an experimental api server for labe; it works with three data stores.
 
@@ -75,11 +74,11 @@ Flags
   -W    enable stopwatch
   -bs string
         blob server URL
-  -g    enable gzip compression
   -l string
         host and port to listen on (default "localhost:3000")
   -version
         show version
+  -z    enable gzip compression
 ```
 
 ## Fetch or FetchMany
