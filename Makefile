@@ -6,7 +6,7 @@ PKGNAME := labe
 
 # The "zipapp" we build, cf. PEP441, https://www.python.org/dev/peps/pep-0441/,
 # https://shiv.readthedocs.io/
-ZIPAPP := labectl
+ZIPAPP := laberun
 
 # IMPORTANT: Python version on dev (e.g. use https://github.com/pyenv/pyenv)
 # and target *must match* (up to minor version), example:
@@ -33,6 +33,6 @@ fmt:
 .PHONY: clean
 clean:
 	rm -rf labe.egg-info
-	rm -rf labectl
+	rm -rf $(ZIPAPP)
 	find . -name "__pycache__" -exec rm -rf "{}" +
 	rm -rf .pytest_cache
