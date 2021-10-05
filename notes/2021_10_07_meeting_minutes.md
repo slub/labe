@@ -4,6 +4,7 @@
 
 ## Topics
 
+* [ ] factored out [slikv](https://github.com/miku/slikv) sqlite3 as key-value store; replaces mkocidb
 * [ ] prepare deployment; VM in progress; 8; 16; 500G; debian 10; systemd unit
     * [ ] tools to generate suitable data stores (e.g. via OCI, a copy of solr, etc.)
     * [ ] a service unit for the server
