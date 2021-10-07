@@ -4,8 +4,9 @@
 
 ## Topics
 
-* [ ] factored out [slikv](https://github.com/miku/slikv) sqlite3 as key-value store; replaces mkocidb
+* [x] factored out [slikv](https://github.com/miku/slikv) sqlite3 as key-value store; replaces mkocidb
 * [ ] prepare deployment; VM in progress; 8; 16; 500G; debian 10; systemd unit
+    * [x] collect ideas on deployment
     * [ ] tools to generate suitable data stores (e.g. via OCI, a copy of solr, etc.)
     * [ ] a service unit for the server
     * [ ] implement HTTP cache policy
@@ -15,14 +16,15 @@
     * [ ] an ansible playbook for tools and service
 * [ ] deployment, maybe next week; test-frontend
 * [ ] db backup on a network mount
-* [ ] SSHKEY
+* [ ] SSHKEY (sent)
 * [ ] data acquisition; packaging and deployment; "DEB", systemd, /etc/...; [1TB]
 * [ ] optimization ideas: ETag, Cache-Control, ...; sqlite3; proxy: nginx
 * [ ] data analysis, e.g. OCI
 
 ## Notes
 
-...
+* [x] machine online; via UBL net
+* [ ] HTTP port; HTTPS port
 
 ## S312-2021
 
