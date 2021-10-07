@@ -1,11 +1,9 @@
 #!/bin/bash
-
 # Generate an OCI database version from a given URL.
 
 set -e
 set -o errexit -o pipefail -o nounset
 
-# Adjust this URL for updates.
 DATASET_URL=https://figshare.com/ndownloader/articles/6741422/versions/11
 OUTPUT=oci-$(date +"%Y-%m-%d")-$(echo -n $DATASET_URL | sha1sum | awk '{print $1}').db
 FILE=""
@@ -47,7 +45,6 @@ EOF
 		OUTPUT="$2"
 		shift
 		;;
-	-u | --uglify) uglify=1 ;;
 	*)
 		echo "unknown parameter passed: $1"
 		exit 1
@@ -63,21 +60,18 @@ for req in curl unzip zstd hck slikv; do
 	}
 done
 
-T=$(mktemp)
-D=$(mktemp -d)
-Z=$(mktemp)
-F=$(mktemp)
+T=$(mktemp); Z=$(mktemp); F=$(mktemp); D=$(mktemp -d)
 
 function cleanup() {
 	rm -f "$T" "$Z" "$F"
 	rm -rf "$D"
 }
+trap cleanup EXIT
 
 if [ -z "$FILE" ]; then
-	curl -vL "$DATASET_URL" >"$T" && mv "$T" "$FILE"
+	curl -vL "$DATASET_URL" >"$T" && FILE="$T"
 fi
-
-unzip -d "$D" "$T"
+unzip -d "$D" "$FILE"
 for f in $(find "$D" -name "*zip"); do
 	unzip -p "$f"
 done | LC_ALL=C grep -vF 'oci,citing' | zstd -c -T0 >"$Z"
