@@ -185,12 +185,13 @@ var (
 	Buildtime string
 	Help      string = `usage: spindel [OPTION]
 
-spindel is an experimental api server for labe; it works with three data stores.
+spindel is an experimental api server for the labe project; it works with three
+data stores:
 
 * (1) an sqlite3 catalog id to doi translation table (11GB)
 * (2) an sqlite3 version of OCI (145GB)
-* (3) a key-value store mapping catalog ids to catalog entities (two
-      implementations: 256GB microblob, 353GB sqlite3)
+* (3) a key-value mapping from catalog ids to catalog entities (various
+	  implementations: 256GB microblob, 353GB sqlite3, solr, ...)
 
 Each database may be updated separately, with separate processes; e.g.
 currently we use the experimental mkocidb command turn (k, v) TSV files into
