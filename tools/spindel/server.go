@@ -205,6 +205,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 					log.Printf("[cache] removed bogus cache value")
 				} else {
 					sw.Record("retrieved value from cache")
+					w.Header().Add("Content-Type", "application/json")
 					if _, err := w.Write(b); err != nil {
 						httpErrLog(w, err)
 						return
