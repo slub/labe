@@ -23,15 +23,20 @@ import (
 // service, e.g. a key value store like microblob, sqlite3, solr, elasticsearch
 // or in memory store.
 type Server struct {
-	IdentifierDatabase   *sqlx.DB
-	OciDatabase          *sqlx.DB
-	IndexData            Fetcher
-	Router               *mux.Router
-	StopWatchEnabled     bool
-	CacheEnabled         bool
-	CacheTriggerDuration time.Duration
-	CacheTTL             time.Duration
-	cache                *cache.Cache
+	IdentifierDatabase *sqlx.DB
+	OciDatabase        *sqlx.DB
+	IndexData          Fetcher
+	// Router to register routes on.
+	Router *mux.Router
+	// StopWatch is a builtin, simplistic tracer.
+	StopWatchEnabled bool
+	// Cache related configuration. We only want to cache expensive requests,
+	// e.g. requests that too longer than CacheTriggerDuration to compute.
+	CacheEnabled           bool
+	CacheTriggerDuration   time.Duration
+	CacheDefaultExpiration time.Duration
+	CacheTTL               time.Duration
+	cache                  *cache.Cache
 }
 
 // Map is a generic lookup table. We use it together with sqlite3.
@@ -171,7 +176,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 	// We only care about caching here. TODO: we could use a closure for the
 	// cache here (and not store it directly on the server).
 	if s.CacheEnabled {
-		s.cache = cache.New(72*time.Hour, s.CacheTTL)
+		s.cache = cache.New(s.CacheDefaultExpiration, s.CacheTTL)
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		// (1) resolve id to doi
@@ -180,22 +185,25 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		// (4) lookup all ids
 		// (5) include unmatched ids
 		// (6) assemble result
+		// (7) cache, if request was expensive
 		var (
 			ctx          = r.Context()
 			started      = time.Now()
 			vars         = mux.Vars(r)
-			ids          []Map // local identifiers
+			ids          []Map
 			outbound     = set.New()
 			inbound      = set.New()
-			matched      []string    // dangling DOI that have no local id
-			unmatchedSet = set.New() // all unmatched doi
+			matched      []string
+			unmatchedSet = set.New()
 			response     = &Response{
-				ID: vars["id"], // the local identifier
+				ID: vars["id"],
 			}
 			sw StopWatch
 		)
 		sw.SetEnabled(s.StopWatchEnabled)
 		sw.Recordf("started query for: %s", vars["id"])
+		// Ganz sicher application/json.
+		w.Header().Add("Content-Type", "application/json")
 		// (0) Check cache first.
 		if s.CacheEnabled {
 			v, found := s.cache.Get(vars["id"])
@@ -205,7 +213,6 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 					log.Printf("[cache] removed bogus cache value")
 				} else {
 					sw.Record("retrieved value from cache")
-					w.Header().Add("Content-Type", "application/json")
 					if _, err := w.Write(b); err != nil {
 						httpErrLog(w, err)
 						return
@@ -301,8 +308,6 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		sw.Recordf("fetched %d blob from index data store", len(ids))
 		response.updateCounts()
 		response.Extra.Took = time.Since(started).Seconds()
-		// Ganz sicher application/json.
-		w.Header().Add("Content-Type", "application/json")
 		// (7) If this request was expensive, cache it.
 		switch {
 		case s.CacheEnabled && time.Since(started) > s.CacheTriggerDuration:
@@ -318,7 +323,6 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				return
 			}
 			sw.Record("encoded JSON and cached value")
-			sw.LogTable()
 		default:
 			enc := json.NewEncoder(w)
 			if err := enc.Encode(response); err != nil {
@@ -326,8 +330,8 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				return
 			}
 			sw.Record("encoded JSON")
-			sw.LogTable()
 		}
+		sw.LogTable()
 	}
 }
 

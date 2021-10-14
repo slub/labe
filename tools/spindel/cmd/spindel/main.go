@@ -176,8 +176,9 @@ var (
 	enableGzip             = flag.Bool("z", false, "enable gzip compression")
 	enableLogging          = flag.Bool("L", false, "enable logging")
 	enableCache            = flag.Bool("C", false, "enable in-memory caching of expensive responses")
-	cacheTTL               = flag.Duration("ttl", 8*time.Hour, "cache ttl")
-	cacheTriggerDuration   = flag.Duration("Ct", 250*time.Millisecond, "cache trigger duration")
+	cacheTTL               = flag.Duration("Ct", 8*time.Hour, "cache ttl")
+	cacheTriggerDuration   = flag.Duration("Cg", 250*time.Millisecond, "cache trigger duration")
+	cacheDefaultExpiration = flag.Duration("Cx", 72*time.Hour, "cache default expiration")
 	showVersion            = flag.Bool("version", false, "show version")
 
 	Version   string
@@ -287,14 +288,15 @@ func main() {
 	}
 	// Setup server.
 	srv := &spindel.Server{
-		IdentifierDatabase:   identifierDatabase,
-		OciDatabase:          ociDatabase,
-		IndexData:            fetcher,
-		Router:               mux.NewRouter(),
-		StopWatchEnabled:     *enableStopWatch,
-		CacheEnabled:         *enableCache,
-		CacheTriggerDuration: *cacheTriggerDuration,
-		CacheTTL:             *cacheTTL,
+		IdentifierDatabase:     identifierDatabase,
+		OciDatabase:            ociDatabase,
+		IndexData:              fetcher,
+		Router:                 mux.NewRouter(),
+		StopWatchEnabled:       *enableStopWatch,
+		CacheEnabled:           *enableCache,
+		CacheTriggerDuration:   *cacheTriggerDuration,
+		CacheDefaultExpiration: *cacheDefaultExpiration,
+		CacheTTL:               *cacheTTL,
 	}
 	srv.Routes()
 	// Basic reachability checks.
