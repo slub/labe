@@ -262,16 +262,26 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			// bit of time. TODO: may switch to proper JSON encoding, if other
 			// parts are more optimized.
 			b := []byte(fmt.Sprintf(`{"doi": %q}`, k))
-			if outbound.Contains(k) {
-				response.Unmatched.Cited = append(response.Unmatched.Cited, b)
-			} else {
-				response.Unmatched.Citing = append(response.Unmatched.Citing, b)
+			switch {
+			case outbound.Contains(k):
+				response.Unmatched.Citing = append(
+					response.Unmatched.Citing, b)
+			case inbound.Contains(k):
+				response.Unmatched.Cited = append(
+					response.Unmatched.Cited, b)
+			default:
+				// If this happens, the content of either inbound, outbound or
+				// their union changed in-flight, which should not happen.
+				panic("in-flight change of inbound or outbound values")
 			}
 		}
 		sw.Record("recorded unmatched ids")
 		// (6) At this point, we need to assemble the result. For each
 		// identifier we want the full metadata. We use an local copy of the
 		// index. We could also ask a live index here.
+		// TODO: We may want to reduce the data to be transmitted to a few core
+		// fields; this may happen here, or we just make the database smaller,
+		// which would also, possible improve performance.
 		for _, v := range ids {
 			b, err := s.IndexData.Fetch(v.Key)
 			if errors.Is(err, ErrBlobNotFound) {
