@@ -62,6 +62,13 @@ Bulk requests
 
 Flags
 
+  -C    enable in-memory caching of expensive responses
+  -Cg duration
+        cache trigger duration (default 250ms)
+  -Ct duration
+        cache ttl (default 8h0m0s)
+  -Cx duration
+        cache default expiration (default 72h0m0s)
   -I string
         identifier database path (default "i.db")
   -L    enable logging
@@ -112,6 +119,8 @@ max          5.718692
 Name: took, dtype: float64
 
 ```
+
+There may be a better way to ask SOLR for dozens or hundreds of ids at once.
 
 ## Using a stopwatch
 
