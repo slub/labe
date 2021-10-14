@@ -1,6 +1,6 @@
 # Meeting Minutes
 
-> 2021-10-07, 1300, JN, MC
+> 2021-10-14, 1300, JN, CR, MC
 
 ## Topics
 
@@ -23,8 +23,16 @@
 
 ## Notes
 
-* [x] machine online; via UBL net
+* [ ] machine online; via UBL net
 * [ ] HTTP port; HTTPS port
+
+Next steps:
+
+* [ ] separate update pipelines for [oci], [main], [ai] and [id-doi] databases and documentation
+
+Misc.
+
+* possibly inclusion of dataset repositories
 
 ## S312-2021
 
