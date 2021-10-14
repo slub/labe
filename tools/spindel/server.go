@@ -22,6 +22,23 @@ import (
 // citation corpus and IndexData allows to fetch a metadata blob from a
 // service, e.g. a key value store like microblob, sqlite3, solr, elasticsearch
 // or in memory store.
+//
+// TODO: The server should be able to work with multiple Fetcher instances,
+// e.g. to roll over to a new version or to use one for different data stores.
+//
+//         server
+//          |
+//          v
+//         fetcher
+//          |   |_________ ....
+//          v         |
+//     fetcher[main]  `-> fetcher[ai]
+//          |                |
+//          v                v
+//         db[main]         db[ai]
+//
+//         (daily)          (monthly)
+//
 type Server struct {
 	IdentifierDatabase *sqlx.DB
 	OciDatabase        *sqlx.DB
