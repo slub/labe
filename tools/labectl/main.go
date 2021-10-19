@@ -1,13 +1,13 @@
-// labesync manages the path from raw data to databases for OCI and index data.
+// labectl manages the path from raw data to databases for OCI and index data.
 // This program manages a local path and will be able to answer certain
 // questions regerding updates. This program should also be usable with cron.
 //
 // Keeps a internal cache and operations are atomic.
 //
-// $ labesync -A -o 1.db -S http://data.index/1
-// $ labesync -A -o 2.db -S http://data.index/2
-// $ labesync -A -o i.db -I -S http://data.index/1 -S http://data.index/2
-// $ labesync -A -o o.db -O
+// $ labectl -A -o 1.db -S http://data.index/1
+// $ labectl -A -o 2.db -S http://data.index/2
+// $ labectl -A -o i.db -I -S http://data.index/1 -S http://data.index/2
+// $ labectl -A -o o.db -O
 package main
 
 import (
@@ -25,5 +25,5 @@ var (
 )
 
 func main() {
-	fmt.Println("labesync")
+	fmt.Println("labectl")
 }
