@@ -1,5 +1,9 @@
 # mkocidb
 
+⚠️  &mdash; deprecated, see: [makta](https://github.com/miku/makta)
+
+----
+
 Create a sqlite3 version of a tab separated file.
 
 ```sh
