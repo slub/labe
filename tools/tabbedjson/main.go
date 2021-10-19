@@ -58,6 +58,8 @@ var (
 	compressTable = flag.Bool("T", false, "emit table showing possible savings through compression")
 )
 
+// Doc is the part of the document we are interested in. If this tool should be
+// more generic, this would need to be generated on the fly.
 type Doc struct {
 	ID string `json:"id"`
 }
