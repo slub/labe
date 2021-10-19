@@ -91,7 +91,8 @@ Flags
 ## Fetch or FetchMany
 
 There seems to be not that much difference between one expensive `IN` and many
-cheap SQL queries in case of sqlite3.
+cheap SQL queries in case of sqlite3. Keeping the API simple for now, just
+supporting `Fetch` for single items for now.
 
 ```python
 In [13]: df.took.describe() # SELECT .. WHERE k = ...
@@ -163,3 +164,9 @@ Examples
 > XVlB    S    84.294786ms    1.0     total
 ```
 
+
+## TODO
+
+* [ ] a better name, e.g. labesrv, labesvc, cdfuse, catfuse, labed, ...
+* [ ] a detailed performance report
+* [ ] tools or scripts to generate the input database from scratch
