@@ -7,7 +7,7 @@ Citation graph kit for the LABE project at [SLUB Dresden](https://www.slub-dresd
 
 ## labed
 
-[![](static/45582_reading_lg.gif)](https://etc.usf.edu/clipart/)
+![](static/45582_reading_lg.gif)
 
 Experimental API server, takes requests for a given id and returns a
 result fused from OCI citations and index data.
@@ -196,3 +196,6 @@ We want this to put our index data into a key value store. Compression (with
 gzip) seems 3-4 slower than using no compression. Also, compression will need
 extra handling at request time.
 
+----
+
+Clip art from [ClipArt ETC](https://etc.usf.edu/clipart/).
