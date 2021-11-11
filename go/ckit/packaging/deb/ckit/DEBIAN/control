@@ -1,0 +1,9 @@
+Package: ckit
+Version: 0.1.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Essential: no
+Depends: libc6 (>= 2.12)
+Maintainer: Martin Czygan <martin.czygan@gmail.com>
+Description: Citation graph toolkit for project LABE at SLUB Dresden.

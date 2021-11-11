@@ -1,7 +1,13 @@
+# ignore binaries
 /labed
 /tabbedjson
 /makta
+
+# ignore sample data files
 /i.db
 /o.db
 /index.data*
 /index.db
+
+# ignore intermediate package artifacts
+/packaging/deb/ckit/usr
