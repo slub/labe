@@ -6,6 +6,24 @@ Citation graph kit for the LABE project at [SLUB Dresden](https://www.slub-dresd
 * [tabbedjson](#tabbedjson), turn JSON into TSV
 * [makta](#makta), turn TSV files into sqlite3 databases
 
+To build all binaries, run:
+
+```
+$ make
+```
+
+To build a debian package, run:
+
+```
+$ make deb
+```
+
+To cleanup all artifacts, run:
+
+```
+$ make clean
+```
+
 ## labed
 
 ![](static/45582_reading_lg.gif)
