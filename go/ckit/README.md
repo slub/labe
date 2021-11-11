@@ -2,6 +2,9 @@
 
 Citation graph kit for the LABE project at [SLUB Dresden](https://www.slub-dresden.de/).
 
+* [labed](#labed)
+* [tabbedjson](#tabbedjson)
+
 ## labed
 
 ![](static/45582_reading_lg.gif)
