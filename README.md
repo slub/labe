@@ -31,6 +31,7 @@ $ pip install -e .[dev]
 
 # Meeting Minutes
 
+* [2021-11-04](notes/2021_11_04_meeting_minutes.md)
 * [2021-10-21](notes/2021_10_21_meeting_minutes.md)
 * [2021-10-14](notes/2021_10_14_meeting_minutes.md)
 * [2021-10-07](notes/2021_10_07_meeting_minutes.md)
