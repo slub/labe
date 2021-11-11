@@ -1,6 +1,9 @@
-# Components written in Go
+# LABE: Components written in Go
 
-Currently only one subproject, named: ckit - citation kit.
+> [Go](https://golang.org/) is an open source programming language that makes it
+easy to build simple, reliable, and efficient software.
 
-* ckit (citation kit) implements command line helpers and a REST web service
+* [ckit](ckit) (citation toolkit) implements command line helpers and a REST web service
   for the labe project
+
+
