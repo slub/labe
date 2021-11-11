@@ -1,4 +1,4 @@
-# Labe
+# LABE
 
 ![](extra/banner/static/canvas.png)
 
