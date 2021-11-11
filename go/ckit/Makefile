@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-TARGETS := labed tabbedjson
+TARGETS := labed tabbedjson makta
 VERSION := $(shell git rev-parse --short HEAD)
 BUILDTIME := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 
