@@ -7,7 +7,7 @@ Citation graph kit for the LABE project at [SLUB Dresden](https://www.slub-dresd
 
 ## labed
 
-![](static/45582_reading_lg.gif)
+[![](static/45582_reading_lg.gif)](https://etc.usf.edu/clipart/)
 
 Experimental API server, takes requests for a given id and returns a
 result fused from OCI citations and index data.
