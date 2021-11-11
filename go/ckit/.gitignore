@@ -3,6 +3,9 @@
 /tabbedjson
 /makta
 
+# ignore debian package
+ckit_*_amd64.deb
+
 # ignore sample data files
 /i.db
 /o.db
