@@ -3,6 +3,7 @@ module github.com/miku/labe/go/ckit
 go 1.17
 
 require (
+	github.com/andrew-d/go-termutil v0.0.0-20150726205930-009166a695a2
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.4
