@@ -31,6 +31,25 @@ $ make clean
 Experimental API server, takes requests for a given id and returns a
 result fused from OCI citations and index data.
 
+It currently needs three sqlite3 database.
+
+```
+$ ls -lLh i.db o.db index.db
+-rw-r--r-- 1 tir tir  11G Sep 20 23:13 i.db
+-rw-r--r-- 1 tir tir 330G Sep 26 22:32 index.db
+-r--r--r-- 1 tir tir 145G Sep 21 00:36 o.db
+```
+
+May become 4 or 5 databases in the future with various update cycles:
+
+* main index copy (W)
+* main index id-doi mapping (W)
+* ai index copy (M)
+* ai index id-doi mapping (M)
+* oci copy (as updated)
+
+Random timings (TODO: performance report):
+
 ```
 ai-49-aHR0cD...TAuMTEwNC9wc...    10.1104/pp.88.4.1411           0   33   0.011371553
 ai-49-aHR0cD...TAuMTc1NzYva...    10.17576/jsm-2019-4808-23      0   3    0.002403981
