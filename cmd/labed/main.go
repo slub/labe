@@ -162,7 +162,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/miku/labe/go/ckit"
+	"github.com/miku/labe/tools/spindel"
 )
 
 var (
@@ -217,13 +217,13 @@ Bulk requests
 
 	Banner string = `
 
-    ___       ___       ___       ___       ___
-   /\__\     /\  \     /\  \     /\  \     /\  \
-  /:/  /    /::\  \   /::\  \   /::\  \   /::\  \
- /:/__/    /::\:\__\ /::\:\__\ /::\:\__\ /:/\:\__\
- \:\  \    \/\::/  / \:\::/  / \:\:\/  / \:\/:/  /
-  \:\__\     /:/  /   \::/  /   \:\/  /   \::/  /
-   \/__/     \/__/     \/__/     \/__/     \/__/
+   _|_|_|            _|                  _|            _|
+ _|        _|_|_|        _|_|_|      _|_|_|    _|_|    _|
+   _|_|    _|    _|  _|  _|    _|  _|    _|  _|_|_|_|  _|
+       _|  _|    _|  _|  _|    _|  _|    _|  _|        _|
+ _|_|_|    _|_|_|    _|  _|    _|    _|_|_|    _|_|_|  _|
+           _|
+           _|
 
 Examples
 
@@ -269,12 +269,12 @@ func main() {
 		log.Fatal(err)
 	}
 	// Setup index data fetcher.
-	var fetcher ckit.Fetcher
+	var fetcher spindel.Fetcher
 	switch {
 	case *solrBlobPath != "":
-		fetcher = &ckit.SolrBlob{BaseURL: *solrBlobPath}
+		fetcher = &spindel.SolrBlob{BaseURL: *solrBlobPath}
 	case *blobServerURL != "":
-		fetcher = &ckit.BlobServer{BaseURL: *blobServerURL}
+		fetcher = &spindel.BlobServer{BaseURL: *blobServerURL}
 	case *sqliteBlobPath != "":
 		if _, err := os.Stat(*sqliteBlobPath); os.IsNotExist(err) {
 			log.Fatal(err)
@@ -283,12 +283,12 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fetcher = &ckit.SqliteBlob{DB: indexDatabase}
+		fetcher = &spindel.SqliteBlob{DB: indexDatabase}
 	default:
 		log.Fatal("need blob server (-bs), sqlite3 database (-Q) or solr (-S)")
 	}
 	// Setup server.
-	srv := &ckit.Server{
+	srv := &spindel.Server{
 		IdentifierDatabase:     identifierDatabase,
 		OciDatabase:            ociDatabase,
 		IndexData:              fetcher,
