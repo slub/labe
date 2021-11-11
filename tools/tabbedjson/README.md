@@ -1,5 +1,10 @@
 # Non-generic JSON to TSV converter
 
+Turns jsonlines with an "id" field into (id, doc) TSV. We want to take an index
+snapshot, extract the id, create a TSV and then put it into sqlite3 so we can
+serve queries.
+
+
 ```sh
 $ tabbedjson -h
 Usage of tabbedjson:
@@ -7,7 +12,7 @@ Usage of tabbedjson:
   -T    emit table showing possible savings through compression
 ```
 
-Turns jsonlines with an "id" field into (id, doc) TSV.
+Examples.
 
 ```
 $ head -1 ../../data/index.data | tabbedjson
