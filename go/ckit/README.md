@@ -2,9 +2,9 @@
 
 Citation graph kit for the LABE project at [SLUB Dresden](https://www.slub-dresden.de/).
 
-* [labed](#labed)
-* [tabbedjson](#tabbedjson)
-* [makta](#makta)
+* [labed](#labed), an HTTP server serving Open Citations data fused with catalog metadata
+* [tabbedjson](#tabbedjson), turn JSON into TSV
+* [makta](#makta), turn TSV files into sqlite3 databases
 
 ## labed
 
