@@ -46,3 +46,5 @@ files, that extract the binaries into e.g. ~/.local/bin. [unzipsfx](https://www.
 
 Could write installed files into ~/.local/share/ckit/installed and then all to
 uninstall or upgrade as well.
+
+
