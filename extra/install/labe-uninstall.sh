@@ -2,7 +2,7 @@
 #
 # Uninstaller for labe tools.
 
-set -eu -o pipefail
+set -eu
 BIN=${HOME}/.local/bin
 
 for prog in "solrdump tabbedjson makta labed"; do
