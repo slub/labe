@@ -27,6 +27,8 @@ cat <<EOM
 
 LABE INSTALLER
 
+> docs: https://github.com/GROSSWEBER/labe
+
 To uninstall, run:
 
     \$ ${UNINSTALL_SCRIPT_NAME}
@@ -50,3 +52,8 @@ rm -- "${UNINSTALL_SCRIPT}"
 echo "[ok] labe uninstalled successfully"
 EOM
 chmod +x "${UNINSTALL_SCRIPT}"
+
+cat <<EOM
+
+[ok] labe installed successfully
+EOM
