@@ -2,7 +2,7 @@
 # Last-Modified: 2021-11-18
 SHELL := /bin/bash
 VERSION := 1.0.0
-INSTALLER_FILENAME := labe-$(VERSION)-installer.run
+INSTALLER_FILENAME := labe-$(VERSION).run
 TARGETS := $(INSTALLER_FILENAME)
 
 # Other static binaries we may need on the target machine (due to lack of root
@@ -33,7 +33,7 @@ $(TARGETS):
 	cp go/ckit/labed .build
 
 	# copy installer script
-	cp extra/install/install.sh .build
+	cp extra/install.sh .build
 
 	makeself .build $(INSTALLER_FILENAME) "installing labe $(VERSION)..." ./install.sh
 
