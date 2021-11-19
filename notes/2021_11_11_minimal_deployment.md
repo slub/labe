@@ -47,4 +47,10 @@ files, that extract the binaries into e.g. ~/.local/bin. [unzipsfx](https://www.
 Could write installed files into ~/.local/share/ckit/installed and then all to
 uninstall or upgrade as well.
 
+## Summary (2021-11-19)
+
+Using [makeself](https://makeself.io/) works great as an alternative, but
+ultimately deployment will look a bit non-standard without root. Fixed that by
+assuming root access to deployment machine and switching to
+[ansible](https://www.ansible.com/) as deploy tool and documention.
 

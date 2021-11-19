@@ -1,0 +1,6 @@
+---
+- name: labe setup
+  hosts: app
+  roles:
+    - common
+    - app

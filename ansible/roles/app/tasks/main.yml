@@ -1,0 +1,9 @@
+- name: Copy labe debian package
+  copy:
+    src: labe_{{ labe_version }}_amd64.deb
+    dest: /tmp
+- name: Install debian package
+  apt:
+    deb: /tmp/labe_{{ labe_version }}_amd64.deb
+    state: present
+

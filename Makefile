@@ -1,43 +1,40 @@
 # Makefile for labe project
-# Last-Modified: 2021-11-18
-SHELL := /bin/bash
-VERSION := 1.0.0
-INSTALLER_FILENAME := labe-$(VERSION).run
-TARGETS := $(INSTALLER_FILENAME)
-
-# Other static binaries we may need on the target machine (due to lack of root
-# access in 11/2021).
+# Last-Modified: 2021-11-19
 #
-# https://github.com/ubleipzig/solrdump
-EXTRA_SOLRDUMP := $(HOME)/code/miku/solrdump/solrdump
-# https://www.sqlite.org/download.html
-# E.g. in 11/2021 on Linux:
-# https://www.sqlite.org/2021/sqlite-tools-linux-x86-3360000.zip, we only want
-# the "sqlite3" command.
-EXTRA_SQLITE3 := $(HOME)/opt/sqlite-tools-linux-x86-3360000/sqlite3
+# We want a single command build process that combines go tools, python
+# packaging, systemd units and other configuration files.
+SHELL := /bin/bash
+
+VERSION := 1.0.0
+PKGNAME := labe
+
+GITCOMMIT := $(shell git rev-parse --short HEAD)
+BUILDTIME := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
+
+ANSIBLE_OPTS := ANSIBLE_RETRY_FILES_ENABLED=false ANSIBLE_NOCOWS=true ANSIBLE_HOST_KEY_CHECKING=false
 
 .PHONY: all
-all: $(TARGETS)
-
-$(TARGETS):
-	mkdir -p .build
-
-	# extra tools
-	cp $(EXTRA_SQLITE3) .build
-	cp $(EXTRA_SOLRDUMP) .build
-
-	# build and copy our tools
-	cd go/ckit && make && cd -
-	cp go/ckit/makta .build
-	cp go/ckit/tabbedjson .build
-	cp go/ckit/labed .build
-
-	# copy installer script
-	cp extra/install.sh .build
-
-	makeself .build $(INSTALLER_FILENAME) "installing labe $(VERSION)..." ./install.sh
+all:
+	cd go/ckit && make all && cd -
 
 .PHONY: clean
 clean:
-	rm -rf .build
-	rm -f $(TARGETS)
+	rm -f $(PKGNAME)_*.deb
+
+.PHONY: deb
+deb: all
+	mkdir -p packaging/deb/$(PKGNAME)/usr/local/bin
+	# copy files one by one
+	cp go/ckit/makta packaging/deb/$(PKGNAME)/usr/local/bin
+	cp go/ckit/tabbedjson packaging/deb/$(PKGNAME)/usr/local/bin
+	cp go/ckit/labed packaging/deb/$(PKGNAME)/usr/local/bin
+	# build package
+	cd packaging/deb && fakeroot dpkg-deb --build $(PKGNAME) .
+	mv packaging/deb/$(PKGNAME)_*.deb .
+
+.PHONY: deploy
+deploy:
+	mkdir -p ansible/roles/app/files
+	cp -v $(PKGNAME)_*deb ansible/roles/app/files/
+	$(ANSIBLE_OPTS) ansible-playbook -b -i ansible/hosts ansible/site.yml
+

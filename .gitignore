@@ -135,3 +135,6 @@ labe-*.zip
 .build/*
 labe-*-installer.run
 labe-*.run
+.vagrant/*
+labe_*_amd64.deb
+packaging/deb/labe/usr/*
