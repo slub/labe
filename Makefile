@@ -33,7 +33,7 @@ deb: all
 	mv packaging/deb/$(PKGNAME)_*.deb .
 
 .PHONY: deploy
-deploy:
+deploy: deb
 	mkdir -p ansible/roles/app/files
 	cp -v $(PKGNAME)_*deb ansible/roles/app/files/
 	$(ANSIBLE_OPTS) ansible-playbook -b -i ansible/hosts ansible/site.yml
