@@ -1,4 +1,4 @@
-// makta takes two columns and turns it into an indexed sqlite3 database.
+// makta takes a two column TSV file and turns it into an indexed sqlite3 database.
 package main
 
 import (
@@ -25,6 +25,7 @@ var (
 	bufferSize  = flag.Int("B", 64*1<<20, "buffer size")
 	indexMode   = flag.Int("I", 3, "index mode: 0=none, 1=k, 2=v, 3=kv")
 	cacheSize   = flag.Int("C", 1000000, "sqlite3 cache size, needs memory = C x page size")
+	verbose     = flag.Bool("verbose", false, "be verbose")
 )
 
 func main() {
@@ -60,8 +61,13 @@ PRAGMA temp_store = MEMORY;
 		log.Println("stdin: no data")
 		os.Exit(1)
 	}
-	if _, err := os.Stat(*outputFile); os.IsNotExist(err) {
-		if err := ckit.RunScript(*outputFile, initSQL, "initialized database"); err != nil {
+	_, err = os.Stat(*outputFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if err := ckit.RunScript(*outputFile, initSQL, "initialized database"); err != nil {
+				log.Fatal(err)
+			}
+		} else {
 			log.Fatal(err)
 		}
 	}
@@ -74,16 +80,25 @@ PRAGMA temp_store = MEMORY;
 		written     int64
 		started     = time.Now()
 		elapsed     float64
+		numBatches  int
 		importBatch = func() error {
 			n, err := ckit.RunImport(&buf, initFile, *outputFile)
 			if err != nil {
-				return err
+				return fmt.Errorf("import: %w", err)
 			}
 			written += n
+			numBatches++
 			elapsed = time.Since(started).Seconds()
-			ckit.Flushf("written %s · %s",
-				ckit.ByteSize(int(written)),
-				ckit.HumanSpeed(written, elapsed))
+			if *verbose {
+				log.Printf("imported batch #%d, %s at %s",
+					numBatches,
+					ckit.ByteSize(int(written)),
+					ckit.HumanSpeed(written, elapsed))
+			} else {
+				ckit.Flushf("written %s · %s",
+					ckit.ByteSize(int(written)),
+					ckit.HumanSpeed(written, elapsed))
+			}
 			return nil
 		}
 		indexScripts []string
@@ -94,19 +109,19 @@ PRAGMA temp_store = MEMORY;
 			break
 		}
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("read: %v", err)
 		}
 		if _, err := buf.Write(b); err != nil {
-			log.Fatal(err)
+			log.Fatalf("write: %v", err)
 		}
 		if buf.Len() >= *bufferSize {
 			if err := importBatch(); err != nil {
-				log.Fatal(err)
+				log.Fatalf("batch: %v", err)
 			}
 		}
 	}
 	if err := importBatch(); err != nil {
-		log.Fatal(err)
+		log.Fatal("batch: %v", err)
 	}
 	fmt.Println()
 	switch *indexMode {
@@ -126,10 +141,11 @@ PRAGMA temp_store = MEMORY;
 	default:
 		log.Printf("no index requested")
 	}
+	log.Printf("building %d indices ...", len(indexScripts))
 	for i, script := range indexScripts {
 		msg := fmt.Sprintf("%d/%d created index", i+1, len(indexScripts))
 		if err := ckit.RunScript(*outputFile, script, msg); err != nil {
-			log.Fatal(err)
+			log.Fatalf("run script: %v", err)
 		}
 	}
 }

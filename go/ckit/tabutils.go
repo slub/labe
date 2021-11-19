@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -16,9 +17,11 @@ import (
 func RunScript(path, script, message string) error {
 	cmd := exec.Command("sqlite3", path)
 	cmd.Stdin = strings.NewReader(script)
-	err := cmd.Run()
+	b, err := cmd.CombinedOutput()
 	if err == nil {
 		log.Printf("[ok] %s · %s", message, path)
+	} else {
+		_, _ = fmt.Fprintf(os.Stderr, "%s\n", string(b))
 	}
 	return err
 }
@@ -30,7 +33,7 @@ func RunImport(r io.Reader, initFile, outputFile string) (int64, error) {
 	cmd := exec.Command("sqlite3", "--init", initFile, outputFile)
 	cmdStdin, err := cmd.StdinPipe()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("stdin pipe: %w", err)
 	}
 	var (
 		wg      sync.WaitGroup
@@ -48,7 +51,8 @@ func RunImport(r io.Reader, initFile, outputFile string) (int64, error) {
 		}
 		written += n
 	}()
-	if _, err := cmd.CombinedOutput(); err != nil {
+	if b, err := cmd.CombinedOutput(); err != nil {
+		fmt.Fprintln(os.Stderr, string(b))
 		return written, fmt.Errorf("exec failed: %w", err)
 	}
 	wg.Wait()

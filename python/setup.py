@@ -10,7 +10,7 @@ with open("README.md", "r") as fh:
         version=__version__,
         author="Martin Czygan",
         author_email="martin.czygan@gmail.com",
-        description="Reference data munging tasks and utilities",
+        description="Citation graph application at SLUB Dresden (LABE)",
         long_description=long_description,
         long_description_content_type="text/markdown",
         url="https://gitlab.com/miku/labe",
@@ -21,14 +21,11 @@ with open("README.md", "r") as fh:
             "Operating System :: OS Independent",
         ],
         python_requires=">=3.6",
-        entry_points={"console_scripts": ["labectl=labe.cli:main"]},
+        entry_points={"console_scripts": ["labe=labe.cli:main"]},
         install_requires=[
-            "luigi",
-            "requests",
-            "xdg",
-            "dynaconf[ini]",
-            "marcx",
-            "orjson",
+            "luigi>=3,<4",
+            "requests>=2.26,<3",
+            "xdg>=5,<6",
         ],
         extras_require={
             "dev": [

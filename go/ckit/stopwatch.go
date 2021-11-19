@@ -41,13 +41,11 @@ type Entry struct {
 // > XVlB    -    -               -       -
 // > XVlB    S    278.113164ms    1.00    total
 //
-// By default a stopwatch is disabled, which means all functions will be noops,
-// use SetEnabled to toggle mode.
 type StopWatch struct {
 	sync.Mutex
-	id      string
-	entries []*Entry
-	enabled bool
+	id       string
+	entries  []*Entry
+	disabled bool
 }
 
 // SetEnabled enables or disables the stopwatch. If disabled, any call will be
@@ -55,7 +53,7 @@ type StopWatch struct {
 func (s *StopWatch) SetEnabled(enabled bool) {
 	s.Lock()
 	defer s.Unlock()
-	s.enabled = enabled
+	s.disabled = !enabled
 }
 
 // Record records a message.
@@ -65,7 +63,7 @@ func (s *StopWatch) Record(msg string) {
 
 // Recordf records a message.
 func (s *StopWatch) Recordf(msg string, vs ...interface{}) {
-	if !s.enabled {
+	if s.disabled {
 		return
 	}
 	s.Lock()
@@ -81,7 +79,7 @@ func (s *StopWatch) Recordf(msg string, vs ...interface{}) {
 
 // Reset resets the stopwatch.
 func (s *StopWatch) Reset() {
-	if !s.enabled {
+	if s.disabled {
 		return
 	}
 	s.entries = nil
@@ -97,7 +95,7 @@ func (s *StopWatch) Elapsed() time.Duration {
 
 // LogTable write a table using standard library log facilities.
 func (s *StopWatch) LogTable() {
-	if !s.enabled {
+	if s.disabled {
 		return
 	}
 	log.Printf("timings for %s\n\n"+s.Table()+"\n", s.id)
@@ -105,7 +103,7 @@ func (s *StopWatch) LogTable() {
 
 // Table format the timings as table.
 func (s *StopWatch) Table() string {
-	if !s.enabled || len(s.entries) == 0 {
+	if s.disabled || len(s.entries) == 0 {
 		return ""
 	}
 	var (

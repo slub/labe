@@ -373,6 +373,13 @@ sys     0m3.224s
       create N databases and distribute queries across files - e.g. `dbize db.json`
       with the same repl, etc. -- if we've seen 300K inserts per db, we may see 0.X x CPU x 300K, maybe millions/s.
 
+As shortcut, we could add commands that turn an index into a "sqlite3" database
+in one command, e.g.
+
+```shell
+$ mkindexdb -server ... -key-field id -o index.db
+```
+
 ### Design ideas
 
 A design that works with 50M rows per database, e.g. 20 files for 1B rows;

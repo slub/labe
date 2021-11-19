@@ -9,7 +9,6 @@ require (
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/matryer/is v1.4.0
 	github.com/mattn/go-sqlite3 v1.14.9
-	github.com/miku/labe/tools/spindel v0.0.0-20211111120113-fa9a957a77c3
 	github.com/miku/parallel v0.0.0-20210205192328-1a799ab70294
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/segmentio/encoding v0.3.0

@@ -183,9 +183,9 @@ var (
 
 	Version   string
 	Buildtime string
-	Help      string = `usage: spindel [OPTION]
+	Help      string = `usage: labed [OPTION]
 
-spindel is an experimental api server for the labe project; it works with three
+labed is an experimental api server for the labe project; it works with three
 data stores:
 
 * (1) an sqlite3 catalog id to doi translation table (11GB)
@@ -250,7 +250,7 @@ func main() {
 	}
 	flag.Parse()
 	if *showVersion {
-		fmt.Printf("spindel %v %v\n", Version, Buildtime)
+		fmt.Printf("labed %v %v\n", Version, Buildtime)
 		os.Exit(0)
 	}
 	// Setup database connections.
@@ -306,7 +306,7 @@ func main() {
 	}
 	// Print banner.
 	fmt.Fprintln(os.Stderr, strings.Replace(Banner, `{{ .listenAddr }}`, *listenAddr, -1))
-	log.Printf("spindel starting %s %s http://%s", Version, Buildtime, *listenAddr)
+	log.Printf("labed starting %s %s http://%s", Version, Buildtime, *listenAddr)
 	// Add middleware.
 	var h http.Handler = srv
 	if *enableGzip {

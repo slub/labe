@@ -9,6 +9,10 @@ The [luigi](https://github.com/spotify/luigi) orchestrator is already used by
 [SLUB Dresden](https://www.slub-dresden.de/), so we'll use it for modelling the
 dependency graph of tasks.
 
+## Deploy Option
+
+We build a single executable with [shiv](https://github.com/linkedin/shiv).
+
 ## Tasks
 
 * [ ] check for new OCI dump

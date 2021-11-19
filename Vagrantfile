@@ -14,9 +14,6 @@ Vagrant.configure("2") do |config|
   # boxes at https://vagrantcloud.com/search.
   config.vm.box = "debian/buster64"
 
-  # https://github.com/dotless-de/vagrant-vbguest/issues/300#issuecomment-402881079
-  # config.vbguest.iso_path = "https://download.virtualbox.org/virtualbox/6.1.26/VBoxGuestAdditions_6.1.26.iso"
-
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
   # `vagrant box outdated`. This is not recommended.
@@ -60,7 +57,7 @@ Vagrant.configure("2") do |config|
     # vb.gui = true
 
     # Customize the amount of memory on the VM:
-    vb.memory = "4096"
+    vb.memory = "2048"
   end
   #
   # View the documentation for the provider you are using for more

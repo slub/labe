@@ -31,11 +31,10 @@ def test_get_redirct_url():
         get_redirect_url("undefined")
 
     assert get_redirect_url("https://google.com") == "https://www.google.com/"
-    assert get_redirect_url("http://google.com") == "https://www.google.com/?gws_rd=ssl"
-    assert (
-        get_redirect_url("https://doi.org/10.1111/icad.12417")
-        == "https://onlinelibrary.wiley.com/doi/10.1111/icad.12417"
-    )
+    assert get_redirect_url(
+        "http://google.com") == "https://www.google.com/?gws_rd=ssl"
+    assert (get_redirect_url("https://doi.org/10.1111/icad.12417") ==
+            "https://onlinelibrary.wiley.com/doi/10.1111/icad.12417")
 
 
 @pytest.mark.skipif(no_internet(), reason="no internet")

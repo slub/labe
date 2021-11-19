@@ -11,7 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
-	"github.com/miku/labe/tools/spindel/set"
+	"github.com/miku/labe/go/ckit/set"
 	"github.com/patrickmn/go-cache"
 	"github.com/segmentio/encoding/json"
 )
@@ -136,7 +136,7 @@ func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err 
 func (s *Server) handleIndex() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// TODO: Render docs.
-		fmt.Fprintf(w, "spindel")
+		fmt.Fprintf(w, "labed")
 	}
 }
 
