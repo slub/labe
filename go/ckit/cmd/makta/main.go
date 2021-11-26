@@ -20,12 +20,13 @@ var (
 	Version   string
 	Buildtime string
 
-	showVersion = flag.Bool("version", false, "show version and exit")
-	outputFile  = flag.String("o", "data.db", "output filename")
-	bufferSize  = flag.Int("B", 64*1<<20, "buffer size")
-	indexMode   = flag.Int("I", 3, "index mode: 0=none, 1=k, 2=v, 3=kv")
-	cacheSize   = flag.Int("C", 1000000, "sqlite3 cache size, needs memory = C x page size")
-	verbose     = flag.Bool("verbose", false, "be verbose")
+	showVersion  = flag.Bool("version", false, "show version and exit")
+	outputFile   = flag.String("o", "data.db", "output filename")
+	bufferSize   = flag.Int("B", 64*1<<20, "buffer size")
+	indexMode    = flag.Int("I", 3, "index mode: 0=none, 1=k, 2=v, 3=kv")
+	cacheSize    = flag.Int("C", 1000000, "sqlite3 cache size, needs memory = C x page size")
+	initDatabase = flag.Bool("init", false, "on start, initialize database, even when the file already exists")
+	verbose      = flag.Bool("verbose", false, "be verbose")
 )
 
 func main() {
@@ -63,7 +64,7 @@ PRAGMA temp_store = MEMORY;
 	}
 	_, err = os.Stat(*outputFile)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if os.IsNotExist(err) || *initDatabase {
 			if err := ckit.RunScript(*outputFile, initSQL, "initialized database"); err != nil {
 				log.Fatal(err)
 			}

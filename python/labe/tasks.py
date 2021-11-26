@@ -83,7 +83,10 @@ class OpenCitationsDatabase(Task):
     Convert CSV to TSV and turn it into a sqlite3 database. The final
     conversion step. Requires the "makta" tool.
 
-    TODO: exit code 1 on after ~50GB written, but not obvious why.
+    TODO: exit code 1 on after ~50GB written, but not obvious why. [A
+    wonderfully subtle bug, caused by a sloppy checking if a file exists as
+    evidence the database schema exists as well; interestingly import does not
+    fail, which is surprising; only at index creation time].
 
     2021/11/25 13:21:13 [io] written 57.6G · 24.1M/s
     2021/11/25 13:21:13 exit status 1
@@ -101,7 +104,7 @@ class OpenCitationsDatabase(Task):
                           zstdcat -T0 {input} |
                           cut -d, -f2,3 |
                           sed -e 's@,@\t@' |
-                          makta -verbose -o {output} -I 3
+                          makta -init -o {output} -I 3
                           """, input=self.input().path)
         luigi.LocalTarget(output).move(self.output().path)
 

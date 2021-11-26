@@ -17,7 +17,7 @@ __all__ = [
     'ClosestDateParameter',
 ]
 
-logger = logging.getLogger('base')
+logger = logging.getLogger('labe')
 
 
 class ClosestDateParameter(luigi.DateParameter):
@@ -139,6 +139,7 @@ def shellout(template,
              ignoremap=None,
              encoding=None,
              pipefail=True,
+             temp_prefix="labe-",
              **kwargs):
     """
     Takes a shell command template and executes it. The template must use the
@@ -163,7 +164,7 @@ def shellout(template,
         ....
     """
     if not 'output' in kwargs:
-        kwargs.update({'output': tempfile.mkstemp(prefix='gluish-')[1]})
+        kwargs.update({'output': tempfile.mkstemp(prefix=temp_prefix)[1]})
     if ignoremap is None:
         ignoremap = {}
     if encoding:
