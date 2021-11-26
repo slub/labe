@@ -118,8 +118,6 @@ def main():
     if os.path.exists(args.logging_conf_file):
         # This won't work with [2:] ...
         logging.config.fileConfig(args.logging_conf_file)
-        sys.argv.remove("--logging-conf-file")
-        sys.argv.remove(args.logging_conf_file)
 
     # Wrapper around OCI.
     if args.print_most_recent_download_url:
