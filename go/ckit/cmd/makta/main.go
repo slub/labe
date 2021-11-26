@@ -63,7 +63,7 @@ PRAGMA temp_store = MEMORY;
 		os.Exit(1)
 	}
 	_, err = os.Stat(*outputFile)
-	if err != nil {
+	if err != nil || *initDatabase {
 		if os.IsNotExist(err) || *initDatabase {
 			if err := ckit.RunScript(*outputFile, initSQL, "initialized database"); err != nil {
 				log.Fatal(err)
