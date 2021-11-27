@@ -142,7 +142,7 @@ PRAGMA temp_store = MEMORY;
 	default:
 		log.Printf("no index requested")
 	}
-	log.Printf("building %d indices ...", len(indexScripts))
+	log.Printf("[io] building %d indices ...", len(indexScripts))
 	for i, script := range indexScripts {
 		msg := fmt.Sprintf("%d/%d created index", i+1, len(indexScripts))
 		if err := ckit.RunScript(*outputFile, script, msg); err != nil {

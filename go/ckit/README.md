@@ -3,7 +3,7 @@
 Citation graph kit for the LABE project at [SLUB Dresden](https://www.slub-dresden.de/).
 
 * [labed](#labed), an HTTP server serving Open Citations data fused with catalog metadata
-* [tabbedjson](#tabbedjson), turn JSON into TSV
+* [tabjson](#tabjson), turn JSON into TSV
 * [makta](#makta), turn TSV files into sqlite3 databases
 
 To build all binaries, run:
@@ -182,20 +182,26 @@ Examples
 
 ----
 
-## tabbedjson
+## tabjson
 
 > A non-generic, quick JSON to TSV converter
 
-Turns jsonlines with an "id" field into (id, doc) TSV. We want to take an index
-snapshot, extract the id, create a TSV and then put it into sqlite3 so we can
-serve queries.
+Turns jsonlines with an `id` field into `(id, doc)` TSV. We want to take an
+index snapshot, extract the id, create a TSV and then put it into sqlite3 so we
+can serve queries.
+
+This is nothing, `jq` could not do, e.g. via (might need escaping).
+
+```
+$ jq -rc '[.id, (. | tojson)] | @tsv'
+```
 
 TODO: remove or use compression.
 
 
 ```sh
-$ tabbedjson -h
-Usage of tabbedjson:
+$ tabjson -h
+Usage of tabjson:
   -C    compress value; gz+b64
   -T    emit table showing possible savings through compression
 ```
@@ -203,21 +209,21 @@ Usage of tabbedjson:
 Examples.
 
 ```
-$ head -1 ../../data/index.data | tabbedjson
+$ head -1 ../../data/index.data | tabjson
 ai-49-aHR0...uMi4xNTU       {"access_facet":"Electronic Resourc ... }
 ```
 
 Around 80K docs/s. Supports some basic compression schema.
 
 ```sh
-$ head -1 ../../data/index.data | tabbedjson -C
+$ head -1 ../../data/index.data | tabjson -C
 ai-49-aHR0...uMi4xNTU       H4sIAAAAAAAA/6xWTY/bNhC991cQPCWArJVUK177...
 ```
 
 Display savings by using compression.
 
 ```sh
-$ head ../../data/index.data | tabbedjson -C -T | column -t
+$ head ../../data/index.data | tabjson -C -T | column -t
 ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzNy8wMDIxLTkwMTAuNjIuMi4xNTU  2223  1005  0.452092
 ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzNy9oMDA3MDY1OQ               2217  993   0.447903
 ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzNy8wMDIxLTkwMTAuNjIuMi4xNDY  2172  969   0.446133
