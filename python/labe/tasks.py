@@ -1,3 +1,24 @@
+"""
+
+Derivation tasks.
+
+$ tree -sh .local/share/labe
+.local/share/labe
+├── [4.0K]  OpenCitationsDatabase
+│   └── [144G]  a6d28e3e04bc206d3c4021a3381deb5c4443104b.db
+├── [4.0K]  OpenCitationsDownload
+│   └── [  28]  a6d28e3e04bc206d3c4021a3381deb5c4443104b.zip -> /home/czygan/tmp/6741422.zip
+├── [4.0K]  OpenCitationsSingleFile
+│   └── [ 29G]  a6d28e3e04bc206d3c4021a3381deb5c4443104b.zst
+└── [4.0K]  SolrFetchDocs
+    ├── [5.5G]  date-2021-11-25-name-ai.zst
+    ├── [968M]  date-2021-11-25-name-main.zst
+    └── [ 23M]  date-2021-11-25-name-slub-production.zst
+
+4 directories, 6 files
+
+"""
+
 import functools
 import hashlib
 import os
@@ -95,6 +116,8 @@ class OpenCitationsDatabase(Task):
 
     sqlite> select count(*) from map;
     1104185948
+
+    Task takes about 95m3.050s.
     """
     def requires(self):
         return OpenCitationsSingleFile()
@@ -145,11 +168,28 @@ class SolrFetchDocs(Task):
         return luigi.LocalTarget(path=self.path(ext="zst"))
 
 
-class SolrTabs(Task):
+class SolrDatabase(Task):
     """
-    Convert SOLR JSON docs to TSV for caching.
+    Convert SOLR JSON into an sqlite database.
     """
-    pass
+    date = luigi.DateParameter(default=datetime.date.today())
+    name = luigi.Parameter(
+        default="main", description="index name, url lookup up from a config")
+
+    def requires(self):
+        return SolrFetchDocs(date=self.date, name=self.name)
+
+    def run(self):
+        output = shellout("""
+                          zstdcat -T0 {input} |
+                          tabjson |
+                          makta -init -I 1 -o {output}
+                          """, input=self.input().path)
+        luigi.LocalTarget(output).move(self.output().path)
+
+    def output(self):
+        return luigi.LocalTarget(path=self.path(ext="db"))
+
 
 
 class Hello(Task):
