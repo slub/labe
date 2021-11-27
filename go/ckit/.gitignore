@@ -1,6 +1,6 @@
 # ignore binaries
 /labed
-/tabbedjson
+/tabjson
 /makta
 
 # ignore debian package
