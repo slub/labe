@@ -8,7 +8,7 @@ import socket
 import pytest
 import requests
 
-from labe.coci import get_figshare_download_link, get_redirect_url
+from labe.oci import get_figshare_download_link, get_terminal_url
 
 
 def no_internet(host="8.8.8.8", port=53, timeout=3):
@@ -28,12 +28,12 @@ def no_internet(host="8.8.8.8", port=53, timeout=3):
 @pytest.mark.skipif(no_internet(), reason="no internet")
 def test_get_redirct_url():
     with pytest.raises(requests.exceptions.MissingSchema):
-        get_redirect_url("undefined")
+        get_terminal_url("undefined")
 
-    assert get_redirect_url("https://google.com") == "https://www.google.com/"
-    assert get_redirect_url(
+    assert get_terminal_url("https://google.com") == "https://www.google.com/"
+    assert get_terminal_url(
         "http://google.com") == "https://www.google.com/?gws_rd=ssl"
-    assert (get_redirect_url("https://doi.org/10.1111/icad.12417") ==
+    assert (get_terminal_url("https://doi.org/10.1111/icad.12417") ==
             "https://onlinelibrary.wiley.com/doi/10.1111/icad.12417")
 
 

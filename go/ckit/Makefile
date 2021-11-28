@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 PKGNAME := ckit
-TARGETS := labed tabjson makta
+TARGETS := labed tabjson makta doisniffer
 VERSION := $(shell git rev-parse --short HEAD)
 BUILDTIME := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 

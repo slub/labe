@@ -54,8 +54,12 @@ import (
 )
 
 var (
+	Version   string
+	Buildtime string
+
 	compressValue = flag.Bool("C", false, "compress value; gz+b64")
 	compressTable = flag.Bool("T", false, "emit table showing possible savings through compression")
+	showVersion   = flag.Bool("version", false, "show version and exit")
 )
 
 // Doc is the part of the document we are interested in. If this tool should be
@@ -66,6 +70,10 @@ type Doc struct {
 
 func main() {
 	flag.Parse()
+	if *showVersion {
+		fmt.Printf("makta %s %s\n", Version, Buildtime)
+		os.Exit(0)
+	}
 	pp := parallel.NewProcessor(os.Stdin, os.Stdout, func(p []byte) ([]byte, error) {
 		var doc Doc
 		if err := json.Unmarshal(p, &doc); err != nil {

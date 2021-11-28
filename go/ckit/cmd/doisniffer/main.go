@@ -1,0 +1,81 @@
+// Sniff out DOI from JSON document, optionally update docs with found DOI.
+package main
+
+import (
+	"flag"
+	"fmt"
+	"log"
+	"os"
+	"regexp"
+	"runtime"
+	"strings"
+
+	"github.com/miku/labe/go/ckit/doi"
+)
+
+var (
+	Version   string
+	Buildtime string
+
+	noSkipUnmatched = flag.Bool("S", false, "do not skip unmatched documents")
+	updateKey       = flag.String("k", "doi_str_mv", "update key")
+	identifierKey   = flag.String("i", "id", "identifier key")
+	ignoreKeys      = flag.String("K", "barcode,dewey", "ignore keys (regexp), comma separated") // TODO: repeated flag
+	numWorkers      = flag.Int("w", runtime.NumCPU(), "number of workers")
+	batchSize       = flag.Int("b", 5000, "batch size")
+	showVersion     = flag.Bool("version", false, "show version and exit")
+)
+
+func main() {
+	flag.Parse()
+	if *showVersion {
+		fmt.Printf("makta %s %s\n", Version, Buildtime)
+		os.Exit(0)
+	}
+	ignore, err := stringToRegexpSlice(*ignoreKeys, ",")
+	if err != nil {
+		log.Fatal(err)
+	}
+	sniffer := &doi.Sniffer{
+		Reader:        os.Stdin,
+		Writer:        os.Stdout,
+		SkipUnmatched: !*noSkipUnmatched,
+		UpdateKey:     *updateKey,
+		IdentifierKey: *identifierKey,
+		MapSniffer: &doi.MapSniffer{
+			Pattern:    regexp.MustCompile(doi.PatDOI),
+			IgnoreKeys: ignore,
+		},
+		// This is custom and cannot be changed from flags.
+		PostProcess: func(s string) string {
+			switch {
+			case strings.HasSuffix(s, "/epdf"):
+				return s[:len(s)-5]
+			case strings.HasSuffix(s, ".") || strings.HasSuffix(s, "*"):
+				return s[:len(s)-1]
+			default:
+				return s
+			}
+		},
+		NumWorkers: *numWorkers,
+		BatchSize:  *batchSize,
+	}
+	if err := sniffer.Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// stringToRegexpSlice converts a string into a list of compiled patterns.
+func stringToRegexpSlice(s string, sep string) (result []*regexp.Regexp, err error) {
+	if len(s) == 0 {
+		return
+	}
+	for _, v := range strings.Split(s, sep) {
+		re, err := regexp.Compile(v)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, re)
+	}
+	return result, nil
+}

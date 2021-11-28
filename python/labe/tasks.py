@@ -207,6 +207,14 @@ class IdMappingDatabase(Task):
     """
     We need to sniff out DOI from all index data and build a (id, doi) table.
     """
+    date = luigi.DateParameter(default=datetime.date.today())
+
+    def requires(self):
+        return [
+            SolrFetchDocs(name="main"),
+            SolrFetchDocs(name="ai"),
+        ]
+
     def run(self):
         return NotImplementedError()
 

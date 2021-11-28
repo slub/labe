@@ -16,6 +16,7 @@ require (
 
 require (
 	github.com/felixge/httpsnoop v1.0.1 // indirect
+	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
 	github.com/segmentio/asm v1.1.0 // indirect
 )

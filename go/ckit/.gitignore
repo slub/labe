@@ -2,6 +2,7 @@
 /labed
 /tabjson
 /makta
+/doisniffer
 
 # ignore debian package
 ckit_*_amd64.deb
