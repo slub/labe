@@ -19,11 +19,11 @@ $ tree -sh .local/share/labe
 
 """
 
+import datetime
 import functools
 import hashlib
 import os
 import tempfile
-import datetime
 
 import luigi
 
@@ -128,7 +128,8 @@ class OpenCitationsDatabase(Task):
                           cut -d, -f2,3 |
                           sed -e 's@,@\t@' |
                           makta -init -o {output} -I 3
-                          """, input=self.input().path)
+                          """,
+                          input=self.input().path)
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -150,9 +151,12 @@ class SolrFetchDocs(Task):
     def run(self):
         # This should live elsewhere.
         urlmap = {
-            "main": "https://index.ubl-proxy.slub-dresden.de/solr/biblio",
-            "ai": "https://ai.ubl-proxy.slub-dresden.de/solr/biblio",
-            "slub-production": "https://slubidx.ubl-proxy.slub-dresden.de/solr/slub-production",
+            "main":
+            "https://index.ubl-proxy.slub-dresden.de/solr/biblio",
+            "ai":
+            "https://ai.ubl-proxy.slub-dresden.de/solr/biblio",
+            "slub-production":
+            "https://slubidx.ubl-proxy.slub-dresden.de/solr/slub-production",
         }
         try:
             url = urlmap[self.name]
@@ -161,7 +165,8 @@ class SolrFetchDocs(Task):
         output = shellout("""
                           solrdump -verbose -server {server} -rows 2000 -fl 'id,title,author,format,url' |
                           zstd -c -T0 > {output}
-                          """, server=url)
+                          """,
+                          server=url)
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -171,6 +176,12 @@ class SolrFetchDocs(Task):
 class SolrDatabase(Task):
     """
     Convert SOLR JSON into an sqlite database.
+
+    Timings:
+
+    main             1m48.112s
+    slub-production  0m3.451s
+    ai              12m47.890s
     """
     date = luigi.DateParameter(default=datetime.date.today())
     name = luigi.Parameter(
@@ -184,12 +195,20 @@ class SolrDatabase(Task):
                           zstdcat -T0 {input} |
                           tabjson |
                           makta -init -I 1 -o {output}
-                          """, input=self.input().path)
+                          """,
+                          input=self.input().path)
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="db"))
 
+
+class IdMappingDatabase(Task):
+    """
+    We need to sniff out DOI from all index data and build a (id, doi) table.
+    """
+    def run(self):
+        return NotImplementedError()
 
 
 class Hello(Task):
