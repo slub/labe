@@ -205,18 +205,33 @@ class SolrDatabase(Task):
 
 class IdMappingDatabase(Task):
     """
-    We need to sniff out DOI from all index data and build a (id, doi) table.
+    We need to sniff out DOI from all index data and build a (id, doi) database.
     """
     date = luigi.DateParameter(default=datetime.date.today())
 
     def requires(self):
         return [
-            SolrFetchDocs(name="main"),
-            SolrFetchDocs(name="ai"),
+            SolrFetchDocs(date=self.date, name="main"),
+            SolrFetchDocs(date=self.date, name="ai"),
         ]
 
     def run(self):
-        return NotImplementedError()
+        raise NotImplementedError
+        #
+        # we need to extract (id, doi) pairs a bit differently from "main" and "ai"
+        #
+        # input_paths = " ".join([t.path for t in self.input()])
+        # output = shellout("""
+        #              zstdcat -T0 {inputs} |
+        #              doisniffer |
+        #              jq -rc '[.id, .doi_str_mv[0]] | @tsv' |
+        #              makta -init -o {output} -I 3
+        #          """,
+        #                   inputs=input_paths)
+        # luigi.LocalTarget(output).move(self.output().path)
+
+    def output(self):
+        return luigi.LocalTarget(path=self.path(ext="db"))
 
 
 class Hello(Task):

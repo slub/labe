@@ -74,7 +74,7 @@ def sniff_doi(fobj,
             # can rule out barcode directly
             if aggressive and ("barcode" in match.key or "dewey" in match.key):
                 print("[skip] {}:{}".format(match.key, value), file=sys.stderr)
-                sniffed = set() # do we need this
+                sniffed = set()  # do we need this
                 break
             sniffed.add(value)
             if tab:

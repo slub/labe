@@ -120,14 +120,16 @@ def main():
         logging.config.fileConfig(args.logging_conf_file)
 
     # Wrapper around OCI.
-    elif args.print_most_recent_download_url:
+    if args.print_most_recent_download_url:
         ds = OpenCitationsDataset()
         print(ds.most_recent_download_url())
+        sys.exit(0)
 
     # List available tasks.
-    elif args.list:
+    if args.list:
         for name in effective_task_names():
             print(name)
+        sys.exit(0)
 
     # Show output filename for task.
     elif args.show_output_path:
