@@ -233,10 +233,3 @@ class IdMappingDatabase(Task):
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="db"))
 
-
-class Hello(Task):
-    def run(self):
-        print("Hello: output at {}".format(self.output().path))
-
-    def output(self):
-        return luigi.LocalTarget(path=self.path())
