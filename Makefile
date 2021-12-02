@@ -26,8 +26,9 @@ deb: all
 	mkdir -p packaging/deb/$(PKGNAME)/usr/local/bin
 	# copy files one by one
 	cp go/ckit/makta packaging/deb/$(PKGNAME)/usr/local/bin
-	cp go/ckit/tabbedjson packaging/deb/$(PKGNAME)/usr/local/bin
+	cp go/ckit/tabjson packaging/deb/$(PKGNAME)/usr/local/bin
 	cp go/ckit/labed packaging/deb/$(PKGNAME)/usr/local/bin
+	cp go/ckit/doisniffer packaging/deb/$(PKGNAME)/usr/local/bin
 	# build package
 	cd packaging/deb && fakeroot dpkg-deb --build $(PKGNAME) .
 	mv packaging/deb/$(PKGNAME)_*.deb .
