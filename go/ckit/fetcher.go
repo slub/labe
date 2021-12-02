@@ -167,7 +167,8 @@ func (g *FetchGroup) Ping() error {
 func (g *FetchGroup) Fetch(id string) ([]byte, error) {
 	for _, v := range g.Backends {
 		if p, err := v.Fetch(id); err != nil {
-			return nil, err
+			// OK to miss.
+			continue
 		} else {
 			return p, nil
 		}
