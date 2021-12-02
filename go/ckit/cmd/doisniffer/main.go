@@ -57,7 +57,10 @@ func main() {
 			case strings.HasSuffix(s, ")") && !strings.Contains(s, "("):
 				// ai-179-wynjb    10.1016/j.jenvp.2019.01.011)
 				return s[:len(s)-1]
-			case strings.HasSuffix(s, ".") || strings.HasSuffix(s, "*"):
+			case strings.HasSuffix(s, "]") && !strings.Contains(s, "["):
+				// ai-28-29f64b012591451f83832a41c64bed83  10.5329/RECADM.20090802005]
+				return s[:len(s)-1]
+			case strings.HasSuffix(s, ".") || strings.HasSuffix(s, ",") || strings.HasSuffix(s, ":") || strings.HasSuffix(s, "*"):
 				return s[:len(s)-1]
 			default:
 				return s
