@@ -152,6 +152,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -170,7 +171,6 @@ var (
 	identifierDatabasePath = flag.String("I", "i.db", "identifier database path")
 	ociDatabasePath        = flag.String("O", "o.db", "oci as a datbase path")
 	blobServerURL          = flag.String("bs", "", "blob server URL")
-	// sqliteBlobPath         = flag.String("Q", "", "sqlite3 blob index path")
 	solrBlobPath           = flag.String("S", "", "solr blob URL")
 	listenAddr             = flag.String("l", "localhost:3000", "host and port to listen on")
 	enableStopWatch        = flag.Bool("W", false, "enable stopwatch")
@@ -181,6 +181,7 @@ var (
 	cacheTriggerDuration   = flag.Duration("Cg", 250*time.Millisecond, "cache trigger duration")
 	cacheDefaultExpiration = flag.Duration("Cx", 72*time.Hour, "cache default expiration")
 	showVersion            = flag.Bool("version", false, "show version")
+	logFile                = flag.String("logfile", "", "file to log to")
 
 	sqliteBlobPath xflag.Array
 
@@ -253,6 +254,16 @@ func main() {
 		fmt.Printf("labed %v %v\n", Version, Buildtime)
 		os.Exit(0)
 	}
+	var logWriter io.Writer = os.Stdout
+	if *logFile != "" {
+		f, err := os.Open(*logFile)
+		if err != nil {
+			log.Fatalf("could not open log file: %v", err)
+		}
+		defer f.Close()
+		logWriter = f
+	}
+	log.SetOutput(logWriter)
 	// Setup database connections.
 	if _, err := os.Stat(*identifierDatabasePath); os.IsNotExist(err) {
 		log.Fatal(err)
@@ -311,7 +322,7 @@ func main() {
 		h = handlers.CompressHandler(srv)
 	}
 	if *enableLogging {
-		h = handlers.LoggingHandler(os.Stdout, h)
+		h = handlers.LoggingHandler(logWriter, h)
 	}
 	log.Fatal(http.ListenAndServe(*listenAddr, h))
 }
