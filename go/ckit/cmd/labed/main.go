@@ -281,6 +281,7 @@ func main() {
 			log.Fatal(err)
 		}
 		fetcher = group
+		log.Printf("setup group fetcher over %d databases: %v", len(group.Backends), group.Backends)
 	default:
 		log.Fatal("need blob server (-bs), sqlite3 database (-Q) or solr (-S)")
 	}
