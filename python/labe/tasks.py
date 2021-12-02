@@ -31,8 +31,11 @@ from labe.base import BaseTask, shellout
 from labe.oci import OpenCitationsDataset
 
 __all__ = [
+    'OpenCitationsDatabase',
     'OpenCitationsDownload',
     'OpenCitationsSingleFile',
+    'SolrDatabase',
+    'SolrFetchDocs',
     'Task',
 ]
 

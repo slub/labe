@@ -46,11 +46,17 @@ func main() {
 			Pattern:    regexp.MustCompile(doi.PatDOI),
 			IgnoreKeys: ignore,
 		},
-		// This is custom and cannot be changed from flags.
+		// Custom postprocessing, cannot be changed from flags.
 		PostProcess: func(s string) string {
 			switch {
+			case strings.HasSuffix(s, "])"):
+				// ai-179-z4p6s    10.24072/pci.ecology.100076])
+				return s[:len(s)-2]
 			case strings.HasSuffix(s, "/epdf"):
 				return s[:len(s)-5]
+			case strings.HasSuffix(s, ")") && !strings.Contains(s, "("):
+				// ai-179-wynjb    10.1016/j.jenvp.2019.01.011)
+				return s[:len(s)-1]
 			case strings.HasSuffix(s, ".") || strings.HasSuffix(s, "*"):
 				return s[:len(s)-1]
 			default:
