@@ -256,7 +256,7 @@ func main() {
 	}
 	var logWriter io.Writer = os.Stdout
 	if *logFile != "" {
-		f, err := os.Open(*logFile)
+		f, err := os.OpenFile(*logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 		if err != nil {
 			log.Fatalf("could not open log file: %v", err)
 		}
