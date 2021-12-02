@@ -4,8 +4,9 @@
 /makta
 /doisniffer
 
-# ignore debian package
+# ignore debian package and files
 ckit_*_amd64.deb
+id_to_doi.tsv.zst
 
 # ignore sample data files
 /i.db
