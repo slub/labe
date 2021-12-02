@@ -48,6 +48,7 @@ func main() {
 		},
 		// Custom postprocessing, cannot be changed from flags.
 		PostProcess: func(s string) string {
+			s = strings.TrimSpace(s)
 			switch {
 			case strings.HasSuffix(s, "])"):
 				// ai-179-z4p6s    10.24072/pci.ecology.100076])
