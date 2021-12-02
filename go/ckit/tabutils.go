@@ -13,6 +13,11 @@ import (
 	"time"
 )
 
+// WithReadOnly opens a sqlite database in read-only mode.
+func WithReadOnly(path string) string {
+	return fmt.Sprintf("file:%s?mode=ro", path)
+}
+
 // RunScript runs a script on an sqlite3 database.
 func RunScript(path, script, message string) error {
 	cmd := exec.Command("sqlite3", path)

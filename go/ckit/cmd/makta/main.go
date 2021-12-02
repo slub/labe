@@ -122,7 +122,7 @@ PRAGMA temp_store = MEMORY;
 		}
 	}
 	if err := importBatch(); err != nil {
-		log.Fatal("batch: %v", err)
+		log.Fatalf("batch: %v", err)
 	}
 	fmt.Println()
 	switch *indexMode {

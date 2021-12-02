@@ -163,13 +163,14 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/miku/labe/go/ckit"
+	"github.com/miku/labe/go/ckit/xflag"
 )
 
 var (
 	identifierDatabasePath = flag.String("I", "i.db", "identifier database path")
 	ociDatabasePath        = flag.String("O", "o.db", "oci as a datbase path")
 	blobServerURL          = flag.String("bs", "", "blob server URL")
-	sqliteBlobPath         = flag.String("Q", "", "sqlite3 blob index path")
+	// sqliteBlobPath         = flag.String("Q", "", "sqlite3 blob index path")
 	solrBlobPath           = flag.String("S", "", "solr blob URL")
 	listenAddr             = flag.String("l", "localhost:3000", "host and port to listen on")
 	enableStopWatch        = flag.Bool("W", false, "enable stopwatch")
@@ -180,6 +181,8 @@ var (
 	cacheTriggerDuration   = flag.Duration("Cg", 250*time.Millisecond, "cache trigger duration")
 	cacheDefaultExpiration = flag.Duration("Cx", 72*time.Hour, "cache default expiration")
 	showVersion            = flag.Bool("version", false, "show version")
+
+	sqliteBlobPath xflag.Array
 
 	Version   string
 	Buildtime string
@@ -237,15 +240,12 @@ Examples
 `
 )
 
-// withReadOnly opens a sqlite database in read-only mode.
-func withReadOnly(path string) string {
-	return fmt.Sprintf("file:%s?mode=ro", path)
-}
-
 func main() {
+	flag.Var(&sqliteBlobPath, "Q", "blob sqlite3 server (repeatable)")
 	flag.Usage = func() {
 		fmt.Printf(strings.Replace(Help, `{{ .listenAddr }}`, *listenAddr, -1))
-		fmt.Println("Flags\n")
+		fmt.Println("Flags")
+		fmt.Println()
 		flag.PrintDefaults()
 	}
 	flag.Parse()
@@ -260,11 +260,11 @@ func main() {
 	if _, err := os.Stat(*ociDatabasePath); os.IsNotExist(err) {
 		log.Fatal(err)
 	}
-	identifierDatabase, err := sqlx.Open("sqlite3", withReadOnly(*identifierDatabasePath))
+	identifierDatabase, err := sqlx.Open("sqlite3", ckit.WithReadOnly(*identifierDatabasePath))
 	if err != nil {
 		log.Fatal(err)
 	}
-	ociDatabase, err := sqlx.Open("sqlite3", withReadOnly(*ociDatabasePath))
+	ociDatabase, err := sqlx.Open("sqlite3", ckit.WithReadOnly(*ociDatabasePath))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -275,15 +275,12 @@ func main() {
 		fetcher = &ckit.SolrBlob{BaseURL: *solrBlobPath}
 	case *blobServerURL != "":
 		fetcher = &ckit.BlobServer{BaseURL: *blobServerURL}
-	case *sqliteBlobPath != "":
-		if _, err := os.Stat(*sqliteBlobPath); os.IsNotExist(err) {
+	case len(sqliteBlobPath) > 0:
+		group := &ckit.FetchGroup{}
+		if err := group.FromDatabaseFiles(sqliteBlobPath...); err != nil {
 			log.Fatal(err)
 		}
-		indexDatabase, err := sqlx.Open("sqlite3", withReadOnly(*sqliteBlobPath))
-		if err != nil {
-			log.Fatal(err)
-		}
-		fetcher = &ckit.SqliteBlob{DB: indexDatabase}
+		fetcher = group
 	default:
 		log.Fatal("need blob server (-bs), sqlite3 database (-Q) or solr (-S)")
 	}

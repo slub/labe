@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"strings"
 	"time"
@@ -128,6 +129,23 @@ func (b *SolrBlob) Fetch(id string) ([]byte, error) {
 // couple of backends.
 type FetchGroup struct {
 	Backends []Fetcher
+}
+
+// FromDatabaseFiles sets up a fetch group from a list of sqlite3 database filenames.
+func (g *FetchGroup) FromDatabaseFiles(files ...string) error {
+	for _, f := range files {
+		// TODO: In theory, we can allow empty files as well.
+		if _, err := os.Stat(f); os.IsNotExist(err) {
+			return fmt.Errorf("file not found: %s", f)
+		}
+		db, err := sqlx.Open("sqlite3", WithReadOnly(f))
+		if err != nil {
+			return fmt.Errorf("database: %w", err)
+		}
+		fetcher := &SqliteBlob{DB: db}
+		g.Backends = append(g.Backends, fetcher)
+	}
+	return nil
 }
 
 // Ping is a healthcheck. Solr typically responds with 404 on the URL without

@@ -61,7 +61,7 @@ func main() {
 			case strings.HasSuffix(s, "]") && !strings.Contains(s, "["):
 				// ai-28-29f64b012591451f83832a41c64bed83  10.5329/RECADM.20090802005]
 				return s[:len(s)-1]
-			case strings.HasSuffix(s, ".") || strings.HasSuffix(s, ",") || strings.HasSuffix(s, ":") || strings.HasSuffix(s, "*"):
+			case hasAnySuffix(s, []string{".", ",", ":", "*", `”`, "'"}):
 				return s[:len(s)-1]
 			default:
 				return s
@@ -73,6 +73,16 @@ func main() {
 	if err := sniffer.Run(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// hasAnySuffix returns true, if s has any one of the given suffixes.
+func hasAnySuffix(s string, suffixes []string) bool {
+	for _, suffix := range suffixes {
+		if strings.HasSuffix(s, suffix) {
+			return true
+		}
+	}
+	return false
 }
 
 // stringToRegexpSlice converts a string into a list of compiled patterns.
