@@ -31,6 +31,7 @@ from labe.base import BaseTask, shellout
 from labe.oci import OpenCitationsDataset
 
 __all__ = [
+    'IdMappingDatabase',
     'OpenCitationsDatabase',
     'OpenCitationsDownload',
     'OpenCitationsSingleFile',
