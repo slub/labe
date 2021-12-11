@@ -4,6 +4,7 @@ Sniff out DOI from finc/vufind SOLR documents.
 
 import collections
 import re
+import sys
 
 import marcx
 
