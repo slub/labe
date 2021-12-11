@@ -39,6 +39,7 @@ def effective_task_names(suppress=None):
     suppress.
     """
     if suppress is None:
+        # These are internal luigi names. TODO: may filter out by module name.
         suppress = [
             'BaseTask',
             'Config',
@@ -87,7 +88,7 @@ def main():
     parser.add_argument(
         "-c",
         "--config-file",
-        default=os.path.join(xdg_config_home(), "labe", "settings.ini"),
+        default=os.path.join(xdg_config_home(), "labe", "labe.cfg"),
         help="path to configuration file",
     )
     parser.add_argument(
@@ -112,11 +113,16 @@ def main():
 
     # Hack to set the base directory of all tasks.
     Task.BASE = args.data_dir
+    # Hack to override autodetection of config file, if the given file exists.
+    if os.path.exists(args.config_file):
+        parser = configparser.ConfigParser()
+        parser.read(path)
+        Task._config = parser
 
     # Setup, configure.
     tempfile.tempdir = args.tmp_dir
     if os.path.exists(args.logging_conf_file):
-        # This won't work with [2:] ...
+        # TODO: This won't work with [2:] ...
         logging.config.fileConfig(args.logging_conf_file)
 
     # Wrapper around OCI.
@@ -159,3 +165,4 @@ def main():
         except TaskClassNotFoundException as err:
             print(err, file=sys.stderr)
             sys.exit(1)
+

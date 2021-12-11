@@ -236,5 +236,3 @@ class IdMappingDatabase(Task):
         #                   inputs=input_paths)
         # luigi.LocalTarget(output).move(self.output().path)
 
-    def output(self):
-        return luigi.LocalTarget(path=self.path(ext="db"))
