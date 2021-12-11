@@ -2,6 +2,7 @@
 A default task class for local workflows.
 """
 
+import configparser
 import datetime
 import hashlib
 import logging
@@ -11,6 +12,7 @@ import subprocess
 import tempfile
 
 import luigi
+import xdg
 
 __all__ = [
     'BaseTask',
@@ -51,6 +53,22 @@ class BaseTask(luigi.Task):
     """
     BASE = os.environ.get('GLUISH_DATA', tempfile.gettempdir())
     TAG = 'default'
+
+    @property
+    def config(self):
+        if not hasattr(self, "_config"):
+            parser = configparser.ConfigParser()
+            _config_paths = [
+                '/etc/labe/labe.cfg',
+                os.path.join(xdg.xdg_config_home(), "labe", "labe.cfg"),
+                'labe.cfg',
+            ]
+            for path in _config_paths:
+                if not os.path.exists(path):
+                    continue
+                parser.read(path)
+            self._config = parser
+        return self._config
 
     def closest(self):
         """ Return the closest date for a given date.

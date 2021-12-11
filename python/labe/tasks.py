@@ -41,6 +41,12 @@ __all__ = [
 ]
 
 
+@functools.lru_cache(maxsize=None)
+def open_citations_most_recent_download_url():
+    ds = OpenCitationsDataset()
+    return ds.most_recent_download_url()
+
+
 class Task(BaseTask):
     """
     Superclass for labe tasks.
@@ -48,13 +54,17 @@ class Task(BaseTask):
     TAG = "labe"
     BASE = os.path.join(tempfile.gettempdir())
 
-    @functools.lru_cache(maxsize=None)
     def open_citations_url(self):
-        ds = OpenCitationsDataset()
-        return ds.most_recent_download_url()
+        """
+        Open citations download url.
+        """
+        return open_citations_most_recent_download_url()
 
-    @functools.lru_cache(maxsize=None)
     def open_citations_url_hash(self):
+        """
+        We use the sha1 of the URL to understand whether task need to be
+        regenerated.
+        """
         url = self.open_citations_url()
         return hashlib.sha1(url.encode("utf-8")).hexdigest()
 
@@ -78,7 +88,7 @@ class OpenCitationsSingleFile(Task):
     Turn nested zip files in to a single, zstd compressed flat file.
 
     As of 11/2021 OpenCitations download is a zip of zip files, but it is
-    easier to work with a single CSV file.
+    easier to work with a single compressed CSV file.
 
     Also, figshare does not support HTTP range requests, which would allow us
     to convert zip files on the fly.
@@ -143,27 +153,19 @@ class OpenCitationsDatabase(Task):
 
 class SolrFetchDocs(Task):
     """
-    Fetch JSON data from solr, store compressed; using solrdump
+    Fetch JSON data from solr, store compressed; uses solrdump
     (https://git.io/J1pxG).
 
-    Some timings: 190min for "main", 32s for "slub-production", 1374min for "ai" (22h).
+    Some timings: 190min for "main", 32s for "slub-production", 1374min for
+    "ai" (22h).
     """
     date = luigi.DateParameter(default=datetime.date.today())
     name = luigi.Parameter(
         default="main", description="index name, url lookup up from a config")
 
     def run(self):
-        # This should live elsewhere.
-        urlmap = {
-            "main":
-            "https://index.ubl-proxy.slub-dresden.de/solr/biblio",
-            "ai":
-            "https://ai.ubl-proxy.slub-dresden.de/solr/biblio",
-            "slub-production":
-            "https://slubidx.ubl-proxy.slub-dresden.de/solr/slub-production",
-        }
         try:
-            url = urlmap[self.name]
+            url = self.config["indices"][self.name]
         except KeyError:
             raise LookupError('cannot map name to solr url')
         output = shellout("""
@@ -236,4 +238,3 @@ class IdMappingDatabase(Task):
 
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="db"))
-
