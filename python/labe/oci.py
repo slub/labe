@@ -44,7 +44,7 @@ def get_figshare_download_link(link):
     landing_page_url = get_terminal_url(link)
     pattern_figshare_url = re.compile(
         r"https://figshare.com/articles/dataset/"
-        "(?P<name>[^/]*)/(?P<id>[^/]*)/(?P<version>[\d]*)")
+        r"(?P<name>[^/]*)/(?P<id>[^/]*)/(?P<version>[\d]*)")
     match = re.match(pattern_figshare_url, landing_page_url)
     if not match:
         raise RuntimeError(
@@ -117,10 +117,10 @@ class OpenCitationsDataset:
 
         """
         pattern_citation_data = re.compile(
-            r"citation data \((?P<format>[^)]*)\)</td>"
-            '<td><a href="(?P<url>[^"]*)">(?P<ext>'
-            "[^<]*)</a></td><td>(?P<size>[^(]*)\((?P<"
-            "size_compressed>[^)]*)\)</td></tr>",
+            r'citation data \((?P<format>[^)]*)\)</td>'
+            r'<td><a href="(?P<url>[^"]*)">(?P<ext>'
+            r'[^<]*)</a></td><td>(?P<size>[^(]*)\((?P<'
+            r'size_compressed>[^)]*)\)</td></tr>',
             re.IGNORECASE,
         )
         return [
