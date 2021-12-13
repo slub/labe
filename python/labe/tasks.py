@@ -75,7 +75,7 @@ class OpenCitationsDownload(Task):
     """
     def run(self):
         output = shellout("""curl -sL "{url}" > {output}""",
-                          url=self.open_citations_url)
+                          url=self.open_citations_url())
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
