@@ -165,4 +165,3 @@ def main():
         except TaskClassNotFoundException as err:
             print(err, file=sys.stderr)
             sys.exit(1)
-

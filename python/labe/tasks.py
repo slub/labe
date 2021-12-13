@@ -54,6 +54,10 @@ class Task(BaseTask):
     TAG = "labe"
     BASE = os.path.join(tempfile.gettempdir())
 
+    # If the downloaded file is smaller than this, trigger an error. A basic
+    # sanity check to notice, if download method has changed.
+    OPEN_CITATION_DOWNLOAD_SIZE_THRESHOLD = 25_000_000_000
+
     def open_citations_url(self):
         """
         Open citations download url.
@@ -76,6 +80,13 @@ class OpenCitationsDownload(Task):
     def run(self):
         output = shellout("""curl -sL "{url}" > {output}""",
                           url=self.open_citations_url())
+        # do a basic sanity check right here, e.g. in 12/2021 filesizes were
+        # about 30GB; we want to get a notice if the file size seems too small
+        filesize = os.path.getsize(output)
+        if filesize < self.OPEN_CITATION_DOWNLOAD_SIZE_THRESHOLD:
+            raise RuntimeError(
+                "open citations download is suspicously small: {}, want at least {}"
+                .format(filesize, OPEN_CITATION_DOWNLOAD_SIZE_THRESHOLD))
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -235,4 +246,3 @@ class IdMappingDatabase(Task):
         #          """,
         #                   inputs=input_paths)
         # luigi.LocalTarget(output).move(self.output().path)
-
