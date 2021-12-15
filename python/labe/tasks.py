@@ -2,20 +2,29 @@
 
 Derivation tasks.
 
-$ tree -sh .local/share/labe
-.local/share/labe
+$ tree -sh ~/.local/share/labe
+/home/czygan/.local/share/labe
+├── [4.0K]  IdMappingDatabase
+│   └── [  29]  date-2021-11-25.db -> /home/czygan/tmp/id_to_doi.db
 ├── [4.0K]  OpenCitationsDatabase
-│   └── [144G]  a6d28e3e04bc206d3c4021a3381deb5c4443104b.db
+│   ├── [144G]  a6d28e3e04bc206d3c4021a3381deb5c4443104b.db
+│   └── [150G]  c90e82e35c9d02c00f81bee6d1f34b132953398c.db
 ├── [4.0K]  OpenCitationsDownload
-│   └── [  28]  a6d28e3e04bc206d3c4021a3381deb5c4443104b.zip -> /home/czygan/tmp/6741422.zip
+│   ├── [  28]  a6d28e3e04bc206d3c4021a3381deb5c4443104b.zip -> /home/czygan/tmp/6741422.zip
+│   └── [ 31G]  c90e82e35c9d02c00f81bee6d1f34b132953398c.zip
 ├── [4.0K]  OpenCitationsSingleFile
-│   └── [ 29G]  a6d28e3e04bc206d3c4021a3381deb5c4443104b.zst
+│   ├── [ 29G]  a6d28e3e04bc206d3c4021a3381deb5c4443104b.zst
+│   └── [ 31G]  c90e82e35c9d02c00f81bee6d1f34b132953398c.zst
+├── [4.0K]  SolrDatabase
+│   ├── [ 40G]  date-2021-11-25-name-ai.db
+│   ├── [5.5G]  date-2021-11-25-name-main.db
+│   └── [217M]  date-2021-11-25-name-slub-production.db
 └── [4.0K]  SolrFetchDocs
     ├── [5.5G]  date-2021-11-25-name-ai.zst
     ├── [968M]  date-2021-11-25-name-main.zst
     └── [ 23M]  date-2021-11-25-name-slub-production.zst
 
-4 directories, 6 files
+6 directories, 13 files
 
 """
 
@@ -143,6 +152,8 @@ class OpenCitationsDatabase(Task):
     1104185948
 
     Task takes about 95m3.050s.
+
+    A full run (e.g. download, single file, database) may take 2-3h: 143m33.560s
     """
     def requires(self):
         return OpenCitationsSingleFile()
