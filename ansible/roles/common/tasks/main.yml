@@ -22,9 +22,12 @@
     - parallel
     - pigz
     - pv
+    - pv
+    - rsync
     - screen
     - sqlite3
     - tmux
+    - tree
     - tree
     - unzip
     - vim

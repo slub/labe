@@ -1,6 +1,6 @@
 # LABE
 
-![](extra/banner/static/canvas.png)
+![](static/canvas.png)
 
 Prototyping citation data flows for [SLUB Dresden](https://www.slub-dresden.de/).
 
