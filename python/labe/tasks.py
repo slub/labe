@@ -87,7 +87,7 @@ class OpenCitationsDownload(Task):
     Download open citations corpus, currently via figshare.
     """
     def run(self):
-        output = shellout("""curl -sL "{url}" > {output}""",
+        output = shellout("""curl --fail -sL "{url}" > {output}""",
                           url=self.open_citations_url())
         # do a basic sanity check right here, e.g. in 12/2021 filesizes were
         # about 30GB; we want to get a notice if the file size seems too small
