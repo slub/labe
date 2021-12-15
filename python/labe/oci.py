@@ -22,7 +22,8 @@ default_user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.
 
 def get_terminal_url(link, headers=None, user_agent=default_user_agent):
     """
-    Given a url, return the terminal url.
+    Given a url, return the terminal url after all redirects. Raises exception
+    on HTTP status codes 400 or higher.
     """
     if headers is None:
         headers = {

@@ -1,18 +1,39 @@
 """
 Command line entry points for labe commands.
 
-    $ labe -S   # status
-    $ labe -r   # run
-    $ labe --gc # gc
+
+    usage: labe.pyz [-h] [-L] [-l] [-O TASK] [-r TASK] [-c CONFIG_FILE]
+                    [--logging-conf-file LOGGING_CONF_FILE] [--data-dir DATA_DIR]
+                    [--tmp-dir TMP_DIR]
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -L, --print-most-recent-download-url
+                            show most recent OCI download URL (default: False)
+      -l, --list            list task nam namess (default: False)
+      -O TASK, --show-output-path TASK
+                            show output path of task (default: None)
+      -r TASK, --run TASK   task to run (default: None)
+      -c CONFIG_FILE, --config-file CONFIG_FILE
+                            path to configuration file (default:
+                            /home/tir/.config/labe/labe.cfg)
+      --logging-conf-file LOGGING_CONF_FILE
+                            path to logging configuration file (default:
+                            /home/tir/.config/labe/logging.ini)
+      --data-dir DATA_DIR, -D DATA_DIR
+                            root directory for all tasks, we follow XDG (override
+                            in settings.ini) (default: /home/tir/.local/share)
+      --tmp-dir TMP_DIR, -T TMP_DIR
+                            temporary directory to use (default: /tmp)
 
 Example:
 
-    $ labe run IndexDatabase --index main
+    $ labe.pyz -r SolrDatabase --name main
 
 Put this into cron, to automate:
 
-    0 8 * * * labe -r IndexDatabase
-    0 1 * * * labe --gc
+    0 8 * * * labe.pyz -r SolrDatabase --name main
+
 """
 
 import argparse

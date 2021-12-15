@@ -238,12 +238,14 @@ class IdMappingDatabase(Task):
     date = luigi.DateParameter(default=datetime.date.today())
 
     def requires(self):
-        return [
-            SolrFetchDocs(date=self.date, name="main"),
-            SolrFetchDocs(date=self.date, name="ai"),
-        ]
+        return {
+            "main": SolrFetchDocs(date=self.date, name="main"),
+            "ai": SolrFetchDocs(date=self.date, name="ai"),
+        }
 
     def run(self):
+        # main -> sniff
+        # ai -> doi_mv_str
         raise NotImplementedError
         #
         # we need to extract (id, doi) pairs a bit differently from "main" and "ai"
@@ -257,3 +259,4 @@ class IdMappingDatabase(Task):
         #          """,
         #                   inputs=input_paths)
         # luigi.LocalTarget(output).move(self.output().path)
+
