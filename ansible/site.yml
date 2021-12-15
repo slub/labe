@@ -1,6 +1,5 @@
 ---
-- name: labe setup
-  hosts: app
+- name: labe setup (wip)
+  hosts: labe
   roles:
     - common
-    - app
