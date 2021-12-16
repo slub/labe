@@ -231,6 +231,26 @@ class SolrDatabase(Task):
         return luigi.LocalTarget(path=self.path(ext="db"))
 
 
+class IdMappingTable(Task):
+    """
+    Generate a two column TSV mapping local identifier to DOI.
+    """
+    date = luigi.DateParameter(default=datetime.date.today())
+
+    def requires(self):
+        return {
+            "main": SolrFetchDocs(date=self.date, name="main"),
+            "ai": SolrFetchDocs(date=self.date, name="ai"),
+        }
+
+    def run(self):
+        output = shellout(""" zstdcat -T0 {input} |
+                              doisniffer |
+                              jq -rc '[.id, .doi_str_mv[0]] | @tsv' > {output}""",
+                          inputs=self.input().get("main").path)
+        luigi.LocalTarget(output).move(self.output().path)
+
+
 class IdMappingDatabase(Task):
     """
     We need to sniff out DOI from all index data and build a (id, doi) database.
@@ -259,4 +279,3 @@ class IdMappingDatabase(Task):
         #          """,
         #                   inputs=input_paths)
         # luigi.LocalTarget(output).move(self.output().path)
-
