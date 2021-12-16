@@ -27,9 +27,9 @@ type Entry struct {
 }
 
 // StopWatch allows to record events over time and render them in a pretty
-// table. Example log output (via stopwatch.LogTable()).
+// table; thread-safe. Example log output (via stopwatch.LogTable()).
 //
-// 2021/09/29 17:22:40 timings for hTHc
+// 2021/09/29 17:22:40 timings for XVlB
 //
 // > XVlB    0    0s              0.00    started query for: ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
 // > XVlB    1    134.532µs       0.00    found doi for id: 10.1210/jc.2011-0385
@@ -103,6 +103,8 @@ func (s *StopWatch) LogTable() {
 
 // Table format the timings as table.
 func (s *StopWatch) Table() string {
+	s.Lock()
+	defer s.Unlock()
 	if s.disabled || len(s.entries) == 0 {
 		return ""
 	}
