@@ -41,5 +41,7 @@ clean:
 
 .PHONY: deploy
 deploy: $(ZIPAPP)
-	# temporary deploy option
+	# temporary deploy option, can put:
+	# DEPLOY_DST=user@srv.slub-dresden.de:/home/user/bin into ".env" file (read
+	# by makefile)
 	rsync -avzP -e 'ssh -p 21' labe.pyz $(DEPLOY_DST)
