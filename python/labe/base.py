@@ -101,7 +101,7 @@ class BaseTask(luigi.Task):
         """
         Return the path for this class with a certain set of parameters.
         `ext` sets the extension of the file.
-        If `hash` is true, the filename (w/o extenstion) will be hashed.
+        If `digest` is true, the filename (w/o extenstion) will be hashed.
         If `shard` is true, the files are placed in shards, based on the first
         two chars of the filename (hashed).
         """
