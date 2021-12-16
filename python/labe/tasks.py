@@ -90,7 +90,7 @@ class OpenCitationsDownload(Task):
         output = shellout("""curl --fail -sL "{url}" > {output}""",
                           url=self.open_citations_url())
         # do a basic sanity check right here, e.g. in 12/2021 filesizes were
-        # about 30GB; we want to get a notice if the file size seems too small
+        # about 30GB; we fail if the file size seems too small
         filesize = os.path.getsize(output)
         if filesize < self.OPEN_CITATION_DOWNLOAD_SIZE_THRESHOLD:
             raise RuntimeError(
