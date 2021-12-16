@@ -38,6 +38,7 @@ Put this into cron, to automate:
 
 import argparse
 import logging
+import configparser
 import os
 import sys
 import tempfile
@@ -137,7 +138,7 @@ def main():
     # Hack to override autodetection of config file, if the given file exists.
     if os.path.exists(args.config_file):
         parser = configparser.ConfigParser()
-        parser.read(path)
+        parser.read(args.config_file)
         Task._config = parser
 
     # Setup, configure.
