@@ -250,6 +250,8 @@ class IdMappingTable(Task):
                           inputs=self.input().get("main").path)
         luigi.LocalTarget(output).move(self.output().path)
 
+    def output(self):
+        return luigi.LocalTarget(path=self.path())
 
 class IdMappingDatabase(Task):
     """
