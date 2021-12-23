@@ -431,3 +431,10 @@ $ ls -lah index.db
 .rw-r--r-- 353G tir 26 Sep 22:32 index.db
 ```
 
+## Shortcuts
+
+From `AIExport` file to id, doi list:
+
+```
+$ unpigz -c $(taskoutput AIExport) | jq -rc 'select(.doi_str_mv != null) | [.id, .doi_str_mv[0]] | @tsv'
+```
