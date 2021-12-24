@@ -260,10 +260,7 @@ class IdMappingDatabase(Task):
     date = luigi.DateParameter(default=datetime.date.today())
 
     def requires(self):
-        return {
-            "main": SolrFetchDocs(date=self.date, name="main"),
-            "ai": SolrFetchDocs(date=self.date, name="ai"),
-        }
+        return IdMappingTable(date=self.date)
 
     def run(self):
         # main -> sniff
