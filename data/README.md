@@ -438,3 +438,7 @@ From `AIExport` file to id, doi list:
 ```
 $ unpigz -c $(taskoutput AIExport) | jq -rc 'select(.doi_str_mv != null) | [.id, .doi_str_mv[0]] | @tsv'
 ```
+
+## AI DOI
+
+* 73881207, `doi_str_mv`
