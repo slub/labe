@@ -179,7 +179,7 @@ class SolrFetchDocs(Task):
     (https://git.io/J1pxG).
 
     Some timings: 190min for "main", 32s for "slub-production", 1374min for
-    "ai" (22h); with -rows 50000: eta about 2.5h.
+    "ai" (22h); with -rows 50000: eta about 2.5h (134m27.012s).
     """
     date = luigi.DateParameter(default=datetime.date.today())
     name = luigi.Parameter(
