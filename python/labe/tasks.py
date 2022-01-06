@@ -246,12 +246,21 @@ class IdMappingTable(Task):
     def run(self):
         output = shellout(""" zstdcat -T0 {input} |
                               doisniffer |
-                              jq -rc '[.id, .doi_str_mv[0]] | @tsv' > {output}""",
-                          inputs=self.input().get("main").path)
+                              jq -rc '[.id, .doi_str_mv[0]] | @tsv' |
+                              zstd -c -T0 >> {output}
+                          """,
+                          input=self.input().get("main").path)
+        shellout(""" zstdcat -T0 {input} |
+                     jq -rc 'select(.doi_str_mv | length > 0) | [.id, .doi_str_mv[0]] | @tsv' |
+                     zstd -T0 -c >> {output}
+                 """,
+                 input=self.input().get("ai").path,
+                 output=output)
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
-        return luigi.LocalTarget(path=self.path())
+        return luigi.LocalTarget(path=self.path(ext="tsv.zst"))
+
 
 class IdMappingDatabase(Task):
     """
