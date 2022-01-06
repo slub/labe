@@ -1,4 +1,4 @@
-# Makefile for labe.
+# Makefile for labe python package.
 
 # use .env if present, https://lithic.tech/blog/2020-05/makefile-dot-env
 ifneq (,$(wildcard ./.env))

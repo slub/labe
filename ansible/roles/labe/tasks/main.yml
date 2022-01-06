@@ -1,0 +1,9 @@
+- name: Ensure group "labe" exists
+  group:
+    name: labe
+    state: present
+- name: Create service worker
+  user:
+    name: "labe"
+    group: "labe"
+    createhome: no

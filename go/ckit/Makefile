@@ -18,7 +18,7 @@ GOLDFLAGS += -X main.Version=$(VERSION)
 GOLDFLAGS += -X main.Buildtime=$(BUILDTIME)
 GOLDFLAGS += -w -s
 GOFLAGS = -ldflags "$(GOLDFLAGS)"
-GOFILES = $(shell find . -name *.go)
+GOFILES = $(shell find . -name \*.go -print)
 
 .PHONY: all
 all: $(TARGETS)
