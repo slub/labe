@@ -272,18 +272,11 @@ class IdMappingDatabase(Task):
         return IdMappingTable(date=self.date)
 
     def run(self):
-        # main -> sniff
-        # ai -> doi_mv_str
-        raise NotImplementedError
-        #
-        # we need to extract (id, doi) pairs a bit differently from "main" and "ai"
-        #
-        # input_paths = " ".join([t.path for t in self.input()])
-        # output = shellout("""
-        #              zstdcat -T0 {inputs} |
-        #              doisniffer |
-        #              jq -rc '[.id, .doi_str_mv[0]] | @tsv' |
-        #              makta -init -o {output} -I 3
-        #          """,
-        #                   inputs=input_paths)
-        # luigi.LocalTarget(output).move(self.output().path)
+        output = shellout(""" zstd -q -d -c -T0 {inputs} |
+                              makta -init -o {output} -I 3
+                          """,
+                          inputs=self.input().path)
+        luigi.LocalTarget(output).move(self.output().path)
+
+    def output(self):
+        return luigi.LocalTarget(path=self.path(ext="db"))
