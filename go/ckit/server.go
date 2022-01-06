@@ -217,12 +217,15 @@ func (s *Server) handleDOI() http.HandlerFunc {
 // testable place. Also, reuse some existing stats library. Also TODO: optimize
 // backend requests and think up schema for delivery.
 func (s *Server) handleLocalIdentifier() http.HandlerFunc {
+	// tookRegexp will help us to update a field in a cached JSON byte slice
+	// w/o parsing the JSON again; hacky but fast. This only is relevant, if we
+	// use the cache.
+	var tookRegexp = regexp.MustCompile(`"took":[0-9.]+`)
 	// We only care about caching here. TODO: we could use a closure for the
 	// cache here (and not store it directly on the server).
 	if s.CacheEnabled {
 		s.cache = cache.New(s.CacheDefaultExpiration, s.CacheTTL)
 	}
-	var tookRegexp = regexp.MustCompile(`"took":[0-9.]*`)
 	return func(w http.ResponseWriter, r *http.Request) {
 		// (1) resolve id to doi
 		// (2) lookup related doi via oci
@@ -265,7 +268,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 					// ...}]},"extra":{"took":1.443760546,"unmatc...
 					// If this fails, we do not care; the chance this pattern
 					// appears in the data is very low.
-					took := fmt.Sprintf(`"took":%f`, time.Since(started).Seconds())
+					took := fmt.Sprintf(`"took":%0.8f`, time.Since(started).Seconds())
 					b = tookRegexp.ReplaceAll(b, []byte(took))
 					if _, err := w.Write(b); err != nil {
 						httpErrLog(w, err)
