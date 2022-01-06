@@ -54,6 +54,7 @@ class BaseTask(luigi.Task):
     BASE = os.environ.get('GLUISH_DATA', tempfile.gettempdir())
     TAG = 'default'
 
+    # TODO: supply example config.ini in repo
     @property
     def config(self):
         if not hasattr(self, "_config"):

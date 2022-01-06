@@ -18,12 +18,13 @@ var (
 	Buildtime string
 
 	noSkipUnmatched = flag.Bool("S", false, "do not skip unmatched documents")
-	updateKey       = flag.String("k", "doi_str_mv", "update key")
-	identifierKey   = flag.String("i", "id", "identifier key")
-	ignoreKeys      = flag.String("K", "barcode,dewey", "ignore keys (regexp), comma separated") // TODO: repeated flag
-	numWorkers      = flag.Int("w", runtime.NumCPU(), "number of workers")
-	batchSize       = flag.Int("b", 5000, "batch size")
-	showVersion     = flag.Bool("version", false, "show version and exit")
+	// TODO: if updateKey exists, do nothing
+	updateKey     = flag.String("k", "doi_str_mv", "update key")
+	identifierKey = flag.String("i", "id", "identifier key")
+	ignoreKeys    = flag.String("K", "barcode,dewey", "ignore keys (regexp), comma separated") // TODO: repeated flag
+	numWorkers    = flag.Int("w", runtime.NumCPU(), "number of workers")
+	batchSize     = flag.Int("b", 5000, "batch size")
+	showVersion   = flag.Bool("version", false, "show version and exit")
 )
 
 func main() {

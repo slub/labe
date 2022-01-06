@@ -189,6 +189,7 @@ class SolrFetchDocs(Task):
         try:
             url = self.config["indices"][self.name]
         except KeyError:
+            # TODO: be a bit more verbose, show which indices are available
             raise LookupError('cannot map name to solr url')
         output = shellout("""
                           solrdump -verbose -server {server} -rows 50000 -fl 'id,title,author,format,url,doi_str_mv' |
@@ -239,6 +240,7 @@ class IdMappingTable(Task):
 
     def requires(self):
         return {
+            # TODO: add "slub-production"
             "main": SolrFetchDocs(date=self.date, name="main"),
             "ai": SolrFetchDocs(date=self.date, name="ai"),
         }
@@ -264,7 +266,8 @@ class IdMappingTable(Task):
 
 class IdMappingDatabase(Task):
     """
-    We need to sniff out DOI from all index data and build a (id, doi) database.
+    We need to sniff out DOI from all index data and build a (id, doi)
+    database.
     """
     date = luigi.DateParameter(default=datetime.date.today())
 
