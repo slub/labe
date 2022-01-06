@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -221,6 +222,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 	if s.CacheEnabled {
 		s.cache = cache.New(s.CacheDefaultExpiration, s.CacheTTL)
 	}
+	var tookRegexp = regexp.MustCompile(`"took":[0-9.]*`)
 	return func(w http.ResponseWriter, r *http.Request) {
 		// (1) resolve id to doi
 		// (2) lookup related doi via oci
@@ -256,9 +258,15 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 					log.Printf("[cache] removed bogus cache value")
 				} else {
 					sw.Record("retrieved value from cache")
-					// TODO: At this point, we may want to update the
-					// "extra.took" field, to be less confusing; could keep all
-					// but "extra.took" unparsed.
+					// At this point, we may want to update the "extra.took"
+					// field, to be less confusing; Hack to update "extra.took"
+					// field w/o parsing and serializing json; we expect
+					// something like:
+					// ...}]},"extra":{"took":1.443760546,"unmatc...
+					// If this fails, we do not care; the chance this pattern
+					// appears in the data is very low.
+					took := fmt.Sprintf(`"took":%f`, time.Since(started).Seconds())
+					b = tookRegexp.ReplaceAll(b, []byte(took))
 					if _, err := w.Write(b); err != nil {
 						httpErrLog(w, err)
 						return
