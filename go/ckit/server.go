@@ -53,7 +53,7 @@ type Server struct {
 	CacheEnabled           bool
 	CacheTriggerDuration   time.Duration
 	CacheDefaultExpiration time.Duration
-	CacheTTL               time.Duration // TODO: rename to CacheCleanupInterval
+	CacheCleanupInterval   time.Duration // TODO: rename to CacheCleanupInterval
 	cache                  *cache.Cache
 }
 
@@ -224,7 +224,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 	// We only care about caching here. TODO: we could use a closure for the
 	// cache here (and not store it directly on the server).
 	if s.CacheEnabled {
-		s.cache = cache.New(s.CacheDefaultExpiration, s.CacheTTL)
+		s.cache = cache.New(s.CacheDefaultExpiration, s.CacheCleanupInterval)
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		// (1) resolve id to doi

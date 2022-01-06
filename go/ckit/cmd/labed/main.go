@@ -177,7 +177,7 @@ var (
 	enableGzip             = flag.Bool("z", false, "enable gzip compression")
 	enableLogging          = flag.Bool("L", false, "enable logging")
 	enableCache            = flag.Bool("C", false, "enable in-memory caching of expensive responses")
-	cacheTTL               = flag.Duration("Ct", 8*time.Hour, "cache ttl")
+	cacheCleanupInterval   = flag.Duration("Ct", 8*time.Hour, "cache cleanup interval")
 	cacheTriggerDuration   = flag.Duration("Cg", 250*time.Millisecond, "cache trigger duration")
 	cacheDefaultExpiration = flag.Duration("Cx", 72*time.Hour, "cache default expiration")
 	showVersion            = flag.Bool("version", false, "show version")
@@ -306,7 +306,7 @@ func main() {
 		CacheEnabled:           *enableCache,
 		CacheTriggerDuration:   *cacheTriggerDuration,
 		CacheDefaultExpiration: *cacheDefaultExpiration,
-		CacheTTL:               *cacheTTL,
+		CacheCleanupInterval:   *cacheCleanupInterval,
 	}
 	srv.Routes()
 	// Basic reachability checks.
