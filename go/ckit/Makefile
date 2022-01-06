@@ -1,6 +1,16 @@
+# Makefile for building executables for labe.
+
 SHELL := /bin/bash
 PKGNAME := ckit
-TARGETS := labed tabjson makta doisniffer
+TARGETS := \
+	doisniffer \
+	labed \
+	makta \
+    tabjson
+
+# This is an automatic version string using the git commit id. The debian
+# package version is currently separately defined in (and only in):
+# packaging/deb/ckit/DEBIAN/control
 VERSION := $(shell git rev-parse --short HEAD)
 BUILDTIME := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 
@@ -21,7 +31,7 @@ all: $(TARGETS)
 clean:
 	rm -f $(TARGETS)
 	rm -f *.deb
-	rm -rf packaging/deb/ckit/usr
+	rm -rf packaging/deb/$(PKGNAME)/usr
 
 .PHONY: deb
 deb: all
