@@ -442,3 +442,26 @@ $ unpigz -c $(taskoutput AIExport) | jq -rc 'select(.doi_str_mv != null) | [.id,
 ## AI DOI
 
 * 73881207, `doi_str_mv`
+
+## Misc
+
+```
+$ time for i in $(zstdcat -T0 date-2022-01-05.tsv.zst | shuf -n 100000); do
+    curl -s "http://0.0.0.0:8000/id/$i";
+done | grep -cv "404 page not found"
+59103
+
+real    89m9.729s
+user    37m43.959s
+sys     15m41.984s
+```
+
+About 59% of records do have some citation information. Single threaded, 18 requests/s.
+
+```
+$ curl 0.0.0.0:8000/cache/size
+{"count":1046}
+```
+
+About 1.7% of data seems cache worthy.
+
