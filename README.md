@@ -49,10 +49,10 @@ $ tokei -C -t=Go,Python
 ===============================================================================
  Language            Files        Lines         Code     Comments       Blanks
 ===============================================================================
- Go                     14         2072         1533          385          154
- Python                 11         1133          946           61          126
+ Go                     14         2105         1549          400          156
+ Python                 10         1135          957           50          128
 ===============================================================================
- Total                  25         3205         2479          446          280
+ Total                  24         3240         2506          450          284
 ===============================================================================
 ```
 
@@ -63,9 +63,12 @@ $ tokei -C -t=Go,Python
 ├── [4.0K]  ansible
 │   ├── [ 207]  hosts
 │   ├── [4.0K]  roles
-│   │   └── [4.0K]  common
+│   │   ├── [4.0K]  common
+│   │   │   └── [4.0K]  tasks
+│   │   │       └── [ 478]  main.yml
+│   │   └── [4.0K]  labe
 │   │       └── [4.0K]  tasks
-│   │           └── [ 478]  main.yml
+│   │           └── [ 170]  main.yml
 │   └── [  64]  site.yml
 ├── [4.0K]  data
 │   ├── [9.8G]  6741422v11s1.zst
@@ -90,12 +93,12 @@ $ tokei -C -t=Go,Python
 │   ├── [ 42M]  ma_to_doi.tsv
 │   ├── [9.4G]  ma_with_doi.json.zst
 │   ├── [145G]  oci.db
-│   └── [ 12K]  README.md
+│   └── [ 15K]  README.md
 ├── [4.0K]  go
 │   ├── [4.0K]  ckit
 │   │   ├── [4.0K]  cmd
 │   │   │   ├── [4.0K]  doisniffer
-│   │   │   │   └── [2.6K]  main.go
+│   │   │   │   └── [2.7K]  main.go
 │   │   │   ├── [4.0K]  labed
 │   │   │   │   └── [ 16K]  main.go
 │   │   │   ├── [4.0K]  makta
@@ -105,7 +108,7 @@ $ tokei -C -t=Go,Python
 │   │   ├── [4.0K]  doi
 │   │   │   ├── [3.2K]  sniffer.go
 │   │   │   └── [1.4K]  sniffer_test.go
-│   │   ├── [4.2K]  fetcher.go
+│   │   ├── [4.3K]  fetcher.go
 │   │   ├── [4.0K]  fixtures
 │   │   │   ├── [7.6M]  id-1m.tsv.zst
 │   │   │   ├── [ 519]  makta-2-col-gen.py
@@ -116,7 +119,7 @@ $ tokei -C -t=Go,Python
 │   │   ├── [3.2K]  go.sum
 │   │   ├── [  23]  i.db -> ../../data/id_to_doi.db
 │   │   ├── [  19]  index.db -> ../../data/index.db
-│   │   ├── [ 783]  Makefile
+│   │   ├── [1.0K]  Makefile
 │   │   ├── [  17]  o.db -> ../../data/oci.db
 │   │   ├── [4.0K]  packaging
 │   │   │   └── [4.0K]  deb
@@ -124,7 +127,7 @@ $ tokei -C -t=Go,Python
 │   │   │           └── [4.0K]  DEBIAN
 │   │   │               └── [ 244]  control
 │   │   ├── [ 14K]  README.md
-│   │   ├── [ 13K]  server.go
+│   │   ├── [ 14K]  server.go
 │   │   ├── [4.0K]  set
 │   │   │   ├── [3.2K]  set.go
 │   │   │   └── [ 915]  set_test.go
@@ -156,6 +159,7 @@ $ tokei -C -t=Go,Python
 │   ├── [ 645]  2021_11_19_deployment_ansible.md
 │   ├── [ 507]  2021_11_25_meeting_minutes.md
 │   ├── [ 401]  2021_12_16_meeting_minutes.md
+│   ├── [ 936]  2022_01_06_meeting_minutes.md
 │   ├── [ 37K]  Labe.drawio
 │   ├── [ 37K]  Labe.png
 │   └── [ 49K]  uJAWsAE.png
@@ -170,7 +174,7 @@ $ tokei -C -t=Go,Python
 │   │   ├── [6.2K]  cli.py
 │   │   ├── [ 178]  __init__.py
 │   │   ├── [5.1K]  oci.py
-│   │   └── [9.1K]  tasks.py
+│   │   └── [9.3K]  tasks.py
 │   ├── [ 205]  labe.cfg
 │   ├── [ 498]  logging.ini
 │   ├── [  31]  luigi.cfg
@@ -180,11 +184,11 @@ $ tokei -C -t=Go,Python
 │   ├── [1.2K]  setup.py
 │   └── [4.0K]  tests
 │       └── [1.6K]  test_oci.py
-├── [2.0K]  README.md
+├── [7.5K]  README.md
 ├── [4.0K]  static
 │   └── [6.6K]  canvas.png
 ├── [1.4K]  TODO.md
 └── [3.0K]  Vagrantfile
 
-30 directories, 95 files
+32 directories, 97 files
 ```
