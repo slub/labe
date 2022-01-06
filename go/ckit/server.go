@@ -268,7 +268,9 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 					// ...}]},"extra":{"took":1.443760546,"unmatc...
 					// If this fails, we do not care; the chance this pattern
 					// appears in the data is very low.
-					took := fmt.Sprintf(`"took":%0.8f`, time.Since(started).Seconds())
+					// Note that JSON will use scienfic notation by default,
+					// while %f would not.
+					took := fmt.Sprintf(`"took":%f`, time.Since(started).Seconds())
 					b = tookRegexp.ReplaceAll(b, []byte(took))
 					if _, err := w.Write(b); err != nil {
 						httpErrLog(w, err)
