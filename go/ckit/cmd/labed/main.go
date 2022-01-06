@@ -183,10 +183,10 @@ var (
 	showVersion            = flag.Bool("version", false, "show version")
 	logFile                = flag.String("logfile", "", "file to log to")
 
-	sqliteBlobPath xflag.Array
+	sqliteBlobPath xflag.Array // allows to specify multiple database to get catalog metadata from
 
-	Version   string
-	Buildtime string
+	Version   string // set by makefile
+	Buildtime string // set by makefile
 	Help      string = `usage: labed [OPTION]
 
 labed is an experimental api server for the labe project; it works with three

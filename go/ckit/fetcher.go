@@ -126,7 +126,8 @@ func (b *SolrBlob) Fetch(id string) ([]byte, error) {
 }
 
 // FetchGroup allows to run a index data fetch operation in a cascade over a
-// couple of backends.
+// couple of backends. The result from the first database that contains a value
+// for a given id is returned.
 type FetchGroup struct {
 	Backends []Fetcher
 }
