@@ -446,7 +446,7 @@ $ unpigz -c $(taskoutput AIExport) | jq -rc 'select(.doi_str_mv != null) | [.id,
 ## Misc
 
 ```
-$ time for i in $(zstdcat -T0 date-2022-01-05.tsv.zst | shuf -n 100000); do
+$ time for i in $(zstdcat -T0 date-2022-01-05.tsv.zst | cut -f1 | shuf -n 100000); do
     curl -s "http://0.0.0.0:8000/id/$i";
 done | grep -cv "404 page not found"
 59103
@@ -465,3 +465,51 @@ $ curl 0.0.0.0:8000/cache/size
 
 About 1.7% of data seems cache worthy.
 
+```
+$ time zstdcat -T0 date-2022-01-05.tsv.zst | cut -f1 | shuf -n 100000 | parallel -j 40 "curl -s http://localhost:8000/id/{}" | pv -l > /dev/null
+57.7k 0:06:13 [ 154 /s] [
+
+real    6m13.504s
+user    13m15.367s
+sys     10m4.010s
+```
+
+About 150 requests/s; load at about 16; 13%-17% ram used (16G box); with
+logging, compression and timing enabled; IO bottleneck, maybe; 30-70M/s disk reads.
+
+```
+$ time zstdcat -T0 date-2022-01-05.tsv.zst | cut -f1 | shuf -n 100000 | parallel -j 80 "curl -s http://localhost:8000/id/{}" | pv -l > /dev/null
+57.6k 0:06:46 [ 141 /s] [
+
+real    6m46.923s
+user    14m10.284s
+sys     10m56.944s
+```
+
+100000 K test, generate random list of ids; run twice; count number of requests taking more than 1s.
+
+```
+$ cat xxxx | parallel -j 20 "curl -s http://localhost:8000/id/{}" | pv -l | jq -rc .extra.took > xxxx.1.took
+58.2k 0:05:41 [ 170 /s] [
+```
+
+concurrency: 20 (fastest), 40, 60 (slowest); no cache; 58000 results; 224 took
+longer than 1s; Strangely (not strange; took keeps the cached value), a second
+run with the same set of ids yields 302 requests taking more than 1s; but
+overall it ran faster:
+
+```
+$ cat xxxx | parallel -j 20 "curl -s http://localhost:8000/id/{}" | pv -l | jq -rc .extra.took > xxxx.2.took
+57.5k 0:05:12 [ 183 /s] [
+```
+
+After caching, the slowest request takes 250ms:
+
+```
+$ cat xxxx.3.took | sort -n | tail -3
+0.249595257
+0.249862621
+0.249955484
+```
+
+Need to keep memory usage of internal cache in check; with 10K cached entries, we consume already 20% of RAM.

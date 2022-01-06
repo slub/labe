@@ -52,7 +52,7 @@ type Server struct {
 	CacheEnabled           bool
 	CacheTriggerDuration   time.Duration
 	CacheDefaultExpiration time.Duration
-	CacheTTL               time.Duration
+	CacheTTL               time.Duration // TODO: rename to CacheCleanupInterval
 	cache                  *cache.Cache
 }
 
@@ -256,6 +256,9 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 					log.Printf("[cache] removed bogus cache value")
 				} else {
 					sw.Record("retrieved value from cache")
+					// TODO: At this point, we may want to update the
+					// "extra.took" field, to be less confusing; could keep all
+					// but "extra.took" unparsed.
 					if _, err := w.Write(b); err != nil {
 						httpErrLog(w, err)
 						return
