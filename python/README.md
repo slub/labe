@@ -15,12 +15,12 @@ We build a single executable with [shiv](https://github.com/linkedin/shiv).
 
 ## Tasks
 
-* [ ] check for new OCI dump
-* [ ] download OCI dump
-* [ ] turn OCI dump into a more managable format (single zstd file)
-* [ ] fetch SOLR index copy, e.g. via [solrdump](https://github.com/ubleipzig/solrdump)
-* [ ] turn SOLR JSON files into (id, doc) TSV
-* [ ] create sqlite3 database from TSV with [makta](https://github.com/miku/labe/tree/main/go/ckit#makta)
+* [x] check for new OCI dump
+* [x] download OCI dump
+* [x] turn OCI dump into a more managable format (single zstd file)
+* [x] fetch SOLR index copy, e.g. via [solrdump](https://github.com/ubleipzig/solrdump)
+* [x] turn SOLR JSON files into (id, doc) TSV
+* [x] create sqlite3 database from TSV with [makta](https://github.com/miku/labe/tree/main/go/ckit#makta)
 * [ ] move databases into place
 * [ ] inform API server to reset database connections via [SIGHUP](https://en.wikipedia.org/wiki/SIGHUP)
 
