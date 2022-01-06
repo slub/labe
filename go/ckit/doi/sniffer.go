@@ -123,7 +123,6 @@ func (s *MapSniffer) SearchMap(doc map[string]interface{}) []string {
 				}
 			}
 		default:
-			// TODO: at least try to iterate over []string, too
 			continue
 		}
 	}
