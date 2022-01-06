@@ -146,7 +146,9 @@
 // ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzOC80MzQ2Ng        20      1060    69.66376108
 // ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEwMy9waHlzcmV2YS40My4yMDQ2  10      1126    73.831349012
 // ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAxNi8wMDIyLTI4MzYoNzQpOTAwMzEteA    26      1473    77.451487135
-//
+
+//go:build linux
+
 package main
 
 import (
@@ -156,7 +158,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/gorilla/handlers"
@@ -324,5 +328,14 @@ func main() {
 	if *enableLogging {
 		h = handlers.LoggingHandler(logWriter, h)
 	}
+	// Setup signal handler; TODO: actually reload connections.
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGHUP)
+	go func() {
+		for sig := range c {
+			println(sig)
+			log.Printf("TODO: reloading database connections")
+		}
+	}()
 	log.Fatal(http.ListenAndServe(*listenAddr, h))
 }
