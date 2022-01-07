@@ -2,6 +2,7 @@
 
 Citation graph kit for the LABE project at [SLUB Dresden](https://www.slub-dresden.de/).
 
+* [doisniffer](#doisniffer), [filter](https://en.wikipedia.org/wiki/Filter_(software)) to find DOI by patterns in Solr VuFind JSON documents
 * [labed](#labed), an HTTP server serving Open Citations data fused with catalog metadata
 * [tabjson](#tabjson), turn JSON into TSV
 * [makta](#makta), turn TSV files into sqlite3 databases
