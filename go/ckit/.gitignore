@@ -3,6 +3,8 @@
 /tabjson
 /makta
 /doisniffer
+/labe-genreport
+/labe-scrub
 
 # ignore debian package and files
 ckit_*_amd64.deb
@@ -16,3 +18,4 @@ id_to_doi.tsv.zst
 
 # ignore intermediate package artifacts
 /packaging/deb/ckit/usr
+
