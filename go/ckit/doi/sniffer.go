@@ -19,15 +19,16 @@ var bNewline = []byte("\n")
 // Sniffer can read, transform and write a stream of newline delimited JSON
 // documents.
 type Sniffer struct {
-	Reader        io.Reader
-	Writer        io.Writer
-	MapSniffer    *MapSniffer
-	IdentifierKey string
-	UpdateKey     string // if set, update the document in place
-	SkipUnmatched bool
-	PostProcess   func(s string) string
-	BatchSize     int
-	NumWorkers    int
+	Reader         io.Reader
+	Writer         io.Writer
+	MapSniffer     *MapSniffer
+	IdentifierKey  string
+	UpdateKey      string // if set, update the document in place
+	SkipUnmatched  bool
+	ForceOverwrite bool // if set, overwrite existing values in "UpdateKey"
+	PostProcess    func(s string) string
+	BatchSize      int
+	NumWorkers     int
 }
 
 // NewSniffer sets up a new sniffer with defaults keys matching the current
@@ -75,9 +76,26 @@ func (s *Sniffer) Run() error {
 			return nil, nil
 		}
 		switch {
-		case len(s.UpdateKey) > 0:
+		case s.UpdateKey != "":
 			if len(result) > 0 {
-				data[s.UpdateKey] = result
+				v, ok := data[s.UpdateKey]
+				if !ok || s.ForceOverwrite {
+					var shouldOverwrite bool
+					switch w := v.(type) {
+					// Overwrite, if the existing value v does not contain any
+					// value or if it is not a list at all (which we do not
+					// expect).
+					case []string:
+						shouldOverwrite = len(w) == 0
+					case []interface{}:
+						shouldOverwrite = len(w) == 0
+					default:
+						shouldOverwrite = true
+					}
+					if shouldOverwrite {
+						data[s.UpdateKey] = result
+					}
+				}
 			}
 			b, err := json.Marshal(data)
 			if err != nil {
