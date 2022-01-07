@@ -24,6 +24,34 @@ To cleanup all artifacts, run:
 $ make clean
 ```
 
+## doisniffer
+
+Tool to turn a VuFind Solr schema without DOI field into one with, by sniffing
+out potential DOI from other fields.
+
+```
+$ cat index.ndj | doisniffer > augmented.ndj
+```
+
+By default, only documents are passed through, which actually contain a DOI.
+
+```
+Usage of doisniffer:
+  -K string
+        ignore keys (regexp), comma separated (default "barcode,dewey")
+  -S    do not skip unmatched documents
+  -b int
+        batch size (default 5000)
+  -i string
+        identifier key (default "id")
+  -k string
+        update key (default "doi_str_mv")
+  -version
+        show version and exit
+  -w int
+        number of workers (default 8)
+```
+
 ## labed
 
 ![](static/45582_reading_lg.gif)
