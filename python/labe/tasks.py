@@ -25,7 +25,6 @@ __all__ = [
 ]
 
 
-
 class Task(BaseTask):
     """
     Superclass for labe tasks.
@@ -67,15 +66,16 @@ class OpenCitationsDownload(Task):
         url = self.open_citations_url()
         output = shellout("""
                           curl --fail -sL "{url}" > {output}
-                          """, url=url)
+                          """,
+                          url=url)
 
         # Do a basic sanity check right here, e.g. in 12/2021 filesize was
         # about 30GB; we fail if the file size seems too small.
         filesize = os.path.getsize(output)
         if filesize < self.OPEN_CITATION_DOWNLOAD_SIZE_THRESHOLD:
             raise RuntimeError(
-                "open citations download from {} at {} is suspiciously small: {}, want at least {}"
-                .format(url, output, filesize, OPEN_CITATION_DOWNLOAD_SIZE_THRESHOLD))
+                "open citations download from {} at {} is suspiciously small: {}, want at least {}".format(
+                    url, output, filesize, OPEN_CITATION_DOWNLOAD_SIZE_THRESHOLD))
         # We excect a zip file.
         if not zipfile.is_zipfile(output):
             raise RuntimeError("not a zip: {}".format(output))
@@ -156,22 +156,24 @@ class SolrFetchDocs(Task):
     "ai" (22h); with "-rows 50000" eta about 2.5h (134m27.012s).
     """
     date = luigi.DateParameter(default=datetime.date.today())
-    name = luigi.Parameter(
-        default="main", description="index name, url lookup up from a config")
+    name = luigi.Parameter(default="main", description="index name, url lookup up from a config")
+    short = luigi.BoolParameter(description="only fetch id,title,author,format,url,doi_str_mv fields, e.g. for ai")
 
     def run(self):
         try:
             indices = self.config["indices"]
             url = indices[self.name]
         except KeyError:
-            # TODO: be a bit more verbose, show which indices are available
             raise LookupError('cannot map name to solr url, available indices: {}'.format(indices.keys()))
+        extra_opts = ''
+        if self.short:
+            extra_opts = "-fl 'id,title,author,format,url,doi_str_mv'"
         output = shellout("""
-                          solrdump -verbose -server {server} -rows 50000
-                              -fl 'id,title,author,format,url,doi_str_mv' |
+                          solrdump -verbose -server {server} -rows 50000 {extra_opts} |
                           zstd -c -T0 > {output}
                           """,
-                          server=url)
+                          server=url,
+                          extra_opts=extra_opts)
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -186,11 +188,11 @@ class SolrDatabase(Task):
     Some timings: ai 12m47.890s, main 1m48.112s, slub-production 0m3.451s.
     """
     date = luigi.DateParameter(default=datetime.date.today())
-    name = luigi.Parameter(
-        default="main", description="index name, url lookup up from a config")
+    name = luigi.Parameter(default="main", description="index name, url lookup up from a config")
+    short = luigi.BoolParameter(description="only fetch id,title,author,format,url,doi_str_mv fields, e.g. for ai")
 
     def requires(self):
-        return SolrFetchDocs(date=self.date, name=self.name)
+        return SolrFetchDocs(date=self.date, name=self.name, short=self.short)
 
     def run(self):
         output = shellout("""
@@ -214,26 +216,37 @@ class IdMappingTable(Task):
 
     def requires(self):
         return {
-            "slub-production": SolrFetchDocs(date=self.date, name="slub-production"),
-            "main": SolrFetchDocs(date=self.date, name="main"),
-            "ai": SolrFetchDocs(date=self.date, name="ai"),
+            "slub-production": SolrFetchDocs(date=self.date, name="slub-production", short=False),
+            "main": SolrFetchDocs(date=self.date, name="main", short=False),
+            "ai": SolrFetchDocs(date=self.date, name="ai", short=True),
         }
 
     def run(self):
-        # In 01/2022, for "main", we still need to apply "doisniffer", but that may change in the future.
-        output = shellout(""" zstdcat -T0 {input} |
+        # In 01/2022, for "main", we still need to apply "doisniffer", but that
+        # may change in the future.
+        output = shellout(""" zstd -q -d -c -T0 {input} |
                               doisniffer |
                               jq -rc '[.id, .doi_str_mv[0]] | @tsv' |
                               zstd -c -T0 >> {output}
                           """,
                           input=self.input().get("main").path)
 
-        shellout(""" zstdcat -T0 {input} |
+        # In 01/2022, we use "doisniffer" for slub-production as well.
+        shellout(""" zstd -q -d -c -T0 {input} |
+                              doisniffer |
+                              jq -rc '[.id, .doi_str_mv[0]] | @tsv' |
+                              zstd -c -T0 >> {output}
+                          """,
+                 output=output,
+                 input=self.input().get("slub-production").path)
+
+        # In 01/2022, the "doi_str_mv" field is included in "ai" - with 73881207 values.
+        shellout(""" zstd -q -d -c -T0 {input} |
                      jq -rc 'select(.doi_str_mv | length > 0) | [.id, .doi_str_mv[0]] | @tsv' |
                      zstd -T0 -c >> {output}
                  """,
-                 input=self.input().get("ai").path,
-                 output=output)
+                 output=output,
+                 input=self.input().get("ai").path)
 
         luigi.LocalTarget(output).move(self.output().path)
 
@@ -243,8 +256,7 @@ class IdMappingTable(Task):
 
 class IdMappingDatabase(Task):
     """
-    We need to sniff out DOI from all index data and build a (id, doi)
-    database.
+    Generate a (id, doi) mapping database.
     """
     date = luigi.DateParameter(default=datetime.date.today())
 
@@ -252,10 +264,10 @@ class IdMappingDatabase(Task):
         return IdMappingTable(date=self.date)
 
     def run(self):
-        output = shellout(""" zstd -q -d -c -T0 {inputs} |
+        output = shellout(""" zstd -q -d -c -T0 {input} |
                               makta -init -o {output} -I 3
                           """,
-                          inputs=self.input().path)
+                          input=self.input().path)
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
