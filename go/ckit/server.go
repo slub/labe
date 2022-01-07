@@ -24,9 +24,6 @@ import (
 // service, e.g. a key value store like microblob, sqlite3, solr, elasticsearch
 // or in memory store.
 //
-// TODO: The server should be able to work with multiple Fetcher instances,
-// e.g. to roll over to a new version or to use one for different data stores.
-//
 //         server
 //          |
 //          v
@@ -53,7 +50,7 @@ type Server struct {
 	CacheEnabled           bool
 	CacheTriggerDuration   time.Duration
 	CacheDefaultExpiration time.Duration
-	CacheCleanupInterval   time.Duration // TODO: rename to CacheCleanupInterval
+	CacheCleanupInterval   time.Duration
 	cache                  *cache.Cache
 }
 
@@ -76,7 +73,7 @@ type Response struct {
 		Cited  []json.RawMessage `json:"cited,omitempty"`
 	} `json:"unmatched"`
 	Extra struct {
-		Took                 float64 `json:"took"`
+		Took                 float64 `json:"took"` // seconds
 		UnmatchedCitingCount int     `json:"unmatched_citing_count"`
 		UnmatchedCitedCount  int     `json:"unmatched_cited_count"`
 		CitingCount          int     `json:"citing_count"`
@@ -93,7 +90,7 @@ func (r *Response) updateCounts() {
 	r.Extra.UnmatchedCitedCount = len(r.Unmatched.Cited)
 }
 
-// Routes sets up route. TODO: we want a direct DOI route as well.
+// Routes sets up route.
 func (s *Server) Routes() {
 	s.Router.HandleFunc("/", s.handleIndex())
 	s.Router.HandleFunc("/cache/size", s.handleCacheSize())
@@ -218,8 +215,8 @@ func (s *Server) handleDOI() http.HandlerFunc {
 // backend requests and think up schema for delivery.
 func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 	// tookRegexp will help us to update a field in a cached JSON byte slice
-	// w/o parsing the JSON again; hacky but fast. This only is relevant, if we
-	// use the cache.
+	// w/o parsing the JSON again; hacky but fast. This is only relevant, if
+	// cache is enabled.
 	var tookRegexp = regexp.MustCompile(`"took":[0-9.]+`)
 	// We only care about caching here. TODO: we could use a closure for the
 	// cache here (and not store it directly on the server).

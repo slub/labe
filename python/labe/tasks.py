@@ -274,6 +274,7 @@ class IdMappingDatabase(Task):
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="db"))
 
+
 class CombinedUpdate(luigi.WrapperTask):
     """
     Wrapper around generation of the the various databases required for the labed service.
