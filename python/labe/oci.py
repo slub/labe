@@ -31,8 +31,7 @@ def get_terminal_url(link, headers=None, user_agent=default_user_agent):
         }
     resp = requests.get(link, headers=headers)
     if resp.status_code >= 400:
-        raise RuntimeError("got http status {} on {}".format(
-            resp.status_code, link))
+        raise RuntimeError("got http status {} on {}".format(resp.status_code, link))
     if not resp.url:
         raise ValueError('url not found')
     return resp.url
@@ -43,16 +42,13 @@ def get_figshare_download_link(link):
     Given a link that should redirect to figshare. If it does not, this will fail.
     """
     landing_page_url = get_terminal_url(link)
-    pattern_figshare_url = re.compile(
-        r"https://figshare.com/articles/dataset/"
-        r"(?P<name>[^/]*)/(?P<id>[^/]*)/(?P<version>[\d]*)")
+    pattern_figshare_url = re.compile(r"https://figshare.com/articles/dataset/"
+                                      r"(?P<name>[^/]*)/(?P<id>[^/]*)/(?P<version>[\d]*)")
     match = re.match(pattern_figshare_url, landing_page_url)
     if not match:
-        raise RuntimeError(
-            "unexpected landing page url: {}".format(landing_page_url))
+        raise RuntimeError("unexpected landing page url: {}".format(landing_page_url))
     groups = match.groupdict()
-    return "https://figshare.com/ndownloader/articles/{}/versions/{}".format(
-        groups["id"], groups["version"])
+    return "https://figshare.com/ndownloader/articles/{}/versions/{}".format(groups["id"], groups["version"])
 
 
 class OpenCitationsDataset:
@@ -83,8 +79,7 @@ class OpenCitationsDataset:
         self.cache = dict()
         resp = requests.get(self.download_url)
         if resp.status_code >= 400:
-            raise RuntimeError("cannot download page at: {}".format(
-                self.download_url))
+            raise RuntimeError("cannot download page at: {}".format(self.download_url))
         self.cache[self.download_url] = resp.text
         self.direct_download_url = direct_download_url
 
@@ -92,8 +87,7 @@ class OpenCitationsDataset:
         return self.__str__()
 
     def __str__(self):
-        return "<OpenCitationsDataset via {} ({} rows)>".format(
-            self.download_url, len(self.rows()))
+        return "<OpenCitationsDataset via {} ({} rows)>".format(self.download_url, len(self.rows()))
 
     def rows(self):
         """
@@ -124,10 +118,7 @@ class OpenCitationsDataset:
             r'size_compressed>[^)]*)\)</td></tr>',
             re.IGNORECASE,
         )
-        return [
-            m.groupdict() for m in re.finditer(pattern_citation_data,
-                                               self.cache[self.download_url])
-        ]
+        return [m.groupdict() for m in re.finditer(pattern_citation_data, self.cache[self.download_url])]
 
     def most_recent_url(self, format="CSV"):
         """

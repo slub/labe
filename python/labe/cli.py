@@ -79,34 +79,21 @@ def effective_task_names(suppress=None):
             'WrapperTask',
         ]
     names = (name for name in sorted(Register.task_names()))
-    names = (name for name in names
-             if name not in suppress and not name.islower())
+    names = (name for name in names if name not in suppress and not name.islower())
     return names
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "-L",
         "--print-most-recent-download-url",
         action="store_true",
         help="show most recent OCI download URL",
     )
-    parser.add_argument("-l",
-                        "--list",
-                        action="store_true",
-                        help="list task nam namess")
-    parser.add_argument("-O",
-                        "--show-output-path",
-                        metavar="TASK",
-                        type=str,
-                        help="show output path of task")
-    parser.add_argument("-r",
-                        "--run",
-                        metavar="TASK",
-                        type=str,
-                        help="task to run")
+    parser.add_argument("-l", "--list", action="store_true", help="list task nam namess")
+    parser.add_argument("-O", "--show-output-path", metavar="TASK", type=str, help="show output path of task")
+    parser.add_argument("-r", "--run", metavar="TASK", type=str, help="task to run")
     parser.add_argument(
         "-c",
         "--config-file",
@@ -118,17 +105,11 @@ def main():
         default=os.path.join(xdg_config_home(), "labe", "logging.ini"),
         help="path to logging configuration file",
     )
-    parser.add_argument(
-        "--data-dir",
-        "-D",
-        default=xdg_data_home(),
-        help=
-        "root directory for all tasks, we follow XDG (override in settings.ini)"
-    )
-    parser.add_argument("--tmp-dir",
-                        "-T",
-                        default=tempfile.gettempdir(),
-                        help="temporary directory to use")
+    parser.add_argument("--data-dir",
+                        "-D",
+                        default=xdg_data_home(),
+                        help="root directory for all tasks, we follow XDG (override in settings.ini)")
+    parser.add_argument("--tmp-dir", "-T", default=tempfile.gettempdir(), help="temporary directory to use")
 
     # Task may have their own arguments, which we ignore.
     args, _ = parser.parse_known_args()

@@ -83,8 +83,7 @@ class BaseTask(luigi.Task):
         params = self.param_kwargs
         if 'date' in params and is_closest_date_parameter(self, 'date'):
             params['date'] = self.closest()
-            task_id_parts = sorted(
-                ['%s=%s' % (k, str(v)) for k, v in params.items()])
+            task_id_parts = sorted(['%s=%s' % (k, str(v)) for k, v in params.items()])
             return '%s(%s)' % (self.task_family, ', '.join(task_id_parts))
         else:
             return self.task_id
@@ -93,12 +92,7 @@ class BaseTask(luigi.Task):
         """ Return the directory under which all artefacts are stored. """
         return os.path.join(self.BASE, self.TAG, self.task_family)
 
-    def path(self,
-             filename=None,
-             ext='tsv',
-             digest=False,
-             shard=False,
-             encoding='utf-8'):
+    def path(self, filename=None, ext='tsv', digest=False, shard=False, encoding='utf-8'):
         """
         Return the path for this class with a certain set of parameters.
         `ext` sets the extension of the file.
@@ -144,10 +138,8 @@ class BaseTask(luigi.Task):
             else:
                 filename = '{fn}.{ext}'.format(ext=ext, fn=name)
             if shard:
-                prefix = hashlib.sha1(
-                    filename.encode(encoding)).hexdigest()[:2]
-                return os.path.join(self.BASE, self.TAG, self.task_family,
-                                    prefix, filename)
+                prefix = hashlib.sha1(filename.encode(encoding)).hexdigest()[:2]
+                return os.path.join(self.BASE, self.TAG, self.task_family, prefix, filename)
 
         return os.path.join(self.BASE, self.TAG, self.task_family, filename)
 
@@ -198,8 +190,7 @@ def shellout(template,
     code = subprocess.call([command], shell=True, executable=executable)
     if not code == 0:
         if code in ignoremap:
-            logger.info("Ignoring error via ignoremap: %s" %
-                        ignoremap.get(code))
+            logger.info("Ignoring error via ignoremap: %s" % ignoremap.get(code))
         else:
             logger.error('%s: %s' % (command, code))
             error = RuntimeError('%s exitcode: %s' % (command, code))
