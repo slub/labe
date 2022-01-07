@@ -15,6 +15,7 @@ from labe.base import BaseTask, shellout
 from labe.oci import OpenCitationsDataset
 
 __all__ = [
+    'CombinedUpdate',
     'IdMappingDatabase',
     'OpenCitationsDatabase',
     'OpenCitationsDownload',
@@ -272,3 +273,16 @@ class IdMappingDatabase(Task):
 
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="db"))
+
+class CombinedUpdate(luigi.WrapperTask):
+    """
+    Wrapper around generation of the the various databases required for the labed service.
+    """
+    date = luigi.DateParameter(default=datetime.date.today())
+
+    def requires(self):
+        yield SolrDatabase(date=self.date, name="ai", short=True)
+        yield SolrDatabase(date=self.date, name="main", short=False)
+        yield SolrDatabase(date=self.date, name="slub-production", short=False)
+        yield IdMappingDatabase(date=self.date)
+        yield OpenCitationsDatabase()
