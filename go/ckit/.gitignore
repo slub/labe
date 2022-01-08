@@ -1,10 +1,10 @@
 # ignore binaries
-/labed
-/tabjson
-/makta
 /doisniffer
 /labe-genreport
-/labe-scrub
+/labed
+/makta
+/tabjson
+/timefd
 
 # ignore debian package and files
 ckit_*_amd64.deb

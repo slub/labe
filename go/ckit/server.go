@@ -37,7 +37,6 @@ import (
 //
 //         (daily)          (monthly)
 //
-//
 // TODO: we may want to know from the server, which files we are working with.
 type Server struct {
 	IdentifierDatabase *sqlx.DB
