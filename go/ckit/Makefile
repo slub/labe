@@ -5,7 +5,6 @@ PKGNAME := ckit
 TARGETS := \
 	doisniffer \
 	labe-genreport \
-	labe-scrub \
 	labed \
 	makta \
     tabjson
