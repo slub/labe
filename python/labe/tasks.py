@@ -237,13 +237,13 @@ class IdMappingTable(Task):
                               doisniffer |
                               jq -rc '[.id, .doi_str_mv[0]] | @tsv' |
                               zstd -c -T0 >> {output}
-                          """,
+                 """,
                  output=output,
                  input=self.input().get("slub-production").path)
 
         # In 01/2022, the "doi_str_mv" field is included in "ai" - with 73881207 values.
         shellout(""" zstd -q -d -c -T0 {input} |
-                     jq -rc 'select(.doi_str_mv | length > 0) | [.id, .doi_str_mv[0]] | @tsv' |
+                     parallel -j 8 --pipe --block 10M "jq -rc 'select(.doi_str_mv | length > 0) | [.id, .doi_str_mv[0]] | @tsv'" |
                      zstd -T0 -c >> {output}
                  """,
                  output=output,
