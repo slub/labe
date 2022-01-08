@@ -211,7 +211,8 @@ class SolrDatabase(Task):
 class IdMappingTable(Task):
     """
     Generate a two column TSV mapping local identifiers to their DOI. May
-    require the "doisniffer" tool (https://git.io/J9L0D).
+    require the "doisniffer" tool (https://git.io/J9L0D) and GNU parallel,
+    about 15min.
     """
     date = luigi.DateParameter(default=datetime.date.today())
 
@@ -257,7 +258,7 @@ class IdMappingTable(Task):
 
 class IdMappingDatabase(Task):
     """
-    Generate a (id, doi) mapping database.
+    Generate a (id, doi) mapping database (5min).
     """
     date = luigi.DateParameter(default=datetime.date.today())
 
