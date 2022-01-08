@@ -48,7 +48,7 @@ class Task(BaseTask):
         """
         Open citations download url.
         """
-        return open_citations_dataset.most_recent_download_url()
+        return self.open_citations_dataset.most_recent_download_url()
 
     def open_citations_url_hash(self):
         """
