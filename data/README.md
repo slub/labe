@@ -513,3 +513,7 @@ $ cat xxxx.3.took | sort -n | tail -3
 ```
 
 Need to keep memory usage of internal cache in check; with 10K cached entries, we consume already 20% of RAM.
+
+Current id mappings (from three indices):
+
+* 72,679,444
