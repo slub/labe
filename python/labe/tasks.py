@@ -117,6 +117,9 @@ class OpenCitationsDownload(Task):
         filename = "{}.zip".format(self.open_citations_url_hash())
         return luigi.LocalTarget(path=self.path(filename=filename))
 
+    def on_success(self):
+        self.create_symlink(name="current")
+        _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
 
 class OpenCitationsSingleFile(Task):
     """
@@ -150,6 +153,10 @@ class OpenCitationsSingleFile(Task):
         fingerprint = self.open_citations_url_hash()
         filename = "{}.zst".format(fingerprint)
         return luigi.LocalTarget(path=self.path(filename=filename))
+
+    def on_success(self):
+        self.create_symlink(name="current")
+        _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
 
 
 class OpenCitationsDatabase(Task):
@@ -291,6 +298,7 @@ class IdMappingTable(Task):
                  output=output,
                  input=self.input().get("ai").path)
 
+        self.validate_output_filesize(output, self.expected_output_file_sizes["IdMappingTable"])
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
