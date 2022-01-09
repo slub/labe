@@ -52,6 +52,7 @@ class Task(BaseTask):
     # As a basic sanity check, fail, if output file fall below certain file sizes (in bytes).
     expected_output_file_sizes = {
         "IdMappingDatabase": 12_000_000_000,
+        "IdMappingTable": 400_000_000,
         "OpenCitationsDatabase": 150_000_000_000,
         "OpenCitationsDownload": 25_000_000_000,
         "SolrDatabase-ai-True": 40_000_000_000,
