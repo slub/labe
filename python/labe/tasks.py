@@ -224,7 +224,8 @@ class SolrFetchDocs(Task):
         return luigi.LocalTarget(path=self.path(ext="zst"))
 
     def on_success(self):
-        self.create_symlink(name="current")
+        name = "{}-short".format(self.name) if self.short else self.name
+        self.create_symlink(name="current", suffix=name)
         _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
 
 
@@ -257,7 +258,8 @@ class SolrDatabase(Task):
         return luigi.LocalTarget(path=self.path(ext="db"))
 
     def on_success(self):
-        self.create_symlink(name="current", suffix=self.name)
+        name = "{}-short".format(self.name) if self.short else self.name
+        self.create_symlink(name="current", suffix=name)
         _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
 
 
