@@ -116,6 +116,7 @@ def main():
     parser.add_argument("--labed-server-process-name",
                         default="labed",
                         help="which process to send sighup to on database updates")
+    parser.add_argument("--list-deletable", action="store_true", help="list task outputs, which could be deleted")
 
     # Task may have their own arguments, which we ignore.
     args, _ = parser.parse_known_args()
@@ -145,6 +146,24 @@ def main():
         for name in effective_task_names():
             print(name)
         sys.exit(0)
+
+    if args.list_deletable:
+        filenames = set()
+        symlinked = set()
+        for root, dirs, files in os.walk(args.data_dir):
+            for name in files:
+                full = os.path.join(root, name)
+                if os.path.isfile(full) and not os.path.islink(full):
+                    filenames.add(full)
+                if os.path.islink(full):
+                    symlinked.add(os.readlink(full))
+        for path in sorted(symlinked):
+            print("L\t{}".format(path))
+        for path in sorted(filenames):
+            print("F\t{}".format(path))
+        print()
+        for path in sorted(filenames - symlinked):
+            print("D\t{}".format(path))
 
     # Show output filename for task.
     elif args.show_output_path:
