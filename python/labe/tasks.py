@@ -6,6 +6,8 @@ import datetime
 import functools
 import hashlib
 import os
+import signal
+import subprocess
 import tempfile
 import zipfile
 
@@ -26,6 +28,17 @@ __all__ = [
 ]
 
 
+def pidof(name):
+    """
+    Return list of pids for a given process name.
+    """
+    try:
+        result = subprocess.check_output(["pidof", name])
+        return [int(pid) for pid in result.split()]
+    except subprocess.CalledProcessError:
+        return []
+
+
 class Task(BaseTask):
     """
     Superclass for labe tasks.
@@ -42,6 +55,10 @@ class Task(BaseTask):
 
     # We only need a single reference.
     open_citations_dataset = OpenCitationsDataset()
+
+    # Name of the server process. We need this in order to inform the server to
+    # reload the database connections, when updates are available.
+    labed_server_process_name = "labed"
 
     @functools.lru_cache(maxsize=None)
     def open_citations_url(self):
@@ -147,6 +164,10 @@ class OpenCitationsDatabase(Task):
         fingerprint = self.open_citations_url_hash()
         filename = "{}.db".format(fingerprint)
         return luigi.LocalTarget(path=self.path(filename=filename))
+
+    def on_success(self):
+        self.create_symlink()
+        _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
 
 
 class SolrFetchDocs(Task):

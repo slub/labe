@@ -92,6 +92,18 @@ class BaseTask(luigi.Task):
         """ Return the directory under which all artefacts are stored. """
         return os.path.join(self.BASE, self.TAG, self.task_family)
 
+    def create_symlink(self, name="current", suffix=""):
+        """
+        Allows to create a symlink pointing to the task output, optionally
+        containing a suffix.
+        """
+        dirname = self.taskdir()
+        name = "{}-{}".format(name, suffix) if suffix else name
+        current = os.path.join(dirname, name)
+        if os.path.exists(current):
+            os.remove(current)
+        os.symlink(self.output().path, current)
+
     def path(self, filename=None, ext='tsv', digest=False, shard=False, encoding='utf-8'):
         """
         Return the path for this class with a certain set of parameters.
