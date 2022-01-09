@@ -121,6 +121,7 @@ class OpenCitationsDownload(Task):
         self.create_symlink(name="current")
         _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
 
+
 class OpenCitationsSingleFile(Task):
     """
     Turn nested zip files into a single, undecorated, flat zstd compressed
@@ -221,6 +222,10 @@ class SolrFetchDocs(Task):
 
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="zst"))
+
+    def on_success(self):
+        self.create_symlink(name="current")
+        _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
 
 
 class SolrDatabase(Task):
