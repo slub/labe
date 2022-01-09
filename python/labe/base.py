@@ -139,7 +139,7 @@ class BaseTask(luigi.Task):
                     val = val.strftime('%Y-%m-%d')
                 elif isinstance(val, bool):
                     if val is True:
-                       parts.append(name)
+                        parts.append(name)
                     continue
 
                 parts.append('%s-%s' % (name, val))
