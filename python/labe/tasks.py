@@ -49,9 +49,16 @@ class Task(BaseTask):
     # Where all output will go by default.
     BASE = os.path.join(tempfile.gettempdir())
 
-    # If the downloaded file is smaller (bytes) than this, trigger an error. A
-    # basic sanity check to notice, if download method has changed.
-    OPEN_CITATION_DOWNLOAD_SIZE_THRESHOLD = 25_000_000_000
+    # As a basic sanity check, fail, if output file fall below certain file sizes (in bytes).
+    expected_output_file_sizes = {
+        "IdMappingDatabase": 12_000_000_000,
+        "OpenCitationsDatabase": 150_000_000_000,
+        "OpenCitationsDownload": 25_000_000_000,
+        "SolrDatabase-ai-True": 40_000_000_000,
+        "SolrDatabase-main-False": 160_000_000_000,
+        "SolrDatabase-main-True": 4_000_000_000,
+        "SolrDatabase-slub-production-False": 2_000_000_000,
+    }
 
     # We only need a single reference.
     open_citations_dataset = OpenCitationsDataset()
@@ -75,6 +82,15 @@ class Task(BaseTask):
         url = self.open_citations_url()
         return hashlib.sha1(url.encode("utf-8")).hexdigest()
 
+    def validate_output_filesize(self, filename, minimum_size):
+        """
+        Raise an exception, if filename is smaller than filesize.
+        """
+        filesize = os.path.getsize(filename)
+        if filesize < minimum_size:
+            raise RuntimeError("{}: unexpected file size, got {}, want at least {}".format(
+                filename, filesize, minimum_size))
+
 
 class OpenCitationsDownload(Task):
     """
@@ -89,11 +105,7 @@ class OpenCitationsDownload(Task):
 
         # Do a basic sanity check right here, e.g. in 12/2021 filesize was
         # about 30GB; we fail if the file size seems too small.
-        filesize = os.path.getsize(output)
-        if filesize < self.OPEN_CITATION_DOWNLOAD_SIZE_THRESHOLD:
-            raise RuntimeError(
-                "open citations download from {} at {} is suspiciously small: {}, want at least {}".format(
-                    url, output, filesize, OPEN_CITATION_DOWNLOAD_SIZE_THRESHOLD))
+        self.validate_output_filesize(output, self.expected_output_file_sizes["OpenCitationsDownload"])
         # We excect a zip file.
         if not zipfile.is_zipfile(output):
             raise RuntimeError("not a zip: {}".format(output))
@@ -158,6 +170,7 @@ class OpenCitationsDatabase(Task):
                           makta -init -o {output} -I 3
                           """,
                           input=self.input().path)
+        self.validate_output_filesize(output, self.expected_output_file_sizes["OpenCitationsDatabase"])
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -166,7 +179,7 @@ class OpenCitationsDatabase(Task):
         return luigi.LocalTarget(path=self.path(filename=filename))
 
     def on_success(self):
-        self.create_symlink()
+        self.create_symlink(name="current")
         _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
 
 
@@ -223,10 +236,16 @@ class SolrDatabase(Task):
                           makta -init -I 1 -o {output}
                           """,
                           input=self.input().path)
+        self.validate_output_filesize(
+            output, self.expected_output_file_sizes["SolrDatabase-{}-{}".format(self.name, self.short)])
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="db"))
+
+    def on_success(self):
+        self.create_symlink(name="current", suffix=self.name)
+        _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
 
 
 class IdMappingTable(Task):
@@ -291,10 +310,15 @@ class IdMappingDatabase(Task):
                               makta -init -o {output} -I 3
                           """,
                           input=self.input().path)
+        self.validate_output_filesize(output, self.expected_output_file_sizes["IdMappingDatabase"])
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="db"))
+
+    def on_success(self):
+        self.create_symlink(name="current")
+        _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
 
 
 class CombinedUpdate(luigi.WrapperTask):
@@ -305,7 +329,7 @@ class CombinedUpdate(luigi.WrapperTask):
 
     def requires(self):
         yield SolrDatabase(date=self.date, name="ai", short=True)
-        yield SolrDatabase(date=self.date, name="main", short=False)
+        yield SolrDatabase(date=self.date, name="main", short=True)
         yield SolrDatabase(date=self.date, name="slub-production", short=False)
         yield IdMappingDatabase(date=self.date)
         yield OpenCitationsDatabase()
