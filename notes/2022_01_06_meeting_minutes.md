@@ -33,3 +33,11 @@
 
 > https://twitter.com/xenzen/status/1473571366846742528
 
+----
+
+## Notes
+
+* [ ] unit file; service; deb package; "ckit"
+* [ ] deb package for "labe" python package; basically a single binary plus a config file
+* [ ] ansible; "labe" user account
+* [ ] report generator; what's in the data
