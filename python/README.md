@@ -42,7 +42,13 @@ select a number of fields (`solrdump -fl ...`).
 
 ## Directory layout
 
-* 13G + 150G + 42G + 5.5G + 2.5G = 213G
+* 13G + 150G + 42G + 5.5G + 2.5G = 213G in databases
+* a current set of outputs and intermediate files: 308G
+* total disk space: 1007G
+
+Currently (01/2022) we can accommodate two full copies at the same time. We
+have headroom for a 30% increase in data size, before we need to take
+additional measures (e.g. delete intermediate artifacts, too).
 
 ```
 $ tree -sh
