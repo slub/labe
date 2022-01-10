@@ -4,11 +4,9 @@ SHELL := /bin/bash
 PKGNAME := ckit
 TARGETS := \
 	doisniffer \
-	labe-genreport \
 	labed \
 	makta \
-    tabjson \
-	timefd
+    tabjson
 
 # This is an automatic version string using the git commit id. The debian
 # package version is currently separately defined in (and only in):
