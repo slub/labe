@@ -2,32 +2,35 @@
 Command line entry points for labe commands.
 
     usage: labe.pyz [-h] [-L] [-l] [-O TASK] [-r TASK] [-c CONFIG_FILE]
-		    [--logging-conf-file LOGGING_CONF_FILE] [--data-dir DATA_DIR]
-		    [--tmp-dir TMP_DIR]
-		    [--labed-server-process-name LABED_SERVER_PROCESS_NAME]
+                    [--logging-conf-file LOGGING_CONF_FILE] [--data-dir DATA_DIR]
+                    [--tmp-dir TMP_DIR]
+                    [--labed-server-process-name LABED_SERVER_PROCESS_NAME]
+                    [--list-deletable]
 
     optional arguments:
       -h, --help            show this help message and exit
       -L, --print-most-recent-download-url
-			    show most recent OCI download URL (default: False)
+                            show most recent OCI download URL (default: False)
       -l, --list            list task nam namess (default: False)
       -O TASK, --show-output-path TASK
-			    show output path of task (default: None)
+                            show output path of task (default: None)
       -r TASK, --run TASK   task to run (default: None)
       -c CONFIG_FILE, --config-file CONFIG_FILE
-			    path to configuration file (default:
-			    /home/tir/.config/labe/labe.cfg)
+                            path to configuration file (default:
+                            /home/tir/.config/labe/labe.cfg)
       --logging-conf-file LOGGING_CONF_FILE
-			    path to logging configuration file (default:
-			    /home/tir/.config/labe/logging.ini)
+                            path to logging configuration file (default:
+                            /home/tir/.config/labe/logging.ini)
       --data-dir DATA_DIR, -D DATA_DIR
-			    root directory for all tasks, we follow XDG (override
-			    in settings.ini) (default: /home/tir/.local/share)
+                            root directory for all tasks, we follow XDG (override
+                            in settings.ini) (default: /home/tir/.local/share)
       --tmp-dir TMP_DIR, -T TMP_DIR
-			    temporary directory to use (default: /tmp)
+                            temporary directory to use (default: /tmp)
       --labed-server-process-name LABED_SERVER_PROCESS_NAME
-			    which process to send sighup to on database updates
-			    (default: labed)
+                            which process to send sighup to on database updates
+                            (default: labed)
+      --list-deletable      list task outputs, which could be deleted (default:
+                            False)
 
 Example:
 
@@ -94,7 +97,7 @@ def main():
         action="store_true",
         help="show most recent OCI download URL",
     )
-    parser.add_argument("-l", "--list", action="store_true", help="list task nam namess")
+    parser.add_argument("-l", "--list", action="store_true", help="list task names")
     parser.add_argument("-O", "--show-output-path", metavar="TASK", type=str, help="show output path of task")
     parser.add_argument("-r", "--run", metavar="TASK", type=str, help="task to run")
     parser.add_argument(
