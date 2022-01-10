@@ -40,6 +40,20 @@ select a number of fields (`solrdump -fl ...`).
 * run "labe.pyz -r CombinedUpdate", e.g. daily
 * run "rm -f $(labe.pyz --list-deletable)", e.g. daily
 
+Example cron:
+
+```shell
+
+# For more information see the manual pages of crontab(5) and cron(8)
+#
+# m h  dom mon dow   command
+SHELL=/bin/bash
+PATH=$PATH:/home/czygan/bin/:/usr/local/bin
+
+15 0 * * * rm -f $(/home/czygan/bin/labe.pyz --list-deletable)
+45 0 * * * /home/czygan/bin/labe.pyz -r CombinedUpdate
+```
+
 ## Directory layout
 
 * 13G + 150G + 42G + 5.5G + 2.5G = 213G in databases
