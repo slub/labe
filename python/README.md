@@ -37,6 +37,8 @@ select a number of fields (`solrdump -fl ...`).
 
 ## Directory layout
 
+* 13G + 150G + 42G + 5.5G + 2.5G = 213G
+
 ```
 $ tree -sh
 .
