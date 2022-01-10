@@ -17,6 +17,7 @@ import xdg
 __all__ = [
     'BaseTask',
     'ClosestDateParameter',
+    'shellout',
 ]
 
 logger = logging.getLogger('labe')
