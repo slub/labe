@@ -45,3 +45,7 @@ deploy: $(ZIPAPP)
 	# DEPLOY_DST=user@srv.slub-dresden.de:/home/user/bin into ".env" file (read
 	# by makefile)
 	rsync -avzP -e 'ssh -p 21' labe.pyz $(DEPLOY_DST)
+
+.PHONY: deb
+deb:
+	echo "TODO: build deb package with zipapp and config files
