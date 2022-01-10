@@ -92,6 +92,13 @@ class Task(BaseTask):
             raise RuntimeError("{}: unexpected file size, got {}, want at least {}".format(
                 filename, filesize, minimum_size))
 
+    def notify_server(self):
+        """
+        Send SIGHUP to server process, looked up by configured
+        `labed_server_process_name`.
+        """
+        _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
+
 
 class OpenCitationsDownload(Task):
     """
@@ -119,7 +126,7 @@ class OpenCitationsDownload(Task):
 
     def on_success(self):
         self.create_symlink(name="current")
-        _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
+        self.notify_server()
 
 
 class OpenCitationsSingleFile(Task):
@@ -157,7 +164,7 @@ class OpenCitationsSingleFile(Task):
 
     def on_success(self):
         self.create_symlink(name="current")
-        _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
+        self.notify_server()
 
 
 class OpenCitationsDatabase(Task):
@@ -189,7 +196,7 @@ class OpenCitationsDatabase(Task):
 
     def on_success(self):
         self.create_symlink(name="current")
-        _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
+        self.notify_server()
 
 
 class SolrFetchDocs(Task):
@@ -226,7 +233,7 @@ class SolrFetchDocs(Task):
     def on_success(self):
         name = "{}-short".format(self.name) if self.short else self.name
         self.create_symlink(name="current", suffix=name)
-        _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
+        self.notify_server()
 
 
 class SolrDatabase(Task):
@@ -260,7 +267,7 @@ class SolrDatabase(Task):
     def on_success(self):
         name = "{}-short".format(self.name) if self.short else self.name
         self.create_symlink(name="current", suffix=name)
-        _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
+        self.notify_server()
 
 
 class IdMappingTable(Task):
@@ -311,6 +318,10 @@ class IdMappingTable(Task):
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="tsv.zst"))
 
+    def on_success(self):
+        self.create_symlink(name="current")
+        self.notify_server()
+
 
 class IdMappingDatabase(Task):
     """
@@ -334,7 +345,7 @@ class IdMappingDatabase(Task):
 
     def on_success(self):
         self.create_symlink(name="current")
-        _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
+        self.notify_server()
 
 
 class CombinedUpdate(luigi.WrapperTask):
