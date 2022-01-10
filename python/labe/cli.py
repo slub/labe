@@ -157,13 +157,8 @@ def main():
                     filenames.add(full)
                 if os.path.islink(full):
                     symlinked.add(os.readlink(full))
-        for path in sorted(symlinked):
-            print("L\t{}".format(path))
-        for path in sorted(filenames):
-            print("F\t{}".format(path))
-        print()
         for path in sorted(filenames - symlinked):
-            print("D\t{}".format(path))
+            print(path)
 
     # Show output filename for task.
     elif args.show_output_path:
