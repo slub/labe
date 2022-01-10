@@ -35,6 +35,11 @@ Constraints: We will only have disk space for a single update. We may want to
 reduce the index data size, e.g. reduce in a pipe while dumping from solr or
 select a number of fields (`solrdump -fl ...`).
 
+## Deployment
+
+* run "labe.pyz -r CombinedUpdate", e.g. daily
+* run "rm -f $(labe.pyz --list-deletable)", e.g. daily
+
 ## Directory layout
 
 * 13G + 150G + 42G + 5.5G + 2.5G = 213G
