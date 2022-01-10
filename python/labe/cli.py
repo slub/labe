@@ -148,6 +148,7 @@ def main():
         sys.exit(0)
 
     if args.list_deletable:
+        # rm -f $(labe.pyz --list-deletable)
         filenames = set()
         symlinked = set()
         for root, dirs, files in os.walk(args.data_dir):
