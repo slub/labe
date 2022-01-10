@@ -97,6 +97,8 @@ class Task(BaseTask):
         Send SIGHUP to server process, looked up by configured
         `labed_server_process_name`.
         """
+        # TODO: may just "systemctl restart labed" in order to spare sighup
+        # handling in server process
         _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
 
 
