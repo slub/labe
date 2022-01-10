@@ -1,0 +1,15 @@
+[Unit]
+Description=Server for labe citation project
+Documentation=man:labe(1) http://www.github.com/grossweber/labe
+After=network.target
+
+[Service]
+Type=simple
+User=labe
+WorkingDirectory=/tmp
+ExecStart=/usr/local/bin/labed -logfile /var/log/labed.log -C -z -l 0.0.0.0:8000 -I /usr/share/labe/IdMappingDatabase/current -O /usr/share/labe/OpenCitationsDatabase/current -Q /usr/share/labe/SolrDatabase/current-main-short -Q /usr/share/share/labe/SolrDatabase/current-ai-short
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
