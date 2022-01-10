@@ -52,7 +52,8 @@ class BaseTask(luigi.Task):
     A base task with a `path` method. BASE should be set to the root
     directory of all tasks. TAG is a shard for a group of related tasks.
     """
-    BASE = os.environ.get('GLUISH_DATA', tempfile.gettempdir())
+    # TODO: allow BASE to be override in config file
+    BASE = os.environ.get('LABE_DATA_DIR', tempfile.gettempdir())
     TAG = 'default'
 
     # TODO: supply example config.ini in repo
