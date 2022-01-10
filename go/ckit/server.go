@@ -410,6 +410,16 @@ func (s *Server) Ping() error {
 	return nil
 }
 
+// func (s *Server) Close() error {
+// 	if err := s.IdentifierDatabase.Close(); err != nil {
+// 		return err
+// 	}
+// 	if err := s.OciDatabase.Close(); err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
+
 // httpErrLogStatus logs the error and returns.
 func httpErrLogStatus(w http.ResponseWriter, err error, status int) {
 	log.Printf("failed [%d]: %v", status, err)
