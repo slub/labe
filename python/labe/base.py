@@ -59,12 +59,17 @@ class BaseTask(luigi.Task):
     # TODO: supply example config.ini in repo
     @property
     def config(self):
+        """
+        Configuration is loaded from labe.cfg, from current directory, XDG
+        config home (https://wiki.archlinux.org/title/XDG_Base_Directory) or
+        /etc/labe/labe.cfg.
+        """
         if not hasattr(self, "_config"):
             parser = configparser.ConfigParser()
             _config_paths = [
-                '/etc/labe/labe.cfg',
-                os.path.join(xdg.xdg_config_home(), "labe", "labe.cfg"),
                 'labe.cfg',
+                os.path.join(xdg.xdg_config_home(), "labe", "labe.cfg"),
+                '/etc/labe/labe.cfg',
             ]
             for path in _config_paths:
                 if not os.path.exists(path):
