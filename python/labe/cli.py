@@ -1,44 +1,46 @@
-"""
-Command line entry points for labe commands.
+r"""
+    ___  ___      ___      ___
+   /\__\/\  \    /\  \    /\  \
+  /:/  /::\  \  /::\  \  /::\  \
+ /:/__/::\:\__\/::\:\__\/::\:\__\
+ \:\  \/\::/  /\:\::/  /\:\:\/  /
+  \:\__\/:/  /  \::/  /  \:\/  /
+   \/__/\/__/    \/__/    \/__/
 
-    usage: labe.pyz [-h] [-L] [-l] [-O TASK] [-r TASK] [-c CONFIG_FILE]
-                    [--logging-conf-file LOGGING_CONF_FILE] [--data-dir DATA_DIR]
-                    [--tmp-dir TMP_DIR]
-                    [--labed-server-process-name LABED_SERVER_PROCESS_NAME]
-                    [--list-deletable]
+Command line interface to run luigi tasks for labe project.
 
-    optional arguments:
-      -h, --help            show this help message and exit
-      -L, --print-most-recent-download-url
-                            show most recent OCI download URL (default: False)
-      -l, --list            list task nam namess (default: False)
-      -O TASK, --show-output-path TASK
-                            show output path of task (default: None)
-      -r TASK, --run TASK   task to run (default: None)
-      -c CONFIG_FILE, --config-file CONFIG_FILE
-                            path to configuration file (default:
-                            /home/tir/.config/labe/labe.cfg)
-      --logging-conf-file LOGGING_CONF_FILE
-                            path to logging configuration file (default:
-                            /home/tir/.config/labe/logging.ini)
-      --data-dir DATA_DIR, -D DATA_DIR
-                            root directory for all tasks, we follow XDG (override
-                            in settings.ini) (default: /home/tir/.local/share)
-      --tmp-dir TMP_DIR, -T TMP_DIR
-                            temporary directory to use (default: /tmp)
-      --labed-server-process-name LABED_SERVER_PROCESS_NAME
-                            which process to send sighup to on database updates
-                            (default: labed)
-      --list-deletable      list task outputs, which could be deleted (default:
-                            False)
+Examples:
 
-Example:
+    List tasks:
 
-    $ labe.pyz -r SolrDatabase --name main
+        $ labe.pyz -l
+        CombinedUpdate
+        IdMappingDatabase
+        IdMappingTable
+        OpenCitationsDatabase
+        OpenCitationsDownload
+        OpenCitationsSingleFile
+        SolrDatabase
+        SolrFetchDocs
 
-Put this into cron, to automate:
+    Run task:
 
-    0 8 * * * labe.pyz -r SolrDatabase --name main
+        $ labe.pyz -r SolrDatabase --name main
+
+    Show task output location:
+
+        $ labe.pyz -O OpenCitationsDatabase
+        /usr/share/labe/OpenCitationsDatabase/c90e82e35c9d02c00f81bee6d1f34b132953398c.db
+
+Symlinks point to the current version of a task output. They will only be
+updated, if the task ran successfully. This way we can identify outdated files:
+
+    $ labe.pyz --list-deletable
+
+Use cron job to schedule tasks:
+
+    0 10 * * * rm -rf $(labe.pyz --list-deletable)
+    0 30 * * * labe.pyz -r CombinedUpdate
 
 """
 
@@ -90,7 +92,8 @@ def effective_task_names(suppress=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(prog="labe.pyz",
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "-L",
         "--print-most-recent-download-url",
@@ -151,10 +154,11 @@ def main():
         sys.exit(0)
 
     if args.list_deletable:
+        labe_data_dir = os.path.join(args.data_dir, Task.TAG) # hack to get the subdirectory
         # rm -f $(labe.pyz --list-deletable)
         filenames = set()
         symlinked = set()
-        for root, dirs, files in os.walk(args.data_dir):
+        for root, dirs, files in os.walk(labe_data_dir):
             for name in files:
                 full = os.path.join(root, name)
                 if os.path.isfile(full) and not os.path.islink(full):
@@ -192,3 +196,5 @@ def main():
         except TaskClassNotFoundException as err:
             print(err, file=sys.stderr)
             sys.exit(1)
+
+    print(__doc__)
