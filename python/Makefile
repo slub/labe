@@ -38,6 +38,7 @@ clean:
 	rm -rf $(PKGNAME).egg-info/
 	rm -rf $(ZIPAPP)
 	find . -name "__pycache__" -exec rm -rf "{}" +
+	rm -rf $(PKGNAME)_*.deb
 
 .PHONY: deploy
 deploy: $(ZIPAPP)
