@@ -41,11 +41,22 @@ clean:
 
 .PHONY: deploy
 deploy: $(ZIPAPP)
-	# temporary deploy option, can put:
-	# DEPLOY_DST=user@srv.slub-dresden.de:/home/user/bin into ".env" file (read
-	# by makefile)
+	# temporary deploy option for development, you can put:
+	# DEPLOY_DST=user@srv.slub-dresden.de:/home/user/bin
+	# into ".env" file (read by makefile)
 	rsync -avzP -e 'ssh -p 21' labe.pyz $(DEPLOY_DST)
 
 .PHONY: deb
-deb:
-	echo "TODO: build deb package with zipapp and config files
+deb: $(ZIPAPP)
+	# executables
+	mkdir -p packaging/deb/$(PKGNAME)/usr/local/bin
+	cp $(ZIPAPP) packaging/deb/$(PKGNAME)/usr/local/bin
+	# config files
+	mkdir -p packaging/deb/$(PKGNAME)/etc/luigi
+	mkdir -p packaging/deb/$(PKGNAME)/etc/labe
+	cp luigi.cfg logging.ini packaging/deb/$(PKGNAME)/etc/luigi
+	cp labe.cfg packaging/deb/$(PKGNAME)/etc/labe
+	# build package
+	cd packaging/deb && fakeroot dpkg-deb --build $(PKGNAME) .
+	mv packaging/deb/$(PKGNAME)_*.deb .
+

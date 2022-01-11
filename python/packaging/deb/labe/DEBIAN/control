@@ -1,0 +1,9 @@
+Package: labe
+Version: 0.1.3
+Section: utils
+Priority: optional
+Architecture: amd64
+Essential: no
+Depends: libc6 (>= 2.12)
+Maintainer: Martin Czygan <martin.czygan@gmail.com>
+Description: Data derivation tasks for project LABE at SLUB Dresden.
