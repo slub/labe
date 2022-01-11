@@ -35,8 +35,13 @@ clean:
 
 .PHONY: deb
 deb: all
+	# executables
 	mkdir -p packaging/deb/$(PKGNAME)/usr/local/bin
 	cp $(TARGETS) packaging/deb/$(PKGNAME)/usr/local/bin
+	# systemd unit file
+	mkdir -p packaging/deb/$(PKGNAME)/usr/lib/systemd/system
+	cp packaging/labed.service packaging/deb/$(PKGNAME)/usr/lib/systemd/system/
+	# build package
 	cd packaging/deb && fakeroot dpkg-deb --build $(PKGNAME) .
 	mv packaging/deb/$(PKGNAME)_*.deb .
 
