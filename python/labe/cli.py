@@ -1,13 +1,4 @@
-r"""
-    ___  ___      ___      ___
-   /\__\/\  \    /\  \    /\  \
-  /:/  /::\  \  /::\  \  /::\  \
- /:/__/::\:\__\/::\:\__\/::\:\__\
- \:\  \/\::/  /\:\::/  /\:\:\/  /
-  \:\__\/:/  /  \::/  /  \:\/  /
-   \/__/\/__/    \/__/    \/__/
-
-Command line interface to run luigi tasks for labe project
+"""Command line interface to run luigi tasks for labe project ≋
 (https://github.com/grossweber/labe).
 
 Examples:
@@ -48,7 +39,6 @@ Relevant configuration files:
     /etc/luigi/luigi.cfg
     /etc/luigi/logging.ini
     /etc/labe/labe.cfg
-
 """
 
 import argparse
