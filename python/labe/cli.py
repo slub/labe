@@ -7,7 +7,8 @@ r"""
   \:\__\/:/  /  \::/  /  \:\/  /
    \/__/\/__/    \/__/    \/__/
 
-Command line interface to run luigi tasks for labe project.
+Command line interface to run luigi tasks for labe project
+(https://github.com/grossweber/labe).
 
 Examples:
 
@@ -41,6 +42,12 @@ Use cron job to schedule tasks:
 
     0 10 * * * rm -rf $(labe.pyz --list-deletable)
     0 30 * * * labe.pyz -r CombinedUpdate
+
+Relevant configuration files:
+
+    /etc/luigi/luigi.cfg
+    /etc/luigi/logging.ini
+    /etc/labe/labe.cfg
 
 """
 
