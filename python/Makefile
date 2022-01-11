@@ -32,13 +32,15 @@ fmt:
 
 .PHONY: clean
 clean:
+	find . -name "__pycache__" -exec rm -rf "{}" +
+	rm -rf $(PKGNAME).egg-info/
+	rm -rf $(PKGNAME)_*.deb
+	rm -rf $(ZIPAPP)
 	rm -rf .pytest_cache/
 	rm -rf build/
 	rm -rf dist/
-	rm -rf $(PKGNAME).egg-info/
-	rm -rf $(ZIPAPP)
-	find . -name "__pycache__" -exec rm -rf "{}" +
-	rm -rf $(PKGNAME)_*.deb
+	rm -rf packaging/deb/labe/etc/
+	rm -rf packaging/deb/labe/usr/
 
 .PHONY: deploy
 deploy: $(ZIPAPP)
