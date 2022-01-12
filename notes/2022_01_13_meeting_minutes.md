@@ -26,11 +26,16 @@ SolrDatabase              *
 SolrFetchDocs
 ```
 
-The `*` tasks are sqlite3 database used by the API server.
+The `*` tasks are sqlite3 databases used by the API server.
 
-There is a single command line tool, currently named
+There is a single command line tool, named
 [`labe.pyz`](https://github.com/GROSSWEBER/labe/blob/801c700dcec4dbca864e022176f275f1acbc31a1/python/Makefile#L23-L26)
-that allows to run tasks (this is a single file packed Python project, built with [shiv](https://shiv.readthedocs.io/).
+that allows to run tasks (this is a single file packed Python project, built
+with [shiv](https://shiv.readthedocs.io/)).
+
+> Shiv is a command line utility for building fully self-contained Python
+> zipapps as outlined in [PEP 441](https://www.python.org/dev/peps/pep-0441/)
+> but with all their dependencies included!
 
 ```
 Command line interface to run luigi tasks for labe project ≋
@@ -81,11 +86,11 @@ Relevant configuration files:
 
 There is a module
 [`oci.py`](https://github.com/GROSSWEBER/labe/blob/main/python/labe/oci.py)
-which checks [Open Citations website](https://opencitations.net/download) for new dumps. The most recent download
-URL can be queried from the command line:
+which checks [Open Citations website](https://opencitations.net/download) for
+new dumps. The most recent download URL can be queried from the command line:
 
 ```
-$ ./labe.pyz -L
+$ labe.pyz -L
 https://figshare.com/ndownloader/articles/6741422/versions/12
 ```
 
@@ -93,14 +98,14 @@ https://figshare.com/ndownloader/articles/6741422/versions/12
 
 Data is prepared and put into a queryable form by utilitizing [sqlite3](https://sqlite.org).
 
-* we turn OCI dumps into an sqlite3 database
+* we convert the OCI CSV data dump into an sqlite3 database
 * we turn solr index documents into sqlite3 key value store (key: id, value: doc)
 * we generate an id-to-doi mapping and store it in sqlite3
 
-A standalone tool,
-[`makta`](https://github.com/GROSSWEBER/labe/tree/main/go/ckit#makta), can turn
-a TSV file into an sqlite3 database (scales to billions of rows). A small tool,
-[`tabjson`](https://github.com/GROSSWEBER/labe/tree/main/go/ckit#tabjson), turns
+A standalone tool -
+[`makta`](https://github.com/GROSSWEBER/labe/tree/main/go/ckit#makta) - can turn
+a TSV file into an sqlite3 database (scales to billions of rows). A small tool -
+[`tabjson`](https://github.com/GROSSWEBER/labe/tree/main/go/ckit#tabjson) - turns
 a JSON document with an ID field into a TSV file (to be used in a key-value style).
 
 Instead of batch processing, we use these sqlite3 databases in conjunction with
