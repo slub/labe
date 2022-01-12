@@ -178,6 +178,9 @@ The current version of the OCI index (v12) contains [1,235,170,583 citations](ht
 
 * [ ] **AP4 Speichern der Daten im Datahub**
 
+> Nach dem Download der Gesamtdaten und nach der Reduktion der Daten sind diese
+> im SLUB Datahub abzulegen.
+
 We save all files on a dedicated host ("sdvlabe", *Intel [Xeon Gold
 5218](https://ark.intel.com/content/www/us/en/ark/products/192444/intel-xeon-gold-5218-processor-22m-cache-2-30-ghz.html)
 (8) @ 2.294GHz*, 1T disk). There is one data directory, which contains all
@@ -186,16 +189,33 @@ regular.
 
 * [ ] **AP5 Einspielen der Daten in einen Index**
 
+> Die in Punkt 4 erzeugten, reduzierten Daten sind in einen leistungsfähigen
+> Solr oder Elasticsearch Index einzuspielen.
+
 Originally, an index was to be used as a data store for the merged data.
 However, we can also use sqlite3 databases as our backing data stores. The
 [`makta`](https://github.com/GROSSWEBER/labe/tree/main/go/ckit#makta) tool
 helps us to move tabular data into sqlite3 quickly.
 
+Some advantages of the current approach:
+
+* less time for preprocessing (around 180 minutes at most), since we need to bring data mostly into sqlite3 (with some transformations)
+* databases can be updated independently
+* sqlite3 is a serverless database and it requires less maintenance than a search server
+* sqlite3 is a stable format, even [recommended as a storage format by the Library of Congress](https://www.sqlite.org/locrsf.html)
+* backups (if necessary) are as simple as an `rsync` of a directory to another machine
+
 * [ ] **AP6 Bereitstellung der Daten als REST API**
+
+> Die Daten aus dem leistungsfähigen Index sind für die weitere Verwendung als
+> REST API bereitzustellen. Die Abfrage der Daten soll mittels der DOI
+> erfolgen. Als Antwort sind die Metadaten der DOI und die zitierten und
+> zitierenden Werke geliefert werden. Zu den zitierten und zitierenden Werken
+> sind die jeweiligen Metadaten ebenfalls in der Antwort auszugeben.
 
 The [`labed`](https://github.com/GROSSWEBER/labe/tree/main/go/ckit#labed)
 program is a standalone HTTP server that serves queries for inbound and
-outbound citations for a given ID (e.g. ai-49-28bf812...) or DOI
+outbound citations for a *given ID* (e.g. ai-49-28bf812...) or *DOI*
 (10.123/123...).
 
 The labed server will utilize the id-mapping, citations and
@@ -204,6 +224,78 @@ about inbound, outbound citations as well as citations currently not found in
 the catalog data.
 
 ![](../static/Labe-Sequence.png)
+
+Example response:
+
+```json
+{
+  "id": "ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjEwNC9hZzA2MDAwOQ",
+  "doi": "10.2104/ag060009",
+  "citing": [
+    {
+      "author": [
+        "O'Connor, Kevin"
+      ],
+      "doi_str_mv": [
+        "10.1080/08111140309955"
+      ],
+      "format": [
+        "ElectronicArticle"
+      ],
+      "id": "ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA4MC8wODExMTE0MDMwOTk1NQ",
+      "title": "Melbourne 2030: A Response",
+      "url": [
+        "http://dx.doi.org/10.1080/08111140309955"
+      ]
+    }
+  ],
+  "cited": [
+    {
+      "author": [
+        "Drechsler, Paul"
+      ],
+      "doi_str_mv": [
+        "10.1080/08111146.2014.908768"
+      ],
+      "format": [
+        "ElectronicArticle"
+      ],
+      "id": "ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA4MC8wODExMTE0Ni4yMDE0LjkwODc2OA",
+      "title": "Metropolitan Activity Centre ...",
+      "url": [
+        "http://dx.doi.org/10.1080/08111146.2014.908768"
+      ]
+    },
+    {
+      "author": [
+        "Fujii, Tadashi",
+        "Yamashita, Hiroki",
+        "Itoh, Satoru"
+      ],
+      "doi_str_mv": [
+        "10.2104/ag060011"
+      ],
+      "format": [
+        "ElectronicArticle"
+      ],
+      "id": "ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjEwNC9hZzA2MDAxMQ",
+      "title": "A comparative study of metropolitan ...",
+      "url": [
+        "http://dx.doi.org/10.2104/ag060011"
+      ]
+    }
+  ],
+  "unmatched": {},
+  "extra": {
+    "took": 0.000727576,
+    "unmatched_citing_count": 0,
+    "unmatched_cited_count": 0,
+    "citing_count": 1,
+    "cited_count": 2,
+    "cached": false
+  }
+}
+```
 
 The server is minimalistic (~1K LOC) and focusses on performance. It is
 possible to trade memory for speed by using a built-in cache (which caches
