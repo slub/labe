@@ -1,28 +1,36 @@
 # Meeting Minutes
 
-> 2022-01-06, 1300, JN, CR, MC, TW
+> 2022-01-13, 1300, JN, CR, MC, TW
 
 ## Checklist
 
-All code and notes are openly available under the
-[labe](https://github.com/GROSSWEBER/labe) git repository.
+All code and notes are available under a permissive free software license; the
+git repository can be found at
+[https://github.com/GROSSWEBER/labe](https://github.com/GROSSWEBER/labe).
 
 * [ ] **AP1 Prozessierungspipeline**
 
-Implemented eight tasks for the processing pipeline:
+Implemented eight
+[tasks](https://github.com/GROSSWEBER/labe/blob/main/python/labe/tasks.py) for
+the processing pipeline (using [luigi](https://github.com/spotify/luigi) as
+pipeline framework):
 
 ```
 CombinedUpdate
-IdMappingDatabase
+IdMappingDatabase         *
 IdMappingTable
-OpenCitationsDatabase
+OpenCitationsDatabase     *
 OpenCitationsDownload
 OpenCitationsSingleFile
-SolrDatabase
+SolrDatabase              *
 SolrFetchDocs
 ```
 
-There is a single command line tool: `labe.pyz` that allows to run tasks.
+The `*` tasks are sqlite3 database used by the API server.
+
+There is a single command line tool, currently named
+[`labe.pyz`](https://github.com/GROSSWEBER/labe/blob/801c700dcec4dbca864e022176f275f1acbc31a1/python/Makefile#L23-L26)
+that allows to run tasks (this is a single file packed Python project, built with [shiv](https://shiv.readthedocs.io/).
 
 ```
 Command line interface to run luigi tasks for labe project ≋
@@ -69,12 +77,11 @@ Relevant configuration files:
 
 ```
 
-
 * [ ] **AP2 Abruf der aktuellen Dumps**
 
 There is a module
 [`oci.py`](https://github.com/GROSSWEBER/labe/blob/main/python/labe/oci.py)
-which checks Open Citataions website for new dumps. The most recent download
+which checks [Open Citations website](https://opencitations.net/download) for new dumps. The most recent download
 URL can be queried from the command line:
 
 ```
@@ -82,48 +89,54 @@ $ ./labe.pyz -L
 https://figshare.com/ndownloader/articles/6741422/versions/12
 ```
 
-
 * [ ] **AP3 Verarbeiten und Reduktion der Daten**
 
-Data is prepared and put into a querable form by utilitizing sqlite3.
+Data is prepared and put into a queryable form by utilitizing [sqlite3](https://sqlite.org).
 
-* we turn OCI dump into sqlite3
-* we turn solr index documents into sqlite3
+* we turn OCI dumps into an sqlite3 database
+* we turn solr index documents into sqlite3 key value store (key: id, value: doc)
 * we generate an id-to-doi mapping and store it in sqlite3
 
 A standalone tool,
-[`makta`](https://github.com/GROSSWEBER/labe/tree/main/go/ckit#makta) can turn
-a TSV file into sqlite3 database (scale to billions of rows). A small tool,
-[`tabjson`](https://github.com/GROSSWEBER/labe/tree/main/go/ckit#tabjson) turns
-a JSON document with an ID into a TSV file for further generation of a
-key-value style sqlite3 database.
+[`makta`](https://github.com/GROSSWEBER/labe/tree/main/go/ckit#makta), can turn
+a TSV file into an sqlite3 database (scales to billions of rows). A small tool,
+[`tabjson`](https://github.com/GROSSWEBER/labe/tree/main/go/ckit#tabjson), turns
+a JSON document with an ID field into a TSV file (to be used in a key-value style).
 
 Instead of batch processing, we use these sqlite3 databases in conjunction with
-the API server to server queries.
+the API server to serve queries.
 
 * [ ] **AP4 Speichern der Daten im Datahub**
 
-We save all files on a dedicated machine ("sdvlabe"). There is one data
-directory, which contains all downloaded files and final databases.
+We save all files on a dedicated host ("sdvlabe", *Intel Xeon Gold 5218 (8)
+@ 2.294GHz*, 1T disk). There is one data directory, which contains all
+downloaded files and final databases. Naming of files and directories is
+regular.
 
 * [ ] **AP5 Einspielen der Daten in einen Index**
 
-Originally, the idea of the index was to be a data store for the merged data.
-We use sqlite3 databases as data store. The
-[`makta`](https://github.com/GROSSWEBER/labe/tree/main/go/ckit#makta) helps us to move tabular data quickly into sqlite3.
+Originally, an index was to be used as a data store for the merged data.
+However, we can also use sqlite3 databases as our backing data stores. The
+[`makta`](https://github.com/GROSSWEBER/labe/tree/main/go/ckit#makta) tool
+helps us to move tabular data quickly into sqlite3.
 
 * [ ] **AP6 Bereitstellung der Daten als REST API**
 
-The [`labed`](https://github.com/GROSSWEBER/labe/tree/main/go/ckit#labed) tool
-is a standalone HTTP server that serves queries for inbound and outbound
-citations for a given ID (e.g. ai-49-28bf812...) or DOI (10.123/123...). The
-labed server will utilize the id-mapping, citations and index cache databases
-to fuse a single JSON response containing information about inbound, outbound
-citations as well as citations currently not found in the catalog data.
+The [`labed`](https://github.com/GROSSWEBER/labe/tree/main/go/ckit#labed)
+program is a standalone HTTP server that serves queries for inbound and
+outbound citations for a given ID (e.g. ai-49-28bf812...) or DOI
+(10.123/123...).
 
-The server is lean (~1K LOC) and focusses on performance. It is possible to
-trade memory for speed by using a builtin cache (which caches expensive
-responses on first query). Via middleware, the server supports gzip
+The labed server will utilize the id-mapping, citations and
+index cache databases to fuse a single JSON response containing information
+about inbound, outbound citations as well as citations currently not found in
+the catalog data.
+
+![](../static/Labe-Sequence.png)
+
+The server is minimalistic (~1K LOC) and focusses on performance. It is
+possible to trade memory for speed by using a built-in cache (which caches
+expensive responses on first query). Via middleware, the server supports gzip
 compression, logging and query tracing.
 
 * [ ] **AP7 Optional: Automatischer Delta Report**
@@ -149,7 +162,8 @@ In order to test our design, we conducted regular performance tests. A final
 report is outstanding, but the TL;DR is:
 
 * labed server can serve 100+ rps sustained with moderate load
-* while some queries (documents with many edges) may take longer than 1s, the majority of requests come back in less than 500ms
+* while some queries (documents with many edges) may take longer than 1s, the
+  majority of requests come back in less than 500ms
 
 ```
 $ curl -sL https://is.gd/xGqzsg | \
@@ -168,21 +182,25 @@ $ curl -sL https://is.gd/xGqzsg | \
 
 ## Extensibility
 
-* in order to add more id-doi mappings, the data needs to be included in [`IdMappingTable`](https://github.com/GROSSWEBER/labe/blob/c67474c272cbbc51405bf53eb22d656622547c38/python/labe/tasks.py#L275-L325) task
+* in order to add more id-doi mappings, the data needs to be included in
+  [`IdMappingTable`](https://github.com/GROSSWEBER/labe/blob/c67474c272cbbc51405bf53eb22d656622547c38/python/labe/tasks.py#L275-L325) task
 * labed supports multiple index data stores to get catalog metadata from (via `-Q` flag)
 
 ## Maintenance
 
-Currently (01/2022) we expect the project to be able to deployed and run with only little intervention for a 12-24 months. A list of a few maintenance issues are:
+Currently (01/2022) we think the project can run with minimal intervention for
+a 12-24 months. A list of a few maintenance issues are:
 
 * update python *dependencies* (adjust `setup.py`)
 * update Go *dependencies* (`go get -u -v`)
 
-Currently, we use about 300G per version on a 1T disk drive, hence we can
-accommodate two versions side-by-side. As citation data and index data is
-expected to grow, the *disk size* may be a limiting factor in 12-24 months.
+Currently, we use about 300G per update cycle on a 1T disk drive, hence we can
+accommodate at most two versions at the same time. As citation data and index
+data is expected to grow, the *disk size* may be a limiting factor in 12-24
+months.
 
-* OCI links are currently scraped, which means that as soon as OCI changes their webpage layout, the scraper module needs to be adjusted
+* OCI links are currently scraped, which means that as soon as OCI changes
+  their webpage layout, the scraper module needs to be adjusted
 
 More maintenance notes:
 
@@ -200,3 +218,4 @@ Additional notes on maintenance.
 * Python package, with a regalar package appearance (via `setup.py`)
 * Makefile target for formatting Python (via `make fmt`)
 * Code documentation for each function and most modules
+
