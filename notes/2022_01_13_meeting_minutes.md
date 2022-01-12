@@ -193,8 +193,8 @@ $ curl -sL https://is.gd/xGqzsg | \
 
 * lightning talk on the Go parts of the projects at [Leipzig
   Gophers](https://golangleipzig.space/)
-[#23](https://golangleipzig.space/posts/meetup-23-wrapup/):
-[Slides](https://github.com/miku/dwstalk)
+[#23](https://golangleipzig.space/posts/meetup-23-wrapup/) (2021-11-23), titled
+[A data web service](https://github.com/miku/dwstalk)
 
 ## Extensibility
 
