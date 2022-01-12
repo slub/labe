@@ -125,7 +125,7 @@ compression, logging and query tracing.
 
 * [ ] **AP7 Optional: Automatischer Delta Report**
 
-A delta report generator is currently in progress. It's design will piggyback
+A delta report generator is currently in progress. Its design will piggyback
 on existing UNIX facilities, such as
 [`diff(1)`](https://man7.org/linux/man-pages/man1/diff.1.html).
 
