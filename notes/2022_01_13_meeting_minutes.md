@@ -174,7 +174,7 @@ a JSON document with an ID field into a TSV file (to be used in a key-value styl
 Instead of batch processing, we use these sqlite3 databases in conjunction with
 the API server to serve queries.
 
-The current version of the OCI index (v12) contains [1,235,170,583 citations](https://opencitations.net/download).
+The current version of the OCI index (v12) contains [1,235,170,583 citations](https://opencitations.net/download) (plus 62%).
 
 * [ ] **AP4 Speichern der Daten im Datahub**
 
