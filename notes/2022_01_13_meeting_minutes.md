@@ -113,8 +113,9 @@ the API server to serve queries.
 
 * [ ] **AP4 Speichern der Daten im Datahub**
 
-We save all files on a dedicated host ("sdvlabe", *Intel Xeon Gold 5218 (8)
-@ 2.294GHz*, 1T disk). There is one data directory, which contains all
+We save all files on a dedicated host ("sdvlabe", *Intel [Xeon Gold
+5218](https://ark.intel.com/content/www/us/en/ark/products/192444/intel-xeon-gold-5218-processor-22m-cache-2-30-ghz.html)
+(8) @ 2.294GHz*, 1T disk). There is one data directory, which contains all
 downloaded files and final databases. Naming of files and directories is
 regular.
 
