@@ -5,10 +5,12 @@
 ## Checklist
 
 All code and notes are available under a permissive free software license; the
-git repository can be found at
+git repository is at
 [https://github.com/GROSSWEBER/labe](https://github.com/GROSSWEBER/labe).
 
 * [ ] **AP1 Prozessierungspipeline**
+
+> Die Pipeline soll automatisiert ablaufen, allerdings sollen die einzelnen Schritte auch manuell ausführbar sein.
 
 Implemented eight
 [tasks](https://github.com/GROSSWEBER/labe/blob/main/python/labe/tasks.py) for
@@ -81,6 +83,44 @@ Relevant configuration files:
     /etc/luigi/luigi.cfg
     /etc/luigi/logging.ini
     /etc/labe/labe.cfg
+
+```
+
+Usage of `labe.pyz`:
+
+```
+usage: labe.pyz [-h] [-L] [-l] [-O TASK] [-r TASK] [-c CONFIG_FILE]
+                [--logging-conf-file LOGGING_CONF_FILE] [--data-dir DATA_DIR]
+                [--tmp-dir TMP_DIR]
+                [--labed-server-process-name LABED_SERVER_PROCESS_NAME]
+                [--list-deletable] [--deps] [--deps-dot]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -L, --print-most-recent-download-url
+                        show most recent OCI download URL (default: False)
+  -l, --list            list task names (default: False)
+  -O TASK, --show-output-path TASK
+                        show output path of task (default: None)
+  -r TASK, --run TASK   task to run (default: None)
+  -c CONFIG_FILE, --config-file CONFIG_FILE
+                        path to configuration file (default:
+                        /home/tir/.config/labe/labe.cfg)
+  --logging-conf-file LOGGING_CONF_FILE
+                        path to logging configuration file (default:
+                        /home/tir/.config/labe/logging.ini)
+  --data-dir DATA_DIR, -D DATA_DIR
+                        root directory for all tasks, we follow XDG (override
+                        in settings.ini) (default: /home/tir/.local/share)
+  --tmp-dir TMP_DIR, -T TMP_DIR
+                        temporary directory to use (default: /tmp)
+  --labed-server-process-name LABED_SERVER_PROCESS_NAME
+                        which process to send sighup to on database updates
+                        (default: labed)
+  --list-deletable      list task outputs, which could be deleted (default:
+                        False)
+  --deps                show task dependencies (default: False)
+  --deps-dot            print task dependencies in dot format (default: False)
 
 ```
 
