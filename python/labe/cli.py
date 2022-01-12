@@ -54,6 +54,7 @@ from luigi.parameter import MissingParameterException
 from luigi.task_register import Register, TaskClassNotFoundException
 from xdg import xdg_config_home, xdg_data_home
 
+from labe.deps import dump_deps
 from labe.oci import OpenCitationsDataset
 # We need a star import to import all tasks.
 from labe.tasks import *
@@ -89,8 +90,7 @@ def effective_task_names(suppress=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog="labe.pyz",
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(prog="labe.pyz", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "-L",
         "--print-most-recent-download-url",
@@ -120,6 +120,8 @@ def main():
                         default="labed",
                         help="which process to send sighup to on database updates")
     parser.add_argument("--list-deletable", action="store_true", help="list task outputs, which could be deleted")
+    parser.add_argument("--deps", action="store_true", help="show task dependencies")
+    parser.add_argument("--deps-dot", action="store_true", help="print task dependencies in dot format")
 
     # Task may have their own arguments, which we ignore.
     args, _ = parser.parse_known_args()
@@ -150,8 +152,8 @@ def main():
             print(name)
         sys.exit(0)
 
-    if args.list_deletable:
-        labe_data_dir = os.path.join(args.data_dir, Task.TAG) # hack to get the subdirectory
+    elif args.list_deletable:
+        labe_data_dir = os.path.join(args.data_dir, Task.TAG)  # hack to get the subdirectory
         # rm -f $(labe.pyz --list-deletable)
         filenames = set()
         symlinked = set()
@@ -182,8 +184,33 @@ def main():
             print(err, file=sys.stderr)
             sys.exit(1)
 
+    elif args.deps:
+        if len(sys.argv) < 2:
+            raise ValueError("task name required")
+        try:
+            parser = CmdlineParser(sys.argv[2:])
+            obj = parser.get_task_obj()
+            dump_deps(obj)
+            sys.exit(0)
+        except TaskClassNotFoundException as exc:
+            print("no such task")
+            sys.exit(1)
+
+    elif args.deps_dot:
+        # labe.pyz --deps-dot CombinedUpdate | dot -Tpng > CombinedUpdate.png
+        if len(sys.argv) < 2:
+            raise ValueError("task name required")
+        try:
+            parser = CmdlineParser(sys.argv[2:])
+            obj = parser.get_task_obj()
+            dump_deps(obj, dot=True)
+            sys.exit(0)
+        except TaskClassNotFoundException as exc:
+            print("no such task")
+            sys.exit(1)
+
     # Run luigi task, tweak args so we can use luigi.run, again.
-    if args.run:
+    elif args.run:
         try:
             sys.argv = [sys.argv[0], *sys.argv[2:]]
             luigi.run(local_scheduler=True)
