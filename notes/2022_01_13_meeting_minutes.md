@@ -28,6 +28,8 @@ SolrFetchDocs
 
 The `*` tasks are sqlite3 databases used by the API server.
 
+![](static/CombinedUpdate.png)
+
 There is a single command line tool, named
 [`labe.pyz`](https://github.com/GROSSWEBER/labe/blob/801c700dcec4dbca864e022176f275f1acbc31a1/python/Makefile#L23-L26)
 that allows to run tasks (this is a single file packed Python project, built
@@ -193,7 +195,7 @@ $ curl -sL https://is.gd/xGqzsg | \
 
 * lightning talk on the Go parts of the projects at [Leipzig
   Gophers](https://golangleipzig.space/)
-[#23](https://golangleipzig.space/posts/meetup-23-wrapup/) (2021-11-23), titled
+[#23](https://golangleipzig.space/posts/meetup-23-wrapup/) (2021-11-23), titled:
 [A data web service](https://github.com/miku/dwstalk)
 
 ## Extensibility
