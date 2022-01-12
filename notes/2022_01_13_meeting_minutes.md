@@ -140,7 +140,24 @@ $ labe.pyz -L
 https://figshare.com/ndownloader/articles/6741422/versions/12
 ```
 
+It is possible to override the direct download url via `labe.cfg` configuration.
+
+```ini
+[oci]
+
+direct = http://example.com/data.csv.gz
+```
+
 * [ ] **AP3 Verarbeiten und Reduktion der Daten**
+
+> Insbesondere soll der Gesamtbestand der Datenbank auf DOIs reduziert werden,
+> die im SLUB Bestand sind, SLUB Bestand zitieren oder von SLUB Bestand zitiert
+> werden.
+>
+> ...
+>
+> Wie oben bereits beschrieben umfasst der "OpenCitations COCI Index" einen
+> Datenbestand von 60.778.357 bibliografische Ressourcen und 759.516.507 Zitationen.
 
 Data is prepared and put into a queryable form by utilitizing [sqlite3](https://sqlite.org).
 
@@ -156,6 +173,8 @@ a JSON document with an ID field into a TSV file (to be used in a key-value styl
 
 Instead of batch processing, we use these sqlite3 databases in conjunction with
 the API server to serve queries.
+
+The current version of the OCI index (v12) contains [1,235,170,583 citations](https://opencitations.net/download).
 
 * [ ] **AP4 Speichern der Daten im Datahub**
 
