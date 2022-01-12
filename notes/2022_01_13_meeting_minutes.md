@@ -205,6 +205,8 @@ Some advantages of the current approach:
 * sqlite3 is a stable format, even [recommended as a storage format by the Library of Congress](https://www.sqlite.org/locrsf.html)
 * backups (if necessary) are as simple as an `rsync` of a directory to another machine
 
+Performance of sqlite3 has been overall positive, since we mostly need simple queries (akin to key-value stores).
+
 * [ ] **AP6 Bereitstellung der Daten als REST API**
 
 > Die Daten aus dem leistungsfähigen Index sind für die weitere Verwendung als
