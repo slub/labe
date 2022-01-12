@@ -156,12 +156,32 @@ $ curl -sL https://is.gd/xGqzsg | \
     jq -rc '[.id, .doi, .extra.citing_count, .extra.cited_count, .extra.took] | @tsv'
 ```
 
+### Lightning Talk
+
+* lightning talk on the Go parts of the projects at [Leipzig
+  Gophers](https://golangleipzig.space/)
+[#23](https://golangleipzig.space/posts/meetup-23-wrapup/):
+[Slides](https://github.com/miku/dwstalk)
+
 ## Extensibility
 
 * in order to add more id-doi mappings, the data needs to be included in [`IdMappingTable`](https://github.com/GROSSWEBER/labe/blob/c67474c272cbbc51405bf53eb22d656622547c38/python/labe/tasks.py#L275-L325) task
 * labed supports multiple index data stores to get catalog metadata from (via `-Q` flag)
 
 ## Maintenance
+
+Currently (01/2022) we expect the project to be able to deployed and run with only little intervention for a 12-24 months. A list of a few maintenance issues are:
+
+* update python *dependencies* (adjust `setup.py`)
+* update Go *dependencies* (`go get -u -v`)
+
+Currently, we use about 300G per version on a 1T disk drive, hence we can
+accommodate two versions side-by-side. As citation data and index data is
+expected to grow, the *disk size* may be a limiting factor in 12-24 months.
+
+* OCI links are currently scraped, which means that as soon as OCI changes their webpage layout, the scraper module needs to be adjusted
+
+More maintenance notes:
 
 * crontab documentation is included
 * a cleanup script and mechanism to only keep the most recent version of the data is included
