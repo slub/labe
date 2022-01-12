@@ -28,7 +28,7 @@ SolrFetchDocs
 
 The `*` tasks are sqlite3 databases used by the API server.
 
-![](static/CombinedUpdate.png)
+![](../static/CombinedUpdate.png)
 
 There is a single command line tool, named
 [`labe.pyz`](https://github.com/GROSSWEBER/labe/blob/801c700dcec4dbca864e022176f275f1acbc31a1/python/Makefile#L23-L26)
