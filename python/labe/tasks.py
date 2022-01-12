@@ -219,7 +219,7 @@ class SolrFetchDocs(Task):
             raise LookupError('cannot map name to solr url, available indices: {}'.format(indices.keys()))
         extra_opts = ''
         if self.short:
-            extra_opts = "-fl 'id,title,author,format,url,doi_str_mv'"
+            extra_opts = "-fl 'id,title,author,format,url,doi_str_mv,institution'"
         output = shellout("""
                           solrdump -verbose -server {server} -rows 50000 {extra_opts} |
                           zstd -c -T0 > {output}
