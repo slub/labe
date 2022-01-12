@@ -4,6 +4,9 @@
 
 ## Checklist
 
+All code and notes are openly available under the
+[labe](https://github.com/GROSSWEBER/labe) git repository.
+
 * [ ] **AP1 Prozessierungspipeline**
 
 Implemented eight tasks for the processing pipeline:
