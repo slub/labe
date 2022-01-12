@@ -266,6 +266,7 @@ $ curl -sL https://is.gd/xGqzsg | \
 * in order to add more id-doi mappings, the data needs to be included in
   [`IdMappingTable`](https://github.com/GROSSWEBER/labe/blob/c67474c272cbbc51405bf53eb22d656622547c38/python/labe/tasks.py#L275-L325) task
 * labed supports multiple index data stores to get catalog metadata from (via `-Q` flag)
+* since we do not limit SOLR metadata to just SLUB data, the service may be reusable by [any institution](https://finc.info/anwender) using the shared article index
 
 ## Maintenance
 
