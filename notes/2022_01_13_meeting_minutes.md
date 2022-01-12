@@ -124,7 +124,7 @@ regular.
 Originally, an index was to be used as a data store for the merged data.
 However, we can also use sqlite3 databases as our backing data stores. The
 [`makta`](https://github.com/GROSSWEBER/labe/tree/main/go/ckit#makta) tool
-helps us to move tabular data quickly into sqlite3.
+helps us to move tabular data into sqlite3 quickly.
 
 * [ ] **AP6 Bereitstellung der Daten als REST API**
 
@@ -158,9 +158,19 @@ on existing UNIX facilities, such as
 > Um zu erfahren, welche Werke im SLUB Bestand sind, kann eine Abfrage der DOIs
 > gegen einen Solr Index stattfinden.
 
-Not all DOI were readily available in indices; we wrote a specific tool,
-[`doisniffer`](https://github.com/GROSSWEBER/labe/tree/main/go/ckit#doisniffer)
-that allows to augment existing JSON lines SOLR files with DOI information.
+Not all DOI were readily available in indices; we wrote a specific tool -
+[`doisniffer`](https://github.com/GROSSWEBER/labe/tree/main/go/ckit#doisniffer) - that allows to augment existing JSON lines SOLR files with DOI information.
+
+```shell
+$ echo '{"title": "example title", "notes": "see also: 10.123/123"}' | doisniffer | jq .
+{
+  "doi_str_mv": [
+    "10.123/123"
+  ],
+  "notes": "see also: 10.123/123",
+  "title": "example title"
+}
+```
 
 ### Performance reports
 
