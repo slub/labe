@@ -61,9 +61,6 @@ class Task(BaseTask):
         "SolrDatabase-slub-production-False": 2_000_000_000,
     }
 
-    # We only need a single reference.
-    open_citations_dataset = OpenCitationsDataset()
-
     # Name of the server process. We need this in order to inform the server to
     # reload the database connections, when updates are available.
     labed_server_process_name = "labed"
@@ -73,6 +70,8 @@ class Task(BaseTask):
         """
         Open citations download url.
         """
+        direct_download_url = self.config.get("oci", {}).get("direct", "")
+        open_citations_dataset = OpenCitationsDataset(direct_download_url=direct_download_url)
         return self.open_citations_dataset.most_recent_download_url()
 
     def open_citations_url_hash(self):

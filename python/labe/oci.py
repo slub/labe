@@ -75,18 +75,22 @@ class OpenCitationsDataset:
     `most_recent_download_url`, e.g. if scraping breaks.
     """
     def __init__(self, direct_download_url=None):
+        # TODO: allow direct_download_url and also local files.
+        self.direct_download_url = direct_download_url
         self.download_url = "https://opencitations.net/download"
         self.cache = dict()
-        resp = requests.get(self.download_url)
-        if resp.status_code >= 400:
-            raise RuntimeError("cannot download page at: {}".format(self.download_url))
-        self.cache[self.download_url] = resp.text
-        self.direct_download_url = direct_download_url
+        if not direct_download_url:
+            resp = requests.get(self.download_url)
+            if resp.status_code >= 400:
+                raise RuntimeError("cannot download page at: {}".format(self.download_url))
+            self.cache[self.download_url] = resp.text
 
     def __repr__(self):
         return self.__str__()
 
     def __str__(self):
+        if self.direct_download_url:
+            return "<OpenCitationsDataset via {})>".format(self.direct_download_url)
         return "<OpenCitationsDataset via {} ({} rows)>".format(self.download_url, len(self.rows()))
 
     def rows(self):
@@ -134,6 +138,9 @@ class OpenCitationsDataset:
         """
         Get the final download link, we want something like:
         https://figshare.com/ndownloader/articles/6741422/versions/11.
+
+        If a direct_download_url is set, we use it otherwise we try to resolve
+        the most recent URL.
         """
         if self.direct_download_url:
             return self.direct_download_url

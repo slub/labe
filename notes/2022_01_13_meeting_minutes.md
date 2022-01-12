@@ -126,6 +126,10 @@ optional arguments:
 
 * [ ] **AP2 Abruf der aktuellen Dumps**
 
+> Die Pipeline soll den Download der aktuellen Version ausführen. Der Link zum
+> Download der aktuellen Version kann durch die Pipeline aus der Webseite
+> selber erkannt werden oder manuell zur Verarbeitung hinzugefügt werden.
+
 There is a module
 [`oci.py`](https://github.com/GROSSWEBER/labe/blob/main/python/labe/oci.py)
 which checks [Open Citations website](https://opencitations.net/download) for
