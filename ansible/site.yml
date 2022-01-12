@@ -3,3 +3,4 @@
   hosts: labe
   roles:
     - common
+    - labe

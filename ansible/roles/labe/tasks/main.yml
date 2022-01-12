@@ -7,3 +7,23 @@
     name: "labe"
     group: "labe"
     createhome: no
+- name: Install ckit
+  apt:
+    deb: https://github.com/miku/labe/releases/download/v0.1.4/ckit_0.1.4_amd64.deb
+- name: Install labe
+  apt:
+    deb: https://github.com/miku/labe/releases/download/v0.1.4/labe_0.1.4_amd64.deb
+- name: Change logging file ownership
+  ansible.builtin.file:
+    path: /var/log/labed.log
+    owner: labe
+    group: labe
+    state: touch
+    mode: '0644'
+- name: Change default data file ownership
+  ansible.builtin.file:
+    path: /usr/share/labe
+    owner: labe
+    group: labe
+    state: directory
+    mode: '0755'
