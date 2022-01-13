@@ -9,7 +9,7 @@ Merging citations and catalog data at [SLUB Dresden](https://www.slub-dresden.de
 The project is composed of a couple of command line tools, both written in
 Python and Go.
 
-* [ckit](go/ckit), the citation toolkit contains the API server and a few command line utilities
+* [ckit](go/ckit), citation toolkit contains an API server, plus a few command line tools
 * [python](python), orchestration helper to assemble data files regularly (based on luigi)
 
 ## Meeting Minutes
