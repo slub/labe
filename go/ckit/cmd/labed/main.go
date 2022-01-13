@@ -48,10 +48,10 @@ var (
 	Buildtime string // set by makefile
 	Help      string = `usage: labed [OPTION]
 
-labed is an web service fusing Open Citations and Library Catalog data (SLUB);
-it works with three types of database files:
+labed is an web service fusing Open Citation and Library Catalog data (SLUB);
+it works with three types of databases:
 
-(1) [-I] an sqlite3 catalog id-to-doi translation database (10+G)
+(1) [-I] an sqlite3 catalog-id-to-doi translation database (10+G)
 (2) [-O] an sqlite3 version of OCI/COCI (around 150+GB)
 (3) [-Q] an sqlite3 mapping from catalog ids to catalog entities; these
          can be repeated (size depends on index size and on how much metadata is included)
@@ -77,7 +77,6 @@ Bulk requests
 `
 
 	Banner string = `
-
     ___       ___       ___       ___       ___
    /\__\     /\  \     /\  \     /\  \     /\  \
   /:/  /    /::\  \   /::\  \   /::\  \   /::\  \
@@ -86,15 +85,15 @@ Bulk requests
   \:\__\     /:/  /   \::/  /   \:\/  /   \::/  /
    \/__/     \/__/     \/__/     \/__/     \/__/
 
-Examples
+Examples:
 
-- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
-- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
-- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
-- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
-- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
-- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
-- http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
+  http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
+  http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
+  http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
+  http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
+  http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
+  http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
+  http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
 `
 )
 
@@ -185,7 +184,7 @@ func main() {
 }
 
 // openDatabase first ensures a file does actually exists, then create as
-// read-only database connection.
+// read-only connection.
 func openDatabase(filename string) (*sqlx.DB, error) {
 	if len(filename) == 0 {
 		return nil, fmt.Errorf("empty file")
