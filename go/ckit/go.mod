@@ -1,4 +1,4 @@
-module github.com/miku/labe/go/ckit
+module github.com/slub/labe/go/ckit
 
 go 1.17
 

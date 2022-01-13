@@ -13,7 +13,7 @@ with open("README.md", "r") as fh:
         description="Citation graph application at SLUB Dresden (LABE)",
         long_description=long_description,
         long_description_content_type="text/markdown",
-        url="https://github.com/grossweber/labe",
+        url="https://github.com/slub/labe",
         packages=setuptools.find_packages(),
         classifiers=[
             "Programming Language :: Python :: 3",

@@ -1,6 +1,6 @@
 [Unit]
 Description=Server for labe citation project
-Documentation=man:labe(1) http://www.github.com/grossweber/labe
+Documentation=man:labe(1) http://www.github.com/slub/labe
 After=network.target
 
 [Service]

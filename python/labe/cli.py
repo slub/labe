@@ -1,5 +1,5 @@
-"""Command line interface to run luigi tasks for labe project ≋
-(https://github.com/grossweber/labe).
+"""Command line interface to run luigi tasks for labe project ≋ labe
+https://github.com/slub/labe
 
 Examples:
 
