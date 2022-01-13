@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/miku/labe/go/ckit/doi"
+	"github.com/slub/labe/go/ckit/doi"
 )
 
 var (

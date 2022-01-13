@@ -12,9 +12,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
-	"github.com/miku/labe/go/ckit/set"
 	"github.com/patrickmn/go-cache"
 	"github.com/segmentio/encoding/json"
+	"github.com/slub/labe/go/ckit/set"
 )
 
 // Server wraps three data sources required for index and citation data fusion.

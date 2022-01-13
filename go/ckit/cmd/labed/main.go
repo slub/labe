@@ -23,8 +23,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/miku/labe/go/ckit"
-	"github.com/miku/labe/go/ckit/xflag"
+	"github.com/slub/labe/go/ckit"
+	"github.com/slub/labe/go/ckit/xflag"
 )
 
 var (

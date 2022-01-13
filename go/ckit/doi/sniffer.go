@@ -7,9 +7,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/miku/labe/go/ckit/set"
 	"github.com/miku/parallel"
 	"github.com/segmentio/encoding/json"
+	"github.com/slub/labe/go/ckit/set"
 )
 
 const PatDOI = "10[.][0-9]{2,6}/[^ \"\u001f\u001e]{3,}"

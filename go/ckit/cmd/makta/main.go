@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/andrew-d/go-termutil"
-	"github.com/miku/labe/go/ckit"
+	"github.com/slub/labe/go/ckit"
 )
 
 var (
