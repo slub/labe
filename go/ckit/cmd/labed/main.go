@@ -187,6 +187,9 @@ func main() {
 // openDatabase first ensures a file does actually exists, then create as
 // read-only database connection.
 func openDatabase(filename string) (*sqlx.DB, error) {
+	if len(filename) == 0 {
+		return nil, fmt.Errorf("empty file")
+	}
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		return nil, fmt.Errorf("file not found: %s", filename)
 	}
