@@ -2,13 +2,15 @@
 
 > 2022-01-13, 1300, JN, CR, MC, TW
 
+## Notes
+
 ## Checklist
 
 All code and notes are available under a permissive free software license; the
 git repository is at
 [https://github.com/GROSSWEBER/labe](https://github.com/GROSSWEBER/labe).
 
-* [ ] **AP1 Prozessierungspipeline**
+* [x] **AP1 Prozessierungspipeline**
 
 > Die Pipeline soll automatisiert ablaufen, allerdings sollen die einzelnen Schritte auch manuell ausführbar sein.
 
@@ -124,7 +126,7 @@ optional arguments:
 
 ```
 
-* [ ] **AP2 Abruf der aktuellen Dumps**
+* [x] **AP2 Abruf der aktuellen Dumps**
 
 > Die Pipeline soll den Download der aktuellen Version ausführen. Der Link zum
 > Download der aktuellen Version kann durch die Pipeline aus der Webseite
@@ -148,7 +150,7 @@ It is possible to override the direct download url via `labe.cfg` configuration.
 direct = http://example.com/data.csv.gz
 ```
 
-* [ ] **AP3 Verarbeiten und Reduktion der Daten**
+* [x] **AP3 Verarbeiten und Reduktion der Daten**
 
 > Insbesondere soll der Gesamtbestand der Datenbank auf DOIs reduziert werden,
 > die im SLUB Bestand sind, SLUB Bestand zitieren oder von SLUB Bestand zitiert
@@ -176,7 +178,7 @@ the API server to serve queries.
 
 The current version of the OCI index (v12) contains [1,235,170,583 citations](https://opencitations.net/download) (plus 62%).
 
-* [ ] **AP4 Speichern der Daten im Datahub**
+* [x] **AP4 Speichern der Daten im Datahub**
 
 > Nach dem Download der Gesamtdaten und nach der Reduktion der Daten sind diese
 > im SLUB Datahub abzulegen.
@@ -187,7 +189,7 @@ We save all files on a dedicated host ("sdvlabe", *Intel [Xeon Gold
 downloaded files and final databases. Naming of files and directories is
 regular.
 
-* [ ] **AP5 Einspielen der Daten in einen Index**
+* [x] **AP5 Einspielen der Daten in einen Index**
 
 > Die in Punkt 4 erzeugten, reduzierten Daten sind in einen leistungsfähigen
 > Solr oder Elasticsearch Index einzuspielen.
@@ -207,7 +209,7 @@ Some advantages of the current approach:
 
 Performance of sqlite3 has been overall positive, since we mostly need simple queries (akin to key-value stores).
 
-* [ ] **AP6 Bereitstellung der Daten als REST API**
+* [x] **AP6 Bereitstellung der Daten als REST API**
 
 > Die Daten aus dem leistungsfähigen Index sind für die weitere Verwendung als
 > REST API bereitzustellen. Die Abfrage der Daten soll mittels der DOI
@@ -304,7 +306,7 @@ possible to trade memory for speed by using a built-in cache (which caches
 expensive responses on first query). Via middleware, the server supports gzip
 compression, logging and query tracing.
 
-* [ ] **AP7 Optional: Automatischer Delta Report**
+* [.] **AP7 Optional: Automatischer Delta Report**
 
 A delta report generator is currently in progress. Its design will piggyback
 on existing UNIX facilities, such as
