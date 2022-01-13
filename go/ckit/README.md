@@ -1,6 +1,8 @@
 # ckit
 
-Citation graph kit for the LABE project at [SLUB Dresden](https://www.slub-dresden.de/).
+Citation graph kit for the LABE project at [SLUB
+Dresden](https://www.slub-dresden.de/). This subproject contains a few
+standalone command lines programs and servers. The task orchestration part lives under [labe/python](../../python).
 
 * [doisniffer](#doisniffer), [filter](https://en.wikipedia.org/wiki/Filter_(software)) to find DOI by patterns in Solr VuFind JSON documents
 * [labed](#labed), an HTTP server serving Open Citations data fused with catalog metadata
@@ -10,13 +12,13 @@ Citation graph kit for the LABE project at [SLUB Dresden](https://www.slub-dresd
 To build all binaries, run:
 
 ```
-$ make
+$ make -j
 ```
 
 To build a debian package, run:
 
 ```
-$ make deb
+$ make -j deb
 ```
 
 To cleanup all artifacts, run:
@@ -25,10 +27,14 @@ To cleanup all artifacts, run:
 $ make clean
 ```
 
+----
+
 ## doisniffer
 
-Tool to turn a VuFind Solr schema without DOI field into one with, by sniffing
-out potential DOI from other fields.
+Tool to turn a [VuFind
+Solr](https://vufind.org/wiki/development:architecture:solr_index_schema)
+schema without DOI field into one with - `doi_str_mv` - by sniffing out
+potential DOI from other fields.
 
 ```
 $ cat index.ndj | doisniffer > augmented.ndj
@@ -53,85 +59,50 @@ Usage of doisniffer:
         number of workers (default 8)
 ```
 
+----
+
 ## labed
 
 ![](static/45582_reading_lg.gif)
 
-Experimental API server, takes requests for a given id and returns a
-result fused from OCI citations and index data.
+HTTP API server, takes requests for a given id and returns a result fused from
+OCI citations and index data.
 
-It currently needs three sqlite3 database.
+It currently works with three types of sqlite3 databases:
 
-```
-$ ls -lLh i.db o.db index.db
--rw-r--r-- 1 tir tir  11G Sep 20 23:13 i.db
--rw-r--r-- 1 tir tir 330G Sep 26 22:32 index.db
--r--r--r-- 1 tir tir 145G Sep 21 00:36 o.db
-```
-
-May become 4 or 5 databases in the future with various update cycles:
-
-* main index copy (W)
-* main index id-doi mapping (W)
-* ai index copy (M)
-* ai index id-doi mapping (M)
-* oci copy (as updated)
-
-Random timings (TODO: performance report):
-
-```
-ai-49-aHR0cD...TAuMTEwNC9wc...    10.1104/pp.88.4.1411           0   33   0.011371553
-ai-49-aHR0cD...TAuMTc1NzYva...    10.17576/jsm-2019-4808-23      0   3    0.002403981
-ai-49-aHR0cD...TAuMTYxNC93d...    10.1614/wt-08-045.1            19  12   0.006658463
-ai-49-aHR0cD...TAuMzg5Ny96b...    10.3897/zookeys.449.6813       0   1    0.000609854
-ai-49-aHR0cD...TAuMTA4OC8xN...    10.1088/1757-899x/768/5/052105 2   0    0.000913447
-ai-49-aHR0cD...TAuNTgxMS9jc...    10.5811/cpcem.2019.7.43632     1   0    0.047257667
-ai-49-aHR0cD...TAuMTEwMy9wa...    10.1103/physrevc.49.3061       27  4    0.008262996
-ai-49-aHR0cD...TAuMTM3MS9qb...    10.1371/journal.pone.0077786   38  15   0.018779194
-ai-49-aHR0cD...TAuMTAwMi9sZ...    10.1002/ldr.3400040418         2   0    0.000982242
-ai-49-aHR0cD...TAuMTEwMy9wa...    10.1103/physrevlett.81.3187    15  14   0.007743473
-ai-49-aHR0cD...TAuMTAwMi9ub...    10.1002/nme.1620300822         7   6    0.004755116
-ai-49-aHR0cD...TAuMTM3MS9qb...    10.1371/journal.pcbi.1002234   54  4    0.018582831
-ai-49-aHR0cD...TAuMTAxNi8wM...    10.1016/0165-4896(94)00731-4   5   4    0.004127696
-ai-49-aHR0cD...TAuMTA5My9qe...    10.1093/jxb/49.318.21          0   0    0.000267756
-ai-49-aHR0cD...TAuMTE0Mi9zM...    10.1142/s0218126619500051      22  2    0.006445901
-ai-49-aHR0cD...TAuNzg2MS9jb...    10.7861/clinmedicine.17-4-332  13  8    0.005840636
-ai-49-aHR0cD...TAuMTM3My9jb...    10.1373/clinchem.2013.204446   20  11   0.011903923
-ai-49-aHR0cD...TAuMTE0My9qa...    10.1143/jjap.9.958             0   7    0.002963267
-ai-49-aHR0cD...TAuMTAyMS9hb...    10.1021/am8001605              29  64   0.022973696
-ai-49-aHR0cD...TAuMTIwNy9zM...    10.1207/s15326934crj1401_1     0   21   0.056867545
-```
+* id-to-doi mapping
+* OCI citations
+* index metadata
 
 ### Usage
 
 ```sh
 usage: labed [OPTION]
 
-labed is an experimental api server for labe; it works with three data stores.
+labed is an web service fusing Open Citation and Library Catalog data (SLUB);
+it works with three types of databases:
 
-* (1) an sqlite3 catalog id to doi translation table (11GB)
-* (2) an sqlite3 version of OCI (145GB)
-* (3) a key-value store mapping catalog ids to catalog entities (two
-      implementations: 256GB microblob, 353GB sqlite3)
+(1) [-I] an sqlite3 catalog-id-to-doi translation database (10+G)
+(2) [-O] an sqlite3 version of OCI/COCI (around 150+GB)
+(3) [-Q] an sqlite3 mapping from catalog ids to catalog entities; these
+         can be repeated (size depends on index size and on how much metadata is included)
 
-Each database may be updated separately, with separate processes; e.g.
-currently we use the experimental mkocidb command turn (k, v) TSV files into
-sqlite3 lookup databases.
+Each database may be updated separately, with separate processes.
 
 Examples
 
-- http://localhost:3000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
-- http://localhost:3000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
-- http://localhost:3000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
-- http://localhost:3000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
-- http://localhost:3000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
-- http://localhost:3000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
-- http://localhost:3000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
+  $ labed -C -z -l localhost:1234 -I i.db -O o.db -Q d.db
+
+  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
+  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
+  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
+  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
+  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
 
 Bulk requests
 
-    $ curl -sL https://git.io/JzVmJ |
-    parallel -j 40 "curl -s http://localhost:3000/id/{}" |
+  $ curl -sL https://is.gd/xGqzsg | zstd -dc -T0 |
+    parallel -j 40 "curl -s http://localhost:8000/id/{}" |
     jq -rc '[.id, .doi, .extra.citing_count, .extra.cited_count, .extra.took] | @tsv'
 
 Flags
@@ -140,26 +111,26 @@ Flags
   -Cg duration
         cache trigger duration (default 250ms)
   -Ct duration
-        cache ttl (default 8h0m0s)
+        cache cleanup interval (default 8h0m0s)
   -Cx duration
         cache default expiration (default 72h0m0s)
   -I string
-        identifier database path (default "i.db")
+        identifier database path (id-doi mapping)
   -L    enable logging
   -O string
-        oci as a datbase path (default "o.db")
-  -Q string
-        sqlite3 blob index path
-  -S string
-        solr blob URL
+        oci as a datbase path (citations)
+  -Q value
+        index metadata cache sqlite3 path (repeatable)
   -W    enable stopwatch
-  -bs string
-        blob server URL
   -l string
-        host and port to listen on (default "localhost:3000")
+        host and port to listen on (default "localhost:8000")
+  -logfile string
+        file to log to
+  -q    no output at all
   -version
         show version
   -z    enable gzip compression
+
 ```
 
 ### Using a stopwatch
@@ -167,7 +138,8 @@ Flags
 Experimental `-W` flag to trace duration of various operations.
 
 ```sh
-$ labed -W -bs http://localhost:8820
+$ labed -W -C -z -I i.db -O o.db -Q index.db
+2022/01/13 12:26:30 setup group fetcher over 1 databases: [index.db]
 
     ___       ___       ___       ___       ___
    /\__\     /\  \     /\  \     /\  \     /\  \
@@ -177,17 +149,18 @@ $ labed -W -bs http://localhost:8820
   \:\__\     /:/  /   \::/  /   \:\/  /   \::/  /
    \/__/     \/__/     \/__/     \/__/     \/__/
 
-Examples
+Examples:
 
-- http://localhost:3000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
-- http://localhost:3000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
-- http://localhost:3000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
-- http://localhost:3000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
-- http://localhost:3000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
-- http://localhost:3000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
-- http://localhost:3000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
+  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
+  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
+  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
+  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
+  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
+  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
+  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
 
-2021/09/29 17:35:19 labed starting 3870a68 2021-09-29T15:34:00Z http://localhost:3000
+2022/01/13 12:26:30 labed starting 4a89db4 2022-01-13T11:23:31Z http://localhost:8000
+
 2021/09/29 17:35:20 timings for XVlB
 
 > XVlB    0    0s             0.00    started query for: ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA5OC9yc3BhLjE5OTguMDE2NA
@@ -202,12 +175,9 @@ Examples
 > XVlB    S    84.294786ms    1.0     total
 ```
 
-
 ### TODO
 
-* [ ] a better name, e.g. labesrv, labesvc, cdfuse, catfuse, labed, ...
 * [ ] a detailed performance report
-* [ ] tools or scripts to generate the input database from scratch
 
 ----
 
@@ -241,33 +211,6 @@ Examples.
 $ head -1 ../../data/index.data | tabjson
 ai-49-aHR0...uMi4xNTU       {"access_facet":"Electronic Resourc ... }
 ```
-
-Around 80K docs/s. Supports some basic compression schema.
-
-```sh
-$ head -1 ../../data/index.data | tabjson -C
-ai-49-aHR0...uMi4xNTU       H4sIAAAAAAAA/6xWTY/bNhC991cQPCWArJVUK177...
-```
-
-Display savings by using compression.
-
-```sh
-$ head ../../data/index.data | tabjson -C -T | column -t
-ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzNy8wMDIxLTkwMTAuNjIuMi4xNTU  2223  1005  0.452092
-ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzNy9oMDA3MDY1OQ               2217  993   0.447903
-ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzNy8wMDIxLTkwMTAuNjIuMi4xNDY  2172  969   0.446133
-ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzNy9oMDA0OTMxNQ               2325  1037  0.446022
-ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzNy9oMDA3NDk0Ng               2340  1037  0.443162
-ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzOC9zai9sZXUvMjQwMTI4Mg       1841  973   0.528517
-ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzNy9oMDA3Mzk5Mg               2118  937   0.442398
-ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzOC9zai9sZXUvMjQwMTI4Mw       1841  973   0.528517
-ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzOC9zai9sZXUvMjQwMTI4NA       1841  973   0.528517
-ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAzNy9oMDA0MDIzMg               2148  989   0.460428
-```
-
-We want this to put our index data into a key value store. Compression (with
-gzip) seems 3-4 slower than using no compression. Also, compression will need
-extra handling at request time.
 
 ----
 
