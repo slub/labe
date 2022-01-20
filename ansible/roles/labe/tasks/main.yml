@@ -54,12 +54,14 @@
 - name: "Creates an entry like `PATH=/opt/bin:...` on top of crontab"
   cron:
     name: PATH
+    user: labe
     env: yes
     job: /usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
 - name: "Setup crontab for data updates"
   cron:
     name: Data updates for labe
-    hour: "13"
-    minute: "30"
+    user: labe
+    hour: "14"
+    minute: "40"
     job: "rm -f $(/usr/local/bin/labe.pyz --data-dir /usr/share --list-deletable) && /usr/local/bin/labe.pyz --data-dir /usr/share -r CombinedUpdate --workers 4 && systemctl restart labed"
