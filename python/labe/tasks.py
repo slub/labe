@@ -2,6 +2,7 @@
 Derivation tasks.
 """
 
+import configparser
 import datetime
 import functools
 import hashlib
@@ -73,7 +74,7 @@ class Task(BaseTask):
         try:
             direct_download_url = self.config["oci"]["direct"]
         except (configparser.NoSectionError, configparser.NoOptionError):
-            pass
+            direct_download_url = None
         finally:
             open_citations_dataset = OpenCitationsDataset(direct_download_url=direct_download_url)
             return self.open_citations_dataset.most_recent_download_url()
