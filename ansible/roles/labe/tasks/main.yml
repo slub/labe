@@ -7,7 +7,8 @@
   user:
     name: "labe"
     group: "labe"
-    createhome: no
+    shell: "/bin/bash"
+    create_home: yes
 
 - name: "Install ckit release"
   apt:
@@ -63,5 +64,5 @@
     name: Data updates for labe
     user: labe
     hour: "14"
-    minute: "40"
+    minute: "46"
     job: "rm -f $(/usr/local/bin/labe.pyz --data-dir /usr/share --list-deletable) && /usr/local/bin/labe.pyz --data-dir /usr/share -r CombinedUpdate --workers 4"
