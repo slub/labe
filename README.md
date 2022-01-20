@@ -14,6 +14,7 @@ Python and Go.
 
 ## Meeting Minutes
 
+* [2022-01-20](notes/2022_01_20_meeting_minutes.md)
 * [2022-01-13](notes/2022_01_13_meeting_minutes.md)
 * [2022-01-06](notes/2022_01_06_meeting_minutes.md)
 * [2021-12-16](notes/2021_12_16_meeting_minutes.md)
