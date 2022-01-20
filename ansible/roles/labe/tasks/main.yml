@@ -64,4 +64,4 @@
     user: labe
     hour: "14"
     minute: "40"
-    job: "rm -f $(/usr/local/bin/labe.pyz --data-dir /usr/share --list-deletable) && /usr/local/bin/labe.pyz --data-dir /usr/share -r CombinedUpdate --workers 4 && systemctl restart labed"
+    job: "rm -f $(/usr/local/bin/labe.pyz --data-dir /usr/share --list-deletable) && /usr/local/bin/labe.pyz --data-dir /usr/share -r CombinedUpdate --workers 4"
