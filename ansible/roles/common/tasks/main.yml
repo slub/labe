@@ -25,7 +25,6 @@
     - parallel
     - pigz
     - pv
-    - pv
     - rsync
     - screen
     - sqlite3

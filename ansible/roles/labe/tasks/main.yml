@@ -1,29 +1,52 @@
-- name: Ensure group "labe" exists
+- name: "Ensure group labe exists"
   group:
     name: labe
     state: present
-- name: Create service worker
+
+- name: "Create service worker"
   user:
     name: "labe"
     group: "labe"
     createhome: no
-- name: Install ckit
+
+- name: "Install ckit release"
   apt:
     deb: https://github.com/miku/labe/releases/download/v0.1.5/ckit_0.1.5_amd64.deb
-- name: Install labe
+
+- name: "Install labe release"
   apt:
     deb: https://github.com/miku/labe/releases/download/v0.1.5/labe_0.1.5_amd64.deb
-- name: Change logging file ownership
+
+- name: "Change logging file ownership"
   ansible.builtin.file:
-    path: /var/log/labed.log
+    path: /var/log/labe.log
     owner: labe
     group: labe
     state: touch
     mode: '0644'
-- name: Change default data file ownership
+
+- name: "Change default data file ownership"
   ansible.builtin.file:
     path: /usr/share/labe
     owner: labe
     group: labe
     state: directory
     mode: '0755'
+
+- name: "Setup logrotate"
+  blockinfile:
+    path: "/etc/logrotate.d/{{ item.path }}"
+    block: "{{ item.conf }}"
+    create: true
+  loop: "{{ lp_logrotate_confd }}"
+  vars:
+    lp_logrotate_confd:
+    - path: labe
+      conf: |
+        /var/log/labe.log {
+            daily
+            rotate 3
+            size 200M
+            compress
+            delaycompress
+        }
