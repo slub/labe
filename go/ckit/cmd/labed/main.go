@@ -28,19 +28,19 @@ import (
 )
 
 var (
-	identifierDatabasePath = flag.String("I", "", "identifier database path (id-doi mapping)")
-	ociDatabasePath        = flag.String("O", "", "oci as a datbase path (citations)")
-	listenAddr             = flag.String("l", "localhost:8000", "host and port to listen on")
-	enableStopWatch        = flag.Bool("W", false, "enable stopwatch")
+	identifierDatabasePath = flag.String("i", "", "identifier database path (id-doi mapping)")
+	ociDatabasePath        = flag.String("o", "", "oci as a datbase path (citations)")
+	listenAddr             = flag.String("addr", "localhost:8000", "host and port to listen on")
+	enableStopWatch        = flag.Bool("stopwatch", false, "enable stopwatch")
 	enableGzip             = flag.Bool("z", false, "enable gzip compression")
-	enableLogging          = flag.Bool("L", false, "enable logging")
-	enableCache            = flag.Bool("C", false, "enable in-memory caching of expensive responses")
-	cacheCleanupInterval   = flag.Duration("Ct", 8*time.Hour, "cache cleanup interval")
-	cacheTriggerDuration   = flag.Duration("Cg", 250*time.Millisecond, "cache trigger duration")
-	cacheDefaultExpiration = flag.Duration("Cx", 72*time.Hour, "cache default expiration")
+	enableLogging          = flag.Bool("l", false, "enable logging")
+	enableCache            = flag.Bool("c", false, "enable in-memory caching of expensive responses")
+	cacheCleanupInterval   = flag.Duration("ct", 8*time.Hour, "cache cleanup interval")
+	cacheTriggerDuration   = flag.Duration("cg", 250*time.Millisecond, "cache trigger duration")
+	cacheDefaultExpiration = flag.Duration("cx", 72*time.Hour, "cache default expiration")
 	showVersion            = flag.Bool("version", false, "show version")
 	logFile                = flag.String("logfile", "", "file to log to")
-	quite                  = flag.Bool("q", false, "no output at all")
+	quiet                  = flag.Bool("q", false, "no output at all")
 
 	sqliteFetcherPaths xflag.Array // allows to specify multiple database to get catalog metadata from
 
@@ -51,16 +51,16 @@ var (
 labed is an web service fusing Open Citation and Library Catalog data (SLUB);
 it works with three types of databases:
 
-(1) [-I] an sqlite3 catalog-id-to-doi translation database (10+G)
-(2) [-O] an sqlite3 version of OCI/COCI (around 150+GB)
-(3) [-Q] an sqlite3 mapping from catalog ids to catalog entities; these
-         can be repeated (size depends on index size and on how much metadata is included)
+(1) [-i] an sqlite3 catalog-id-to-doi translation database (10G+)
+(2) [-o] an sqlite3 version of OCI/COCI (150GB+)
+(3) [-m] an sqlite3 mapping from catalog ids to (json) metadata; this can be repeated
+         (size depends on index size and on how much metadata is included) (40-350G)
 
 Each database may be updated separately, with separate processes.
 
 Examples
 
-  $ labed -C -z -l localhost:1234 -I i.db -O o.db -Q d.db
+  $ labed -c -z -addr localhost:1234 -i i.db -o o.db -m d.db
 
   http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
   http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
@@ -98,7 +98,7 @@ Examples:
 )
 
 func main() {
-	flag.Var(&sqliteFetcherPaths, "Q", "index metadata cache sqlite3 path (repeatable)")
+	flag.Var(&sqliteFetcherPaths, "m", "index metadata cache sqlite3 path (repeatable)")
 	flag.Usage = func() {
 		fmt.Printf(strings.Replace(Help, `{{ .listenAddr }}`, *listenAddr, -1))
 		fmt.Println("Flags")
@@ -119,7 +119,7 @@ func main() {
 	)
 	// Setup logging and log output.
 	switch {
-	case *quite:
+	case *quiet:
 		log.SetOutput(ioutil.Discard)
 	default:
 		if *logFile != "" {

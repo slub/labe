@@ -82,16 +82,16 @@ usage: labed [OPTION]
 labed is an web service fusing Open Citation and Library Catalog data (SLUB);
 it works with three types of databases:
 
-(1) [-I] an sqlite3 catalog-id-to-doi translation database (10+G)
-(2) [-O] an sqlite3 version of OCI/COCI (around 150+GB)
-(3) [-Q] an sqlite3 mapping from catalog ids to catalog entities; these
-         can be repeated (size depends on index size and on how much metadata is included)
+(1) [-i] an sqlite3 catalog-id-to-doi translation database (10G+)
+(2) [-o] an sqlite3 version of OCI/COCI (150GB+)
+(3) [-m] an sqlite3 mapping from catalog ids to (json) metadata; this can be repeated
+         (size depends on index size and on how much metadata is included) (40-350G)
 
 Each database may be updated separately, with separate processes.
 
 Examples
 
-  $ labed -C -z -l localhost:1234 -I i.db -O o.db -Q d.db
+  $ labed -c -z -addr localhost:1234 -i i.db -o o.db -m d.db
 
   http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
   http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
@@ -107,38 +107,38 @@ Bulk requests
 
 Flags
 
-  -C    enable in-memory caching of expensive responses
-  -Cg duration
-        cache trigger duration (default 250ms)
-  -Ct duration
-        cache cleanup interval (default 8h0m0s)
-  -Cx duration
-        cache default expiration (default 72h0m0s)
-  -I string
-        identifier database path (id-doi mapping)
-  -L    enable logging
-  -O string
-        oci as a datbase path (citations)
-  -Q value
-        index metadata cache sqlite3 path (repeatable)
-  -W    enable stopwatch
-  -l string
+  -addr string
         host and port to listen on (default "localhost:8000")
+  -c    enable in-memory caching of expensive responses
+  -cg duration
+        cache trigger duration (default 250ms)
+  -ct duration
+        cache cleanup interval (default 8h0m0s)
+  -cx duration
+        cache default expiration (default 72h0m0s)
+  -i string
+        identifier database path (id-doi mapping)
+  -l    enable logging
   -logfile string
         file to log to
+  -m value
+        index metadata cache sqlite3 path (repeatable)
+  -o string
+        oci as a datbase path (citations)
   -q    no output at all
+  -stopwatch
+        enable stopwatch
   -version
         show version
   -z    enable gzip compression
-
 ```
 
 ### Using a stopwatch
 
-Experimental `-W` flag to trace duration of various operations.
+Experimental `-stopwatch` flag to trace duration of various operations.
 
 ```sh
-$ labed -W -C -z -I i.db -O o.db -Q index.db
+$ labed -stopwatch -c -z -i i.db -o o.db -m index.db
 2022/01/13 12:26:30 setup group fetcher over 1 databases: [index.db]
 
     ___       ___       ___       ___       ___
