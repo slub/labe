@@ -18,6 +18,10 @@
   apt:
     deb: https://github.com/slub/labe/releases/download/v{{ labe_version }}/labe_{{ labe_version}}_amd64.deb
 
+- name: "Reread systemd unit files"
+  systemd:
+    daemon_reload: yes
+
 - name: "Change logging file ownership"
   ansible.builtin.file:
     path: /var/log/labe.log
