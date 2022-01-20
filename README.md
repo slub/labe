@@ -4,6 +4,8 @@
 
 Merging citations and catalog data at [SLUB Dresden](https://www.slub-dresden.de/).
 
+> Status: testing
+
 ## Project
 
 The project is composed of a couple of command line tools, both written in
