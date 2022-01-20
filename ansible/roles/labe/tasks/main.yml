@@ -52,6 +52,14 @@
             delaycompress
         }
 
+- name: "Allow labe user to restart the labe server"
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: '^labe'
+    line: 'labe ALL=(ALL:ALL) NOPASSWD: /usr/bin/systemctl restart labed'
+    validate: visudo -cf %s
+
 - name: "Creates an entry like `PATH=/opt/bin:...` on top of crontab"
   cron:
     name: PATH
@@ -65,4 +73,4 @@
     user: labe
     hour: "14"
     minute: "46"
-    job: "rm -f $(/usr/local/bin/labe.pyz --data-dir /usr/share --list-deletable) && /usr/local/bin/labe.pyz --data-dir /usr/share -r CombinedUpdate --workers 4"
+    job: "rm -f $(/usr/local/bin/labe.pyz --data-dir /usr/share --list-deletable) && /usr/local/bin/labe.pyz --data-dir /usr/share -r CombinedUpdate --workers 4 && sudo /usr/bin/systemctl restart labed"
