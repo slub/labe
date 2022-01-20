@@ -120,8 +120,8 @@ def main():
                         default="labed",
                         help="which process to send sighup to on database updates")
     parser.add_argument("--list-deletable", action="store_true", help="list task outputs, which could be deleted")
-    parser.add_argument("--deps", action="store_true", help="show task dependencies")
-    parser.add_argument("--deps-dot", action="store_true", help="print task dependencies in dot format")
+    parser.add_argument("--deps", metavar="TASK", type=str, help="show task dependencies")
+    parser.add_argument("--deps-dot", metavar="TASK", type=str, help="print task dependencies in dot format")
 
     # Task may have their own arguments, which we ignore.
     args, unparsed = parser.parse_known_args()
@@ -189,7 +189,7 @@ def main():
         if len(sys.argv) < 2:
             raise ValueError("task name required")
         try:
-            parser = CmdlineParser([args.show_output_path] + unparsed)
+            parser = CmdlineParser([args.deps] + unparsed)
             obj = parser.get_task_obj()
             dump_deps(obj)
             sys.exit(0)
@@ -203,7 +203,7 @@ def main():
         if len(sys.argv) < 2:
             raise ValueError("task name required")
         try:
-            parser = CmdlineParser([args.show_output_path] + unparsed)
+            parser = CmdlineParser([args.deps_dot] + unparsed)
             obj = parser.get_task_obj()
             dump_deps(obj, dot=True)
             sys.exit(0)
