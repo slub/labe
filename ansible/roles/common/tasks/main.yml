@@ -2,36 +2,36 @@
   shell: hwclock --hctosys
 - name: "Update packages"
   apt:
-    update_cache: yes
+    update_cache: true
     upgrade: full
-    autoremove: yes
+    autoremove: true
 - name: "Install common packages"
   apt:
     state: present
     name:
-    - bash-completion
-    - bc
-    - curl
-    - dnsutils
-    - dstat
-    - git
-    - htop
-    - jq
-    - locales
-    - logrotate
-    - moreutils
-    - ncdu
-    - netcat
-    - parallel
-    - pigz
-    - pv
-    - rsync
-    - screen
-    - sqlite3
-    - tmux
-    - tree
-    - tree
-    - unzip
-    - vim
-    - wget
-    - zstd
+      - bash-completion
+      - bc
+      - curl
+      - dnsutils
+      - dstat
+      - git
+      - htop
+      - jq
+      - locales
+      - logrotate
+      - moreutils
+      - ncdu
+      - netcat
+      - parallel
+      - pigz
+      - pv
+      - rsync
+      - screen
+      - sqlite3
+      - tmux
+      - tree
+      - tree
+      - unzip
+      - vim
+      - wget
+      - zstd

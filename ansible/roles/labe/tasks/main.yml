@@ -8,7 +8,7 @@
     name: "labe"
     group: "labe"
     shell: "/bin/bash"
-    create_home: yes
+    create_home: true
 
 - name: "Install ckit release"
   apt:
@@ -20,7 +20,7 @@
 
 - name: "Reread systemd unit files"
   systemd:
-    daemon_reload: yes
+    daemon_reload: true
 
 - name: "Change logging file ownership"
   ansible.builtin.file:
@@ -43,18 +43,19 @@
     path: "/etc/logrotate.d/{{ item.path }}"
     block: "{{ item.conf }}"
     create: true
+    mode: '0644'
   loop: "{{ lp_logrotate_confd }}"
   vars:
     lp_logrotate_confd:
-    - path: labe
-      conf: |
-        /var/log/labe.log {
-            daily
-            rotate 3
-            size 200M
-            compress
-            delaycompress
-        }
+      - path: labe
+        conf: |
+          /var/log/labe.log {
+              daily
+              rotate 3
+              size 200M
+              compress
+              delaycompress
+          }
 
 - name: "Allow labe user to restart the labe server"
   lineinfile:
@@ -68,7 +69,7 @@
   cron:
     name: PATH
     user: labe
-    env: yes
+    env: true
     job: /usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
 - name: "Setup crontab for data updates"
@@ -77,4 +78,7 @@
     user: labe
     hour: "0"
     minute: "5"
-    job: "rm -f $(/usr/local/bin/labe.pyz --data-dir /usr/share --list-deletable) && /usr/local/bin/labe.pyz --data-dir /usr/share -r CombinedUpdate --workers 4 && sudo /usr/bin/systemctl restart labed"
+    job: >
+      rm -f $(/usr/local/bin/labe.pyz --data-dir /usr/share --list-deletable) &&
+      /usr/local/bin/labe.pyz --data-dir /usr/share -r CombinedUpdate --workers 4 &&
+      sudo /usr/bin/systemctl restart labed
