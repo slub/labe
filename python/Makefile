@@ -20,18 +20,23 @@ ZIPAPP := $(PKGNAME).pyz
 # make labe.pyz PYTHON_INTERPRETER='"/usr/bin/env python3.7"'
 PYTHON_INTERPRETER := "/usr/bin/env python3.7"
 
-$(ZIPAPP): $(PY_FILES)
+.PHONY: help
+help: ## print info about all commands
+	@echo "Commands:"
+	@grep -E '^[/.a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sed -e 's@Makefile:@@' | awk 'BEGIN {FS = ":.*?## "}; {printf "    \033[01;32m%-40s\033[0m %s\n", $$1, $$2}'
+
+$(ZIPAPP): $(PY_FILES) ## build single python executable with shiv
 	# https://shiv.readthedocs.io/en/latest/cli-reference.html
 	# note: use SHIV_ROOT envvar to override expansion dir (e.g. if home is networked)
 	shiv --reproducible --compressed --entry-point labe.cli:main --python $(PYTHON_INTERPRETER) --output-file $(ZIPAPP) .
 
 .PHONY: fmt
-fmt:
+fmt: ## apply code formatting
 	yapf -p -i -r $(PKGNAME) tests
 	isort $(PKGNAME)
 
 .PHONY: clean
-clean:
+clean: ## clean artifacts
 	find . -name "__pycache__" -exec rm -rf "{}" +
 	rm -rf $(PKGNAME).egg-info/
 	rm -rf $(PKGNAME)_*.deb
@@ -43,14 +48,14 @@ clean:
 	rm -rf packaging/deb/labe/usr/
 
 .PHONY: deploy
-deploy: $(ZIPAPP)
+deploy: $(ZIPAPP) ## ad-hoc deploy of single file executable via rsync
 	# temporary deploy option for development, you can put:
 	# DEPLOY_DST=user@srv.slub-dresden.de:/home/user/bin
 	# into ".env" file (read by makefile)
 	rsync -avzP -e 'ssh -p 21' labe.pyz $(DEPLOY_DST)
 
 .PHONY: deb
-deb: $(ZIPAPP)
+deb: $(ZIPAPP) ## build a debian package
 	# executables
 	mkdir -p packaging/deb/$(PKGNAME)/usr/local/bin
 	cp $(ZIPAPP) packaging/deb/$(PKGNAME)/usr/local/bin

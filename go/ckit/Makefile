@@ -20,21 +20,26 @@ GOLDFLAGS += -w -s
 GOFLAGS = -ldflags "$(GOLDFLAGS)"
 GOFILES = $(shell find . -name \*.go -print)
 
+.PHONY: help
+help: ## print info about all commands
+	@echo "Commands:"
+	@grep -E '^[/.a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "    \033[01;32m%-40s\033[0m %s\n", $$1, $$2}'
+
 .PHONY: all
-all: $(TARGETS)
+all: $(TARGETS) ## build all targets
 
 .PHONY: build
 %: cmd/%/main.go server.go set/set.go
 	go build -o $@ -ldflags "$(GOLDFLAGS)" $<
 
 .PHONY: clean
-clean:
+clean: ## clean artifacts
 	rm -f $(TARGETS)
 	rm -f *.deb
 	rm -rf packaging/deb/$(PKGNAME)/usr
 
 .PHONY: deb
-deb: all
+deb: all ## build debian package
 	# executables
 	mkdir -p packaging/deb/$(PKGNAME)/usr/local/bin
 	cp $(TARGETS) packaging/deb/$(PKGNAME)/usr/local/bin
