@@ -7,8 +7,6 @@ import datetime
 import functools
 import hashlib
 import os
-import signal
-import subprocess
 import tempfile
 import zipfile
 
@@ -27,17 +25,6 @@ __all__ = [
     'SolrFetchDocs',
     'Task',
 ]
-
-
-def pidof(name):
-    """
-    Return list of pids for a given process name.
-    """
-    try:
-        result = subprocess.check_output(["pidof", name])
-        return [int(pid) for pid in result.split()]
-    except subprocess.CalledProcessError:
-        return []
 
 
 class Task(BaseTask):
@@ -97,15 +84,6 @@ class Task(BaseTask):
             raise RuntimeError("{}: unexpected file size, got {}, want at least {}".format(
                 filename, filesize, minimum_size))
 
-    def notify_server(self):
-        """
-        Send SIGHUP to server process, looked up by configured
-        `labed_server_process_name`.
-        """
-        # TODO: may just "systemctl restart labed" in order to spare sighup
-        # handling in server process
-        _ = [os.kill(pid, signal.SIGHUP) for pid in pidof(self.labed_server_process_name)]
-
 
 class OpenCitationsDownload(Task):
     """
@@ -133,7 +111,6 @@ class OpenCitationsDownload(Task):
 
     def on_success(self):
         self.create_symlink(name="current")
-        self.notify_server()
 
 
 class OpenCitationsSingleFile(Task):
@@ -171,7 +148,6 @@ class OpenCitationsSingleFile(Task):
 
     def on_success(self):
         self.create_symlink(name="current")
-        self.notify_server()
 
 
 class OpenCitationsDatabase(Task):
@@ -203,7 +179,6 @@ class OpenCitationsDatabase(Task):
 
     def on_success(self):
         self.create_symlink(name="current")
-        self.notify_server()
 
 
 class SolrFetchDocs(Task):
@@ -240,7 +215,6 @@ class SolrFetchDocs(Task):
     def on_success(self):
         name = "{}-short".format(self.name) if self.short else self.name
         self.create_symlink(name="current", suffix=name)
-        self.notify_server()
 
 
 class SolrDatabase(Task):
@@ -274,7 +248,6 @@ class SolrDatabase(Task):
     def on_success(self):
         name = "{}-short".format(self.name) if self.short else self.name
         self.create_symlink(name="current", suffix=name)
-        self.notify_server()
 
 
 class IdMappingTable(Task):
@@ -327,7 +300,6 @@ class IdMappingTable(Task):
 
     def on_success(self):
         self.create_symlink(name="current")
-        self.notify_server()
 
 
 class IdMappingDatabase(Task):
@@ -352,7 +324,6 @@ class IdMappingDatabase(Task):
 
     def on_success(self):
         self.create_symlink(name="current")
-        self.notify_server()
 
 
 class CombinedUpdate(luigi.WrapperTask):
