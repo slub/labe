@@ -60,6 +60,6 @@
 - name: "Setup crontab for data updates"
   cron:
     name: Data updates for labe
-    hour: "0"
-    minute: "10"
+    hour: "13"
+    minute: "30"
     job: "rm -f $(/usr/local/bin/labe.pyz --data-dir /usr/share --list-deletable) && /usr/local/bin/labe.pyz --data-dir /usr/share -r CombinedUpdate --workers 4 && systemctl restart labed"
