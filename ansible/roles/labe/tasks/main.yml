@@ -11,11 +11,11 @@
 
 - name: "Install ckit release"
   apt:
-    deb: https://github.com/miku/labe/releases/download/v0.1.5/ckit_0.1.5_amd64.deb
+    deb: https://github.com/miku/labe/releases/download/v0.1.6/ckit_0.1.6_amd64.deb
 
 - name: "Install labe release"
   apt:
-    deb: https://github.com/miku/labe/releases/download/v0.1.5/labe_0.1.5_amd64.deb
+    deb: https://github.com/miku/labe/releases/download/v0.1.6/labe_0.1.6_amd64.deb
 
 - name: "Change logging file ownership"
   ansible.builtin.file:
