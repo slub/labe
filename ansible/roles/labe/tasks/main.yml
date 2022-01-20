@@ -75,6 +75,6 @@
   cron:
     name: Data updates for labe
     user: labe
-    hour: "14"
-    minute: "46"
+    hour: "0"
+    minute: "5"
     job: "rm -f $(/usr/local/bin/labe.pyz --data-dir /usr/share --list-deletable) && /usr/local/bin/labe.pyz --data-dir /usr/share -r CombinedUpdate --workers 4 && sudo /usr/bin/systemctl restart labed"
