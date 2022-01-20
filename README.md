@@ -31,6 +31,48 @@ Python and Go.
 * [2021-09-16](notes/2021_09_16_meeting_minutes.md)
 * [2021-09-14](notes/2021_09_14_meeting_minutes.md)
 
+## Project structure
+
+```shell
+$ tree -d
+.
+├── ansible
+│   └── roles
+│       ├── common
+│       │   └── tasks
+│       └── labe
+│           ├── defaults
+│           └── tasks
+├── data
+├── go
+│   └── ckit
+│       ├── cmd
+│       │   ├── doisniffer
+│       │   ├── labed
+│       │   ├── makta
+│       │   └── tabjson
+│       ├── doi
+│       ├── fixtures
+│       ├── packaging
+│       │   └── deb
+│       │       └── ckit
+│       │           └── DEBIAN
+│       ├── set
+│       ├── static
+│       └── xflag
+├── notes
+├── python
+│   ├── labe
+│   ├── packaging
+│   │   └── deb
+│   │       └── labe
+│   │           └── DEBIAN
+│   └── tests
+└── static
+
+33 directories
+```
+
 ## SLOC
 
 ```
@@ -39,9 +81,9 @@ $ tokei -C -t=Go,Python
  Language            Files        Lines         Code     Comments       Blanks
 ===============================================================================
  Go                     15         1926         1523          249          154
- Python                 11         1305         1085           62          158
+ Python                 11         1317         1095           64          158
 ===============================================================================
- Total                  26         3231         2608          311          312
+ Total                  26         3243         2618          313          312
 ===============================================================================
 ```
 
