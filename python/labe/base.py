@@ -75,6 +75,9 @@ class BaseTask(luigi.Task):
                 if not os.path.exists(path):
                     continue
                 parser.read(path)
+                break
+            else:
+                raise RuntimeError("we need a config file in one of: {}".format(_config_paths))
             self._config = parser
         return self._config
 
