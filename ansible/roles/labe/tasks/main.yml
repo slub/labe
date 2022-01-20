@@ -62,4 +62,4 @@
     name: Data updates for labe
     hour: "0"
     minute: "10"
-    job: "rm -f $(/usr/local/bin/labe.pyz --list-deletable) && /usr/local/bin/labe.pyz -r CombinedUpdate --workers 4"
+    job: "rm -f $(/usr/local/bin/labe.pyz --data-dir /usr/share --list-deletable) && /usr/local/bin/labe.pyz --data-dir /usr/share -r CombinedUpdate --workers 4"

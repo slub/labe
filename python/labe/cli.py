@@ -114,7 +114,7 @@ def main():
     parser.add_argument("--data-dir",
                         "-D",
                         default=xdg_data_home(),
-                        help="root directory for all tasks, we follow XDG (override in settings.ini)")
+                        help="root directory for all tasks, we follow XDG")
     parser.add_argument("--tmp-dir", "-T", default=tempfile.gettempdir(), help="temporary directory to use")
     parser.add_argument("--labed-server-process-name",
                         default="labed",
@@ -124,7 +124,7 @@ def main():
     parser.add_argument("--deps-dot", action="store_true", help="print task dependencies in dot format")
 
     # Task may have their own arguments, which we ignore.
-    args, _ = parser.parse_known_args()
+    args, unparsed = parser.parse_known_args()
 
     # Hack to set the base directory of all tasks.
     Task.BASE = args.data_dir
@@ -153,7 +153,7 @@ def main():
         sys.exit(0)
 
     elif args.list_deletable:
-        labe_data_dir = os.path.join(args.data_dir, Task.TAG)  # hack to get the subdirectory
+        labe_data_dir = os.path.join(args.data_dir, Task.TAG)  # hack to get the subdirectory (e.g. "labe")
         # rm -f $(labe.pyz --list-deletable)
         filenames = set()
         symlinked = set()
@@ -170,7 +170,7 @@ def main():
     # Show output filename for task.
     elif args.show_output_path:
         try:
-            parser = CmdlineParser(sys.argv[2:])
+            parser = CmdlineParser([args.show_output_path] + unparsed)
             output = parser.get_task_obj().output()
             try:
                 print(output.path)
@@ -184,11 +184,12 @@ def main():
             print(err, file=sys.stderr)
             sys.exit(1)
 
+    # Show dependency graph.
     elif args.deps:
         if len(sys.argv) < 2:
             raise ValueError("task name required")
         try:
-            parser = CmdlineParser(sys.argv[2:])
+            parser = CmdlineParser([args.show_output_path] + unparsed)
             obj = parser.get_task_obj()
             dump_deps(obj)
             sys.exit(0)
@@ -196,12 +197,13 @@ def main():
             print("no such task")
             sys.exit(1)
 
+    # Render graphviz dot.
     elif args.deps_dot:
         # labe.pyz --deps-dot CombinedUpdate | dot -Tpng > CombinedUpdate.png
         if len(sys.argv) < 2:
             raise ValueError("task name required")
         try:
-            parser = CmdlineParser(sys.argv[2:])
+            parser = CmdlineParser([args.show_output_path] + unparsed)
             obj = parser.get_task_obj()
             dump_deps(obj, dot=True)
             sys.exit(0)
@@ -212,7 +214,7 @@ def main():
     # Run luigi task, tweak args so we can use luigi.run, again.
     elif args.run:
         try:
-            sys.argv = [sys.argv[0], *sys.argv[2:]]
+            sys.argv = [sys.argv[0], args.run] + unparsed
             luigi.run(local_scheduler=True)
         except MissingParameterException as err:
             print('missing parameter: %s' % err, file=sys.stderr)
@@ -221,4 +223,5 @@ def main():
             print(err, file=sys.stderr)
             sys.exit(1)
 
-    print(__doc__)
+    else:
+        print(__doc__)

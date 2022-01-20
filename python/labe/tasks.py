@@ -71,13 +71,14 @@ class Task(BaseTask):
         """
         Open citations download url.
         """
+        direct_download_url = None
         try:
             direct_download_url = self.config["oci"]["direct"]
-        except (configparser.NoSectionError, configparser.NoOptionError):
-            direct_download_url = None
+        except (configparser.NoSectionError, configparser.NoOptionError, KeyError):
+            pass
         finally:
-            open_citations_dataset = OpenCitationsDataset(direct_download_url=direct_download_url)
-            return self.open_citations_dataset.most_recent_download_url()
+            ds = OpenCitationsDataset(direct_download_url=direct_download_url)
+            return ds.most_recent_download_url()
 
     def open_citations_url_hash(self):
         """
