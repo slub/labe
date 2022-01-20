@@ -50,3 +50,16 @@
             compress
             delaycompress
         }
+
+- name: "Creates an entry like `PATH=/opt/bin:...` on top of crontab"
+  cron:
+    name: PATH
+    env: yes
+    job: /usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+- name: "Setup crontab for data updates"
+  cron:
+    name: Data updates for labe
+    hour: "0"
+    minute: "10"
+    job: "rm -f $(/usr/local/bin/labe.pyz --list-deletable) && /usr/local/bin/labe.pyz -r CombinedUpdate --workers 4"
