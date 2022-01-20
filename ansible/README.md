@@ -10,5 +10,13 @@
 SHELL=/bin/bash
 PATH=...
 
-10 0 * * * rm -f $(/usr/local/bin/labe.pyz --list-deletable) && /usr/local/bin/labe.pyz -r CombinedUpdate --workers 4    
+10 0 * * * rm -f $(/usr/local/bin/labe.pyz --list-deletable) && /usr/local/bin/labe.pyz -r CombinedUpdate --workers 4
+```
+
+## Lint
+
+* via [ansible-lint](https://ansible-lint.readthedocs.io)
+
+```
+$ ansible-lint
 ```
