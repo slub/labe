@@ -1,5 +1,25 @@
 """
 Helper to render dependencies.
+
+Example output:
+
+  $ labe.pyz --deps CombinedUpdate
+   \_ CombinedUpdate(date=2022-01-21)
+      \_ IdMappingDatabase(date=2022-01-21)
+         \_ IdMappingTable(date=2022-01-21)
+            \_ SolrFetchDocs(date=2022-01-21, name=ai, short=True)
+            \_ SolrFetchDocs(date=2022-01-21, name=slub-production, short=False)
+            \_ SolrFetchDocs(date=2022-01-21, name=main, short=False)
+      \_ OpenCitationsDatabase()
+         \_ OpenCitationsSingleFile()
+            \_ OpenCitationsDownload()
+      \_ SolrDatabase(date=2022-01-21, name=ai, short=True)
+         \_ SolrFetchDocs(date=2022-01-21, name=ai, short=True)
+      \_ SolrDatabase(date=2022-01-21, name=slub-production, short=False)
+         \_ SolrFetchDocs(date=2022-01-21, name=slub-production, short=False)
+      \_ SolrDatabase(date=2022-01-21, name=main, short=True)
+         \_ SolrFetchDocs(date=2022-01-21, name=main, short=True)
+
 """
 
 import collections
