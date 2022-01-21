@@ -65,19 +65,17 @@ class BaseTask(luigi.Task):
         /etc/labe/labe.cfg.
         """
         if not hasattr(self, "_config"):
-            parser = configparser.ConfigParser()
             _config_paths = [
-                'labe.cfg',
-                os.path.join(xdg.xdg_config_home(), "labe", "labe.cfg"),
                 '/etc/labe/labe.cfg',
+                os.path.join(xdg.xdg_config_home(), "labe", "labe.cfg"),
+                'labe.cfg',
             ]
-            for path in _config_paths:
-                if not os.path.exists(path):
-                    continue
-                parser.read(path)
-                break
-            else:
+            existing_config_paths = [path for path in _config_paths if os.path.exists(path)]
+            if len(existing_config_paths) == 0:
                 raise RuntimeError("we need a config file in one of: {}".format(_config_paths))
+            parser = configparser.ConfigParser()
+            for path in existing_config_paths:
+                parser.read(path)
             self._config = parser
         return self._config
 
