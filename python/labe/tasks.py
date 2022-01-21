@@ -49,10 +49,6 @@ class Task(BaseTask):
         "SolrDatabase-slub-production-False": 2_000_000_000,
     }
 
-    # Name of the server process. We need this in order to inform the server to
-    # reload the database connections, when updates are available.
-    labed_server_process_name = "labed"
-
     @functools.lru_cache(maxsize=None)
     def open_citations_url(self):
         """
@@ -75,7 +71,7 @@ class Task(BaseTask):
         url = self.open_citations_url()
         return hashlib.sha1(url.encode("utf-8")).hexdigest()
 
-    def validate_output_filesize(self, filename, minimum_size):
+    def ensure_minimum_filesize(self, filename, minimum_size):
         """
         Raise an exception, if filename is smaller than filesize.
         """
@@ -99,7 +95,7 @@ class OpenCitationsDownload(Task):
 
         # Do a basic sanity check right here, e.g. in 12/2021 filesize was
         # about 30GB; we fail if the file size seems too small.
-        self.validate_output_filesize(output, self.expected_output_file_sizes["OpenCitationsDownload"])
+        self.ensure_minimum_filesize(output, self.expected_output_file_sizes["OpenCitationsDownload"])
         # We excect a zip file.
         if not zipfile.is_zipfile(output):
             raise RuntimeError("not a zip: {}".format(output))
@@ -172,7 +168,7 @@ class OpenCitationsDatabase(Task):
                           makta -init -o {output} -I 3
                           """,
                           input=self.input().path)
-        self.validate_output_filesize(output, self.expected_output_file_sizes["OpenCitationsDatabase"])
+        self.ensure_minimum_filesize(output, self.expected_output_file_sizes["OpenCitationsDatabase"])
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -241,7 +237,7 @@ class SolrDatabase(Task):
                           makta -init -I 1 -o {output}
                           """,
                           input=self.input().path)
-        self.validate_output_filesize(
+        self.ensure_minimum_filesize(
             output, self.expected_output_file_sizes["SolrDatabase-{}-{}".format(self.name, self.short)])
         luigi.LocalTarget(output).move(self.output().path)
 
@@ -295,7 +291,7 @@ class IdMappingTable(Task):
                  output=output,
                  input=self.input().get("ai").path)
 
-        self.validate_output_filesize(output, self.expected_output_file_sizes["IdMappingTable"])
+        self.ensure_minimum_filesize(output, self.expected_output_file_sizes["IdMappingTable"])
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -319,7 +315,7 @@ class IdMappingDatabase(Task):
                               makta -init -o {output} -I 3
                           """,
                           input=self.input().path)
-        self.validate_output_filesize(output, self.expected_output_file_sizes["IdMappingDatabase"])
+        self.ensure_minimum_filesize(output, self.expected_output_file_sizes["IdMappingDatabase"])
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):

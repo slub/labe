@@ -103,7 +103,7 @@ class BaseTask(luigi.Task):
     def create_symlink(self, name="current", suffix=""):
         """
         Allows to create a symlink pointing to the task output, optionally
-        containing a suffix.
+        containing a suffix. Overwrites existing links.
         """
         dirname = self.taskdir()
         name = "{}-{}".format(name, suffix) if suffix else name
