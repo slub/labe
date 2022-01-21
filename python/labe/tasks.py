@@ -179,6 +179,24 @@ class OpenCitationsDatabase(Task):
     def on_success(self):
         self.create_symlink(name="current")
 
+class OpenCitationsRanked(Task):
+    """
+    TODO: All OCI DOI, ranked by frequency.
+    """
+    def requires(self):
+        return OpenCitationsSingleFile()
+
+    def run(self):
+        raise NotImplementedError()
+
+    def output(self):
+        fingerprint = self.open_citations_url_hash()
+        filename = "{}.db".format(fingerprint)
+        return luigi.LocalTarget(path=self.path(filename=filename))
+
+    def on_success(self):
+        self.create_symlink(name="current")
+
 
 class SolrFetchDocs(Task):
     """
