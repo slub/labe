@@ -179,10 +179,12 @@ class OpenCitationsDatabase(Task):
     def on_success(self):
         self.create_symlink(name="current")
 
+
 class OpenCitationsRanked(Task):
     """
     TODO: All OCI DOI, ranked by frequency.
     """
+
     def requires(self):
         return OpenCitationsSingleFile()
 

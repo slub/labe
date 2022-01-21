@@ -1,44 +1,43 @@
-"""Command line interface to run luigi tasks for labe project ≋ labe
-https://github.com/slub/labe
+"""
+Command line tool to run luigi tasks for project ≋ labe
 
-Examples:
+  List tasks:
 
-    List tasks:
+      $ labe.pyz -l
+      CombinedUpdate
+      IdMappingDatabase
+      IdMappingTable
+      OpenCitationsDatabase
+      OpenCitationsDownload
+      OpenCitationsSingleFile
+      SolrDatabase
+      SolrFetchDocs
 
-        $ labe.pyz -l
-        CombinedUpdate
-        IdMappingDatabase
-        IdMappingTable
-        OpenCitationsDatabase
-        OpenCitationsDownload
-        OpenCitationsSingleFile
-        SolrDatabase
-        SolrFetchDocs
+  Run task:
 
-    Run task:
+      $ labe.pyz -r SolrDatabase --name main
 
-        $ labe.pyz -r SolrDatabase --name main
+  Show task output location:
 
-    Show task output location:
-
-        $ labe.pyz -O OpenCitationsDatabase
-        /usr/share/labe/OpenCitationsDatabase/c90e82e35c9d02c00f81bee6d1f34b132953398c.db
+      $ labe.pyz -O OpenCitationsDatabase
+      /usr/share/labe/OpenCitationsDatabase/c90e82e35c9d02c00f81bee6d1f34b132953398c.db
 
 Symlinks point to the current version of a task output. They will only be
 updated, if the task ran successfully. This way we can identify outdated files:
 
-    $ labe.pyz --list-deletable
+  $ labe.pyz --list-deletable
 
-Use cron job to schedule tasks:
+Use cron job to schedule (a daily) task:
 
-    0 10 * * * rm -rf $(labe.pyz --list-deletable)
-    0 30 * * * labe.pyz -r CombinedUpdate
+  0 5 * * * rm -rf $(labe.pyz --list-deletable) && labe.pyz -r CombinedUpdate
 
 Relevant configuration files:
 
-    /etc/luigi/luigi.cfg
-    /etc/luigi/logging.ini
-    /etc/labe/labe.cfg
+  /etc/labe/labe.cfg
+  /etc/luigi/logging.ini
+  /etc/luigi/luigi.cfg
+
+Project homepage: https://github.com/slub/labe
 """
 
 import argparse
