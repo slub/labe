@@ -1,10 +1,12 @@
 package ckit
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"regexp"
@@ -12,6 +14,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
+	"github.com/klauspost/compress/zstd"
 	"github.com/patrickmn/go-cache"
 	"github.com/segmentio/encoding/json"
 	"github.com/slub/labe/go/ckit/set"
@@ -259,6 +262,17 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 					log.Printf("[cache] removed bogus cache value")
 				} else {
 					sw.Record("retrieved value from cache")
+					// decompress the value
+					r, err := zstd.NewReader(bytes.NewReader(b))
+					if err != nil {
+						httpErrLog(w, err)
+						return
+					}
+					var buf bytes.Buffer
+					if _, err := io.Copy(&buf, r); err != nil {
+						httpErrLog(w, err)
+						return
+					}
 					// Hack to update "extra.took" field w/o parsing and
 					// serializing json; we expect something like:
 					// ...}]},"extra":{"took":1.443760546,"unmatc...  If this
@@ -266,7 +280,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 					// in the data is very low.  Note that JSON will use
 					// scienfic notation by default, while %f would not.
 					took := fmt.Sprintf(`"took":%f`, time.Since(started).Seconds())
-					b = tookRegexp.ReplaceAll(b, []byte(took))
+					b = tookRegexp.ReplaceAll(buf.Bytes(), []byte(took))
 					if _, err := w.Write(b); err != nil {
 						httpErrLog(w, err)
 						return
@@ -365,13 +379,29 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		switch {
 		case s.CacheEnabled && time.Since(started) > s.CacheTriggerDuration:
 			response.Extra.Cached = true
-			b, err := json.Marshal(response)
+			var (
+				buf  bytes.Buffer
+				zbuf bytes.Buffer
+			)
+			zw, err := zstd.NewWriter(&zbuf)
 			if err != nil {
 				httpErrLog(w, err)
 				return
 			}
-			s.cache.Set(vars["id"], b, s.CacheDefaultExpiration)
-			if _, err := w.Write(b); err != nil {
+			var (
+				mw  = io.MultiWriter(&buf, zw)
+				enc = json.NewEncoder(mw)
+			)
+			if err := enc.Encode(response); err != nil {
+				httpErrLog(w, err)
+				return
+			}
+			if err := zw.Close(); err != nil {
+				httpErrLog(w, err)
+				return
+			}
+			s.cache.Set(vars["id"], zbuf.Bytes(), s.CacheDefaultExpiration)
+			if _, err := w.Write(buf.Bytes()); err != nil {
 				httpErrLog(w, err)
 				return
 			}
