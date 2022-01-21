@@ -14,3 +14,8 @@ deploy: ## deploy ansible/set.yml
 deb: ## shortcut to build both ckit and labe debian packages
 	(cd python && make clean && make deb)
 	(cd go/ckit && make clean && make -j deb)
+
+.PHONY: clean
+clean:
+	(cd python && make clean)
+	(cd go/ckit && make clean)
