@@ -389,6 +389,8 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				return
 			}
 			var (
+				// Encode both into a plain (response) and a zstd-compressed
+				// (cache) buffer.
 				mw  = io.MultiWriter(&buf, zw)
 				enc = json.NewEncoder(mw)
 			)
@@ -405,7 +407,8 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				httpErrLog(w, err)
 				return
 			}
-			sw.Record("encoded JSON and cached value")
+			sw.Recordf("encoded JSON and cached value (r: %0.2f)",
+				float64(zbuf.Len())/float64(buf.Len()))
 		default:
 			enc := json.NewEncoder(w)
 			if err := enc.Encode(response); err != nil {
