@@ -89,6 +89,7 @@ class OpenCitationsDownload(Task):
     """
     Download open citations corpus, currently via figshare.
     """
+
     def run(self):
         url = self.open_citations_url()
         output = shellout("""
@@ -122,6 +123,7 @@ class OpenCitationsSingleFile(Task):
     Also, figshare does not support HTTP range requests, which would allow us
     to convert zip files on the fly. Pity.
     """
+
     def requires(self):
         return OpenCitationsDownload()
 
@@ -158,6 +160,7 @@ class OpenCitationsDatabase(Task):
     In 12/2021, task took about 95m3.050s. A full sequence (e.g. download,
     single file, database) can take 2-3h (143m33.560s).
     """
+
     def requires(self):
         return OpenCitationsSingleFile()
 

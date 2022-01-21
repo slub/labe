@@ -74,6 +74,7 @@ class OpenCitationsDataset:
     Use `direct_download_url` to override link returned by
     `most_recent_download_url`, e.g. if scraping breaks.
     """
+
     def __init__(self, direct_download_url=None):
         # TODO: allow direct_download_url and also local files.
         self.direct_download_url = direct_download_url
