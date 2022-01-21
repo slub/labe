@@ -83,9 +83,9 @@ class Task(BaseTask):
 
 class OpenCitationsDownload(Task):
     """
-    Download open citations corpus, currently via figshare.
+    Download open citations corpus, currently hosted on figshare.com, cf.
+    https://figshare.com/authors/OpenCitations_Project/3068259.
     """
-
     def run(self):
         url = self.open_citations_url()
         output = shellout("""
@@ -112,12 +112,12 @@ class OpenCitationsDownload(Task):
 
 class OpenCitationsSingleFile(Task):
     """
-    Turn nested zip files into a single, undecorated, flat zstd compressed
+    Turn nested zip files into a single, undecorated, flat, zstd-compressed
     file. As of 11/2021 OpenCitations download is a zip of zip files, but it is
-    easier to work with a single compressed CSV file.
+    easier to work with a single compressed CSV file instead.
 
-    Also, figshare does not support HTTP range requests, which would allow us
-    to convert zip files on the fly. Pity.
+    Also, figshare.com does not support HTTP range requests, which would allow us
+    to perform this conversion on the fly altogether - pity.
     """
 
     def requires(self):
@@ -156,7 +156,6 @@ class OpenCitationsDatabase(Task):
     In 12/2021, task took about 95m3.050s. A full sequence (e.g. download,
     single file, database) can take 2-3h (143m33.560s).
     """
-
     def requires(self):
         return OpenCitationsSingleFile()
 
@@ -182,9 +181,9 @@ class OpenCitationsDatabase(Task):
 
 class OpenCitationsRanked(Task):
     """
-    TODO: All OCI DOI, ranked by frequency.
+    TODO: All OCI DOI, ranked by frequency. We can use this information to warm
+    the labed cache, e.g. with the 1000 most connected DOI, etc.
     """
-
     def requires(self):
         return OpenCitationsSingleFile()
 
@@ -202,10 +201,11 @@ class OpenCitationsRanked(Task):
 
 class SolrFetchDocs(Task):
     """
-    Fetch JSON data from solr; uses solrdump (https://git.io/J1pxG).
+    Fetch JSON data from SOLR; uses solrdump (https://github.com/ubleipzig/solrdump).
 
     Some timings: 190min for "main", 32s for "slub-production", 1374min for
-    "ai" (22h); with "-rows 50000" eta about 2.5h (134m27.012s).
+    "ai" full version (22h) - however with "-rows 50000" eta about 2.5h
+    (134m27.012s).
     """
     date = luigi.DateParameter(default=datetime.date.today())
     name = luigi.Parameter(default="main", description="index name, url lookup up from a config")
@@ -241,7 +241,12 @@ class SolrDatabase(Task):
     Convert SOLR JSON documents into an sqlite database to allow lookup of
     documents by key. Requires the small "tabjson" tool (https://git.io/J9LRH).
 
-    Some timings: ai 12m47.890s, main 1m48.112s, slub-production 0m3.451s.
+    Some timings, ai: 12m47.890s, main: 1m48.112s, slub-production: 0m3.451s.
+
+    The `name` maps to index URLs (configured in labe.cfg), if `short` is True,
+    we generate an abridged version of the metadata to save space (for example
+    a sqlite3 version of the full "ai" metadata is over 350G, whereas the short
+    version is only 50G).
     """
     date = luigi.DateParameter(default=datetime.date.today())
     name = luigi.Parameter(default="main", description="index name, url lookup up from a config")
