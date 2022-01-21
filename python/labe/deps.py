@@ -7,7 +7,7 @@ import sys
 import textwrap
 
 
-def dump_deps(task=None, indent=0, dot=False, file=file):
+def dump_deps(task=None, indent=0, dot=False, file=sys.stdout):
     """
     Print dependency graph for a given task to stdout.
     """
