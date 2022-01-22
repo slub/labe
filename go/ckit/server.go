@@ -374,6 +374,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		case s.Cache != nil && time.Since(started) > s.CacheTriggerDuration:
 			response.Extra.Cached = true
 			var (
+				// TODO: could use a sync.Pool here
 				buf  bytes.Buffer
 				zbuf bytes.Buffer
 			)
