@@ -38,6 +38,10 @@ clean: ## clean artifacts
 	rm -f *.deb
 	rm -rf packaging/deb/$(PKGNAME)/usr
 
+.PHONY: test
+test: ## run tests
+	go test -v -cover ./...
+
 .PHONY: deb
 deb: all ## build debian package
 	# executables
