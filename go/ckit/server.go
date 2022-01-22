@@ -15,8 +15,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	"github.com/klauspost/compress/zstd"
-	"github.com/patrickmn/go-cache"
 	"github.com/segmentio/encoding/json"
+	"github.com/slub/labe/go/ckit/cache"
 	"github.com/slub/labe/go/ckit/set"
 )
 
@@ -41,22 +41,9 @@ type Server struct {
 	// Router to register routes on.
 	Router *mux.Router
 	// StopWatchEnabled enabled the stopwatch, a builtin, simplistic request tracer.
-	StopWatchEnabled bool
-	// CacheEnabled elables the built-in cache. We only want to cache expensive requests,
-	// e.g. requests that too longer than CacheTriggerDuration to compute.
-	CacheEnabled bool
-	// CacheTriggerDuration is a threshold, every request which takes longer
-	// than this threshold will be cached.
+	StopWatchEnabled     bool
+	Cache                *cache.Cache
 	CacheTriggerDuration time.Duration
-	// CacheDefaultExpiration tells the cache how long to hold on to a cache entry.
-	CacheDefaultExpiration time.Duration
-	// CacheCleanupInterval tells the cache how often to purge expired entries
-	// from the cache.
-	CacheCleanupInterval time.Duration
-	// TODO: cache of larger, slow values eats up too much memory; 1207 item
-	// and we're already at 15%. Need to switch to a persistant version. Out of
-	// about 70M ids, we'll probably want to cache about 100K items (~0.14%).
-	cache *cache.Cache
 }
 
 // Map is a generic lookup table. We use it together with sqlite3. This
@@ -184,9 +171,14 @@ Examples (hostport may be different):
 // handleCacheSize returns the number of currently cached items.
 func (s *Server) handleCacheSize() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if s.CacheEnabled {
-			err := json.NewEncoder(w).Encode(map[string]interface{}{
-				"count": s.cache.ItemCount(),
+		if s.Cache != nil {
+			count, err := s.Cache.ItemCount()
+			if err != nil {
+				httpErrLog(w, err)
+				return
+			}
+			err = json.NewEncoder(w).Encode(map[string]interface{}{
+				"count": count,
 			})
 			if err != nil {
 				httpErrLog(w, err)
@@ -199,8 +191,8 @@ func (s *Server) handleCacheSize() http.HandlerFunc {
 // handleCachePurge empties the cache.
 func (s *Server) handleCachePurge() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if s.CacheEnabled {
-			s.cache.Flush()
+		if s.Cache != nil {
+			s.Cache.Flush()
 			log.Println("flushed cached")
 		}
 	}
@@ -233,10 +225,6 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 	// w/o parsing the JSON again; hacky but fast. This is only relevant, if
 	// cache is enabled.
 	var tookRegexp = regexp.MustCompile(`"took":[0-9.]+`)
-	// We only care about caching here.
-	if s.CacheEnabled {
-		s.cache = cache.New(s.CacheDefaultExpiration, s.CacheCleanupInterval)
-	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		// (0) check for cached value
 		// (1) resolve id to doi
@@ -265,41 +253,36 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		// Ganz sicher application/json.
 		w.Header().Add("Content-Type", "application/json")
 		// (0) Check cache first.
-		if s.CacheEnabled {
-			v, found := s.cache.Get(vars["id"])
-			if found {
-				if b, ok := v.([]byte); !ok {
-					s.cache.Delete(vars["id"])
-					log.Printf("[cache] removed bogus cache value")
-				} else {
-					sw.Record("retrieved value from cache")
-					// decompress the value
-					r, err := zstd.NewReader(bytes.NewReader(b))
-					if err != nil {
-						httpErrLog(w, err)
-						return
-					}
-					var buf bytes.Buffer
-					if _, err := io.Copy(&buf, r); err != nil {
-						httpErrLog(w, err)
-						return
-					}
-					// Hack to update "extra.took" field w/o parsing and
-					// serializing json; we expect something like:
-					// ...}]},"extra":{"took":1.443760546,"unmatc...  If this
-					// fails, we do not care; the chance this pattern appears
-					// in the data is very low.  Note that JSON will use
-					// scienfic notation by default, while %f would not.
-					took := fmt.Sprintf(`"took":%f`, time.Since(started).Seconds())
-					b = tookRegexp.ReplaceAll(buf.Bytes(), []byte(took))
-					if _, err := w.Write(b); err != nil {
-						httpErrLog(w, err)
-						return
-					}
-					sw.Record("used cached value")
-					sw.LogTable()
+		if s.Cache != nil {
+			b, err := s.Cache.Get(vars["id"])
+			if err == nil {
+				sw.Record("retrieved value from cache")
+				// decompress the value
+				r, err := zstd.NewReader(bytes.NewReader(b))
+				if err != nil {
+					httpErrLog(w, err)
 					return
 				}
+				var buf bytes.Buffer
+				if _, err := io.Copy(&buf, r); err != nil {
+					httpErrLog(w, err)
+					return
+				}
+				// Hack to update "extra.took" field w/o parsing and
+				// serializing json; we expect something like:
+				// ...}]},"extra":{"took":1.443760546,"unmatc...  If this
+				// fails, we do not care; the chance this pattern appears
+				// in the data is very low.  Note that JSON will use
+				// scienfic notation by default, while %f would not.
+				took := fmt.Sprintf(`"took":%f`, time.Since(started).Seconds())
+				b = tookRegexp.ReplaceAll(buf.Bytes(), []byte(took))
+				if _, err := w.Write(b); err != nil {
+					httpErrLog(w, err)
+					return
+				}
+				sw.Record("used cached value")
+				sw.LogTable()
+				return
 			}
 		}
 		// (1) Get the DOI for the local id; or get out.
@@ -388,7 +371,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		response.Extra.Took = time.Since(started).Seconds()
 		// (7) If this request was expensive, cache it.
 		switch {
-		case s.CacheEnabled && time.Since(started) > s.CacheTriggerDuration:
+		case s.Cache != nil && time.Since(started) > s.CacheTriggerDuration:
 			response.Extra.Cached = true
 			var (
 				buf  bytes.Buffer
@@ -413,13 +396,17 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				httpErrLog(w, err)
 				return
 			}
-			s.cache.Set(vars["id"], zbuf.Bytes(), s.CacheDefaultExpiration)
+			if err := s.Cache.Set(vars["id"], zbuf.Bytes()); err != nil {
+				log.Printf("failed to cache value for %s: %v", vars["id"], err)
+			} else {
+				sw.Recordf("cached value (r: %0.2f)", float64(zbuf.Len())/float64(buf.Len()))
+			}
 			if _, err := w.Write(buf.Bytes()); err != nil {
 				httpErrLog(w, err)
 				return
+			} else {
+				sw.Record("encoded json")
 			}
-			sw.Recordf("encoded JSON and cached value (r: %0.2f)",
-				float64(zbuf.Len())/float64(buf.Len()))
 		default:
 			enc := json.NewEncoder(w)
 			if err := enc.Encode(response); err != nil {

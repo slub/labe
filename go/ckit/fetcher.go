@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/slub/labe/go/ckit/tabutils"
 )
 
 var (
@@ -67,7 +68,7 @@ func (g *FetchGroup) FromFiles(files ...string) error {
 		if _, err := os.Stat(f); os.IsNotExist(err) {
 			return fmt.Errorf("file not found: %s", f)
 		}
-		db, err := sqlx.Open("sqlite3", WithReadOnly(f))
+		db, err := sqlx.Open("sqlite3", tabutils.WithReadOnly(f))
 		if err != nil {
 			return fmt.Errorf("database: %w", err)
 		}

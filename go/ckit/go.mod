@@ -13,7 +13,6 @@ require (
 	github.com/matryer/is v1.4.0
 	github.com/mattn/go-sqlite3 v1.14.10
 	github.com/miku/parallel v0.0.0-20210205192328-1a799ab70294
-	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/segmentio/encoding v0.3.3
 )
 

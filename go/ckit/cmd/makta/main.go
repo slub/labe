@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/andrew-d/go-termutil"
-	"github.com/slub/labe/go/ckit"
+	"github.com/slub/labe/go/ckit/tabutils"
 )
 
 var (
@@ -65,14 +65,14 @@ PRAGMA temp_store = MEMORY;
 	_, err = os.Stat(*outputFile)
 	if err != nil || *initDatabase {
 		if os.IsNotExist(err) || *initDatabase {
-			if err := ckit.RunScript(*outputFile, initSQL, "initialized database"); err != nil {
+			if err := tabutils.RunScript(*outputFile, initSQL, "initialized database"); err != nil {
 				log.Fatal(err)
 			}
 		} else {
 			log.Fatal(err)
 		}
 	}
-	if initFile, err = ckit.TempFileReader(strings.NewReader(importSQL)); err != nil {
+	if initFile, err = tabutils.TempFileReader(strings.NewReader(importSQL)); err != nil {
 		log.Fatal(err)
 	}
 	var (
@@ -83,7 +83,7 @@ PRAGMA temp_store = MEMORY;
 		elapsed     float64
 		numBatches  int
 		importBatch = func() error {
-			n, err := ckit.RunImport(&buf, initFile, *outputFile)
+			n, err := tabutils.RunImport(&buf, initFile, *outputFile)
 			if err != nil {
 				return fmt.Errorf("import: %w", err)
 			}
@@ -93,12 +93,12 @@ PRAGMA temp_store = MEMORY;
 			if *verbose {
 				log.Printf("imported batch #%d, %s at %s",
 					numBatches,
-					ckit.ByteSize(int(written)),
-					ckit.HumanSpeed(written, elapsed))
+					tabutils.ByteSize(int(written)),
+					tabutils.HumanSpeed(written, elapsed))
 			} else {
-				ckit.Flushf("written %s · %s",
-					ckit.ByteSize(int(written)),
-					ckit.HumanSpeed(written, elapsed))
+				tabutils.Flushf("written %s · %s",
+					tabutils.ByteSize(int(written)),
+					tabutils.HumanSpeed(written, elapsed))
 			}
 			return nil
 		}
@@ -145,7 +145,7 @@ PRAGMA temp_store = MEMORY;
 	log.Printf("[io] building %d indices ...", len(indexScripts))
 	for i, script := range indexScripts {
 		msg := fmt.Sprintf("%d/%d created index", i+1, len(indexScripts))
-		if err := ckit.RunScript(*outputFile, script, msg); err != nil {
+		if err := tabutils.RunScript(*outputFile, script, msg); err != nil {
 			log.Fatalf("run script: %v", err)
 		}
 	}

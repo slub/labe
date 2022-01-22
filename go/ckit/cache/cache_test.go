@@ -16,7 +16,7 @@ func TestCache(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create db: %v", err)
 	}
-	if size, err := cache.Len(); err != nil {
+	if size, err := cache.ItemCount(); err != nil {
 		t.Fatalf("failed to get number of entries: %v", err)
 	} else {
 		if size != 0 {
@@ -26,7 +26,7 @@ func TestCache(t *testing.T) {
 	if err := cache.Set("a", []byte("abc")); err != nil {
 		t.Fatalf("failed to set value: %v", err)
 	}
-	if size, err := cache.Len(); err != nil {
+	if size, err := cache.ItemCount(); err != nil {
 		t.Fatalf("failed to get number of entries: %v", err)
 	} else {
 		if size != 1 {

@@ -1,4 +1,4 @@
-package ckit
+package tabutils
 
 import (
 	"fmt"

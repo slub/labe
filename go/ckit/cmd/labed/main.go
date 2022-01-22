@@ -24,6 +24,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/slub/labe/go/ckit"
+	"github.com/slub/labe/go/ckit/cache"
+	"github.com/slub/labe/go/ckit/tabutils"
 	"github.com/slub/labe/go/ckit/xflag"
 )
 
@@ -34,10 +36,8 @@ var (
 	enableStopWatch        = flag.Bool("stopwatch", false, "enable stopwatch")
 	enableGzip             = flag.Bool("z", false, "enable gzip compression")
 	enableLogging          = flag.Bool("l", false, "enable logging")
-	enableCache            = flag.Bool("c", false, "enable in-memory caching of expensive responses")
-	cacheCleanupInterval   = flag.Duration("ct", 8*time.Hour, "cache cleanup interval")
-	cacheTriggerDuration   = flag.Duration("cg", 250*time.Millisecond, "cache trigger duration")
-	cacheDefaultExpiration = flag.Duration("cx", 72*time.Hour, "cache default expiration")
+	enableCache            = flag.Bool("c", false, "enable caching of expensive responses")
+	cacheTriggerDuration   = flag.Duration("t", 250*time.Millisecond, "cache trigger duration")
 	showVersion            = flag.Bool("version", false, "show version")
 	logFile                = flag.String("logfile", "", "file to log to")
 	quiet                  = flag.Bool("q", false, "no output at all")
@@ -154,15 +154,26 @@ func main() {
 	}
 	// Setup server.
 	srv := &ckit.Server{
-		IdentifierDatabase:     identifierDatabase,
-		OciDatabase:            ociDatabase,
-		IndexData:              fetcher,
-		Router:                 mux.NewRouter(),
-		StopWatchEnabled:       *enableStopWatch,
-		CacheEnabled:           *enableCache,
-		CacheTriggerDuration:   *cacheTriggerDuration,
-		CacheDefaultExpiration: *cacheDefaultExpiration,
-		CacheCleanupInterval:   *cacheCleanupInterval,
+		IdentifierDatabase: identifierDatabase,
+		OciDatabase:        ociDatabase,
+		IndexData:          fetcher,
+		Router:             mux.NewRouter(),
+		StopWatchEnabled:   *enableStopWatch,
+	}
+	// Setup caching.
+	if *enableCache {
+		f, err := ioutil.TempFile("", "labed-cache-")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		c, err := cache.New(f.Name())
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer c.Close()
+		srv.Cache = c
+		srv.CacheTriggerDuration = *cacheTriggerDuration
 	}
 	srv.Routes()
 	// Basic reachability checks.
@@ -192,5 +203,5 @@ func openDatabase(filename string) (*sqlx.DB, error) {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		return nil, fmt.Errorf("file not found: %s", filename)
 	}
-	return sqlx.Open("sqlite3", ckit.WithReadOnly(filename))
+	return sqlx.Open("sqlite3", tabutils.WithReadOnly(filename))
 }
