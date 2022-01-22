@@ -53,7 +53,10 @@ type Server struct {
 	// CacheCleanupInterval tells the cache how often to purge expired entries
 	// from the cache.
 	CacheCleanupInterval time.Duration
-	cache                *cache.Cache
+	// TODO: cache of larger, slow values eats up too much memory; 1207 item
+	// and we're already at 15%. Need to switch to a persistant version. Out of
+	// about 70M ids, we'll probably want to cache about 100K items (~0.14%).
+	cache *cache.Cache
 }
 
 // Map is a generic lookup table. We use it together with sqlite3. This
