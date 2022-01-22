@@ -86,6 +86,7 @@ class OpenCitationsDownload(Task):
     Download open citations corpus, currently hosted on figshare.com, cf.
     https://figshare.com/authors/OpenCitations_Project/3068259.
     """
+
     def run(self):
         url = self.open_citations_url()
         output = shellout("""
@@ -156,6 +157,7 @@ class OpenCitationsDatabase(Task):
     In 12/2021, task took about 95m3.050s. A full sequence (e.g. download,
     single file, database) can take 2-3h (143m33.560s).
     """
+
     def requires(self):
         return OpenCitationsSingleFile()
 
@@ -182,17 +184,35 @@ class OpenCitationsDatabase(Task):
 class OpenCitationsRanked(Task):
     """
     TODO: All OCI DOI, ranked by frequency. We can use this information to warm
-    the labed cache, e.g. with the 1000 most connected DOI, etc.
+    the labed cache, e.g. with the 1000 most connected DOI, etc. (36m50.553s).
+
+    69,897,322 unique DOI.
     """
+
     def requires(self):
         return OpenCitationsSingleFile()
 
     def run(self):
-        raise NotImplementedError()
+        dois = shellout(r"""
+                         zstd -cd -T0 {input} |
+                         cut -d , -f2,3 |
+                         tr ',' '\n' |
+                         grep ^10 |
+                         zstd -T0 -c >> {output}
+                         """, input=self.input().path, preserve_whitespace=True)
+        output = shellout("""
+                          zstd -cd -T0 {input} |
+                          LC_ALL=C sort -S50% |
+                          LC_ALL=C uniq -c |
+                          LC_ALL=C sort -nr -S 20% > {output}
+                          """,
+                          input=dois)
+        luigi.LocalTarget(output).move(self.output().path)
+        os.remove(dois)
 
     def output(self):
         fingerprint = self.open_citations_url_hash()
-        filename = "{}.db".format(fingerprint)
+        filename = "{}.zst".format(fingerprint)
         return luigi.LocalTarget(path=self.path(filename=filename))
 
     def on_success(self):
