@@ -67,6 +67,12 @@ type Map struct {
 	Value string `db:"v"`
 }
 
+// ErrorMessage from failed requests.
+type ErrorMessage struct {
+	Status int   `json:"status,omitempty"`
+	Err    error `json:"err,omitempty"`
+}
+
 // Response contains a subset of index data fused with citation data.  Citing
 // and cited documents are raw bytes, but typically will contain JSON. For
 // unmatched docs, we only transmit the DOI, e.g. as {"doi": "10.123/123"}.
@@ -126,14 +132,16 @@ func (s *Server) edges(ctx context.Context, doi string) (citing, cited []Map, er
 
 // mapToLocal takes a list of DOI and returns a slice of Maps containing the
 // local id and DOI.
+// TODO: "too many SQL variables", SQLITE_LIMIT_VARIABLE_NUMBER (default value:
+// 999, cf: https://www.daemon-systems.org/man/sqlite3_bind_blob.3.html).
 func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err error) {
 	query, args, err := sqlx.In("SELECT * FROM map WHERE v IN (?)", dois)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query: %v", err)
 	}
 	query = s.IdentifierDatabase.Rebind(query)
 	if err := s.IdentifierDatabase.SelectContext(ctx, &ids, query, args...); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("select: %v", err)
 	}
 	return ids, nil
 }
@@ -445,7 +453,15 @@ func (s *Server) Ping() error {
 // httpErrLogStatus logs the error and returns.
 func httpErrLogStatus(w http.ResponseWriter, err error, status int) {
 	log.Printf("failed [%d]: %v", status, err)
-	http.Error(w, err.Error(), status)
+	em := ErrorMessage{
+		Status: status,
+		Err:    err,
+	}
+	b, err := json.Marshal(em)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	http.Error(w, string(b), status)
 }
 
 // httpErrLog tries to infer an appropriate status code.
