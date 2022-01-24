@@ -12,7 +12,7 @@ import zipfile
 
 import luigi
 
-from labe.base import BaseTask, shellout
+from labe.base import BaseTask, shellout, ensure_minimum_filesize
 from labe.oci import OpenCitationsDataset
 
 __all__ = [
@@ -37,8 +37,9 @@ class Task(BaseTask):
     # Where all output will go by default.
     BASE = os.path.join(tempfile.gettempdir())
 
-    # As a basic sanity check, fail, if output file fall below certain file sizes (in bytes).
-    expected_output_file_sizes = {
+    # As a basic sanity check, fail, if output file fall below certain file
+    # sizes (in bytes). TODO: May also live in the config file.
+    minimum_file_size_map = {
         "IdMappingDatabase": 12_000_000_000,
         "IdMappingTable": 400_000_000,
         "OpenCitationsDatabase": 150_000_000_000,
@@ -71,14 +72,6 @@ class Task(BaseTask):
         url = self.open_citations_url()
         return hashlib.sha1(url.encode("utf-8")).hexdigest()
 
-    def ensure_minimum_filesize(self, filename, minimum_size):
-        """
-        Raise an exception, if filename is smaller than filesize.
-        """
-        filesize = os.path.getsize(filename)
-        if filesize < minimum_size:
-            raise RuntimeError("{}: unexpected file size, got {}, want at least {}".format(
-                filename, filesize, minimum_size))
 
 
 class OpenCitationsDownload(Task):
@@ -96,7 +89,7 @@ class OpenCitationsDownload(Task):
 
         # Do a basic sanity check right here, e.g. in 12/2021 filesize was
         # about 30GB; we fail if the file size seems too small.
-        self.ensure_minimum_filesize(output, self.expected_output_file_sizes["OpenCitationsDownload"])
+        ensure_minimum_filesize(output, self.minimum_file_size_map["OpenCitationsDownload"])
         # We excect a zip file.
         if not zipfile.is_zipfile(output):
             raise RuntimeError("not a zip: {}".format(output))
@@ -169,7 +162,7 @@ class OpenCitationsDatabase(Task):
                           makta -init -o {output} -I 3
                           """,
                           input=self.input().path)
-        self.ensure_minimum_filesize(output, self.expected_output_file_sizes["OpenCitationsDatabase"])
+        ensure_minimum_filesize(output, self.minimum_file_size_map["OpenCitationsDatabase"])
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -282,8 +275,8 @@ class SolrDatabase(Task):
                           makta -init -I 1 -o {output}
                           """,
                           input=self.input().path)
-        self.ensure_minimum_filesize(
-            output, self.expected_output_file_sizes["SolrDatabase-{}-{}".format(self.name, self.short)])
+        ensure_minimum_filesize(
+            output, self.minimum_file_size_map["SolrDatabase-{}-{}".format(self.name, self.short)])
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -336,7 +329,7 @@ class IdMappingTable(Task):
                  output=output,
                  input=self.input().get("ai").path)
 
-        self.ensure_minimum_filesize(output, self.expected_output_file_sizes["IdMappingTable"])
+        ensure_minimum_filesize(output, self.minimum_file_size_map["IdMappingTable"])
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -360,7 +353,7 @@ class IdMappingDatabase(Task):
                               makta -init -o {output} -I 3
                           """,
                           input=self.input().path)
-        self.ensure_minimum_filesize(output, self.expected_output_file_sizes["IdMappingDatabase"])
+        ensure_minimum_filesize(output, self.minimum_file_size_map["IdMappingDatabase"])
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
