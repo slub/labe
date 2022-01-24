@@ -487,6 +487,6 @@ func WarmCache(r io.Reader, hostport string) error {
 		return nil, nil
 	})
 	pp.BatchSize = 10
-	pp.NumWorkers = runtime.NumCPU()
+	pp.NumWorkers = 4 * runtime.NumCPU()
 	return pp.Run()
 }
