@@ -12,7 +12,7 @@ import zipfile
 
 import luigi
 
-from labe.base import BaseTask, ensure_minimum_filesize, shellout
+from labe.base import BaseTask, ensure_minimum_file_size, shellout
 from labe.oci import OpenCitationsDataset
 
 __all__ = [
@@ -88,7 +88,7 @@ class OpenCitationsDownload(Task):
 
         # Do a basic sanity check right here, e.g. in 12/2021 filesize was
         # about 30GB; we fail if the file size seems too small.
-        ensure_minimum_filesize(output, self.minimum_file_size_map["OpenCitationsDownload"])
+        ensure_minimum_file_size(output, self.minimum_file_size_map["OpenCitationsDownload"])
         # We excect a zip file.
         if not zipfile.is_zipfile(output):
             raise RuntimeError("not a zip: {}".format(output))
@@ -161,7 +161,7 @@ class OpenCitationsDatabase(Task):
                           makta -init -o {output} -I 3
                           """,
                           input=self.input().path)
-        ensure_minimum_filesize(output, self.minimum_file_size_map["OpenCitationsDatabase"])
+        ensure_minimum_file_size(output, self.minimum_file_size_map["OpenCitationsDatabase"])
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -298,7 +298,7 @@ class SolrDatabase(Task):
                           makta -init -I 1 -o {output}
                           """,
                           input=self.input().path)
-        ensure_minimum_filesize(output, self.minimum_file_size_map["SolrDatabase-{}-{}".format(self.name, self.short)])
+        ensure_minimum_file_size(output, self.minimum_file_size_map["SolrDatabase-{}-{}".format(self.name, self.short)])
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -351,7 +351,7 @@ class IdMappingTable(Task):
                  output=output,
                  input=self.input().get("ai").path)
 
-        ensure_minimum_filesize(output, self.minimum_file_size_map["IdMappingTable"])
+        ensure_minimum_file_size(output, self.minimum_file_size_map["IdMappingTable"])
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -375,7 +375,7 @@ class IdMappingDatabase(Task):
                               makta -init -o {output} -I 3
                           """,
                           input=self.input().path)
-        ensure_minimum_filesize(output, self.minimum_file_size_map["IdMappingDatabase"])
+        ensure_minimum_file_size(output, self.minimum_file_size_map["IdMappingDatabase"])
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
