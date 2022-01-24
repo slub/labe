@@ -41,6 +41,7 @@ var (
 	showVersion            = flag.Bool("version", false, "show version")
 	logFile                = flag.String("logfile", "", "file to log to")
 	quiet                  = flag.Bool("q", false, "no output at all")
+	warmCache              = flag.Bool("warm-cache", false, "warm cache, read one DOI per line from stdin")
 
 	sqliteFetcherPaths xflag.Array // allows to specify multiple database to get catalog metadata from
 
@@ -109,6 +110,12 @@ func main() {
 	// Show version.
 	if *showVersion {
 		fmt.Printf("labed %v %v\n", Version, Buildtime)
+		os.Exit(0)
+	}
+	if *warmCache {
+		if err := ckit.WarmCache(os.Stdin, *listenAddr); err != nil {
+			log.Fatal(err)
+		}
 		os.Exit(0)
 	}
 	var (

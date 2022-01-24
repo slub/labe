@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"regexp"
@@ -15,6 +16,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	"github.com/klauspost/compress/zstd"
+	"github.com/miku/parallel"
 	"github.com/segmentio/encoding/json"
 	"github.com/slub/labe/go/ckit/cache"
 	"github.com/slub/labe/go/ckit/set"
@@ -462,4 +464,23 @@ func httpErrLog(w http.ResponseWriter, err error) {
 		status = http.StatusNotFound
 	}
 	httpErrLogStatus(w, err, status)
+}
+
+// WarmCache reads one DOI per line from reader and requests the fused result.
+// The server will cache the response in the process. The
+func WarmCache(r io.Reader, hostport string) error {
+	pp := parallel.NewProcessor(r, ioutil.Discard, func(p []byte) ([]byte, error) {
+		p = bytes.TrimSpace(p)
+		var (
+			link      = fmt.Sprintf("http://%s/doi/%s", hostport, string(p))
+			resp, err = http.Get(link)
+		)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+		return nil, nil
+	})
+	pp.BatchSize = 1000
+	return pp.Run()
 }
