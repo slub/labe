@@ -17,6 +17,7 @@ import xdg
 __all__ = [
     'BaseTask',
     'ClosestDateParameter',
+    'ensure_minimal_file_size',
     'shellout',
 ]
 
