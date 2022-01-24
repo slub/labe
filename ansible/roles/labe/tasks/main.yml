@@ -72,6 +72,11 @@
     env: true
     job: /usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
+# Setup crontab for data updates. We squash the various steps into a one-liner:
+# (a) delete obsolete artifacts, (b) run data updates, (c) restart the server,
+# (d) warm cache.
+#
+# As of 01/2022, (b) takes about 3-4 hours, (d) maybe 1-2 hours.
 - name: "Setup crontab for data updates"
   cron:
     name: Data updates for labe
@@ -81,4 +86,5 @@
     job: >
       rm -f $(/usr/local/bin/labe.pyz --data-dir /usr/share --list-deletable) &&
       /usr/local/bin/labe.pyz --data-dir /usr/share -r CombinedUpdate --workers 4 &&
-      sudo /usr/bin/systemctl restart labed
+      sudo /usr/bin/systemctl restart labed &&
+      /usr/local/bin/labe.pyz --data-dir /usr/share -r WarmServerCache
