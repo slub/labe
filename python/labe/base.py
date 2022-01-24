@@ -169,15 +169,14 @@ class BaseTask(luigi.Task):
         return os.path.join(self.BASE, self.TAG, self.task_family, filename)
 
 
-def ensure_minimal_file_size(filename, size=1024):
+def ensure_minimum_file_size(filename, size=1024):
     """
     Raises an exception, when condition fails, otherwise returns None.
     """
     sz = os.path.getsize(filename)
     if sz >= size:
         return
-    raise RuntimeError("minimum filesize underflow for {}, got {}, want at least {}".format(
-        filename, filesize, minimum_size))
+    raise RuntimeError("size underflow for {}, got {}, want at least {}".format(filename, sz, size))
 
 
 def shellout(template,

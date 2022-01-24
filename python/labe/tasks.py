@@ -198,7 +198,8 @@ class OpenCitationsRanked(Task):
                           zstd -cd -T0 {input} |
                           LC_ALL=C sort -S50% |
                           LC_ALL=C uniq -c |
-                          LC_ALL=C sort -nr -S 20% > {output}
+                          LC_ALL=C sort -nr -S 20% |
+                          zstd -c -T0 > {output}
                           """,
                           input=dois)
         luigi.LocalTarget(output).move(self.output().path)
@@ -206,7 +207,7 @@ class OpenCitationsRanked(Task):
 
     def output(self):
         fingerprint = self.open_citations_url_hash()
-        filename = "{}.zst".format(fingerprint)
+        filename = "{}.txt.zst".format(fingerprint)
         return luigi.LocalTarget(path=self.path(filename=filename))
 
     def on_success(self):
@@ -217,6 +218,7 @@ class WarmServerCache(Task):
     """
     Warm the server cache. Takes about 3h for 100K urls.
     """
+    n = luigi.IntParameter(default=50000, description="number of doi to request", significant=False)
 
     def requires(self):
         return OpenCitationsRanked()
@@ -225,11 +227,14 @@ class WarmServerCache(Task):
         """
         """
         shellout("""
-                 zstd -cd -T0 {input} |
-                 awk '{{ $2 }}' |
-                 head -50000 |
+                 zstd -q -cd -T0 {input} |
+                 awk '{{ print $2 }}' |
+                 head -n {n} |
                  labed -warm-cache -addr localhost:8000
-                 """)
+                 """,
+                 input=self.input().path,
+                 n=self.n,
+                 ignoremap={141: "broken pipe ok"})
 
     def complete(self):
         return False
