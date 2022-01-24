@@ -167,6 +167,7 @@ class BaseTask(luigi.Task):
 
         return os.path.join(self.BASE, self.TAG, self.task_family, filename)
 
+
 def ensure_minimal_file_size(filename, size=1024):
     """
     Raises an exception, when condition fails, otherwise returns None.

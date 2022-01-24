@@ -12,7 +12,7 @@ import zipfile
 
 import luigi
 
-from labe.base import BaseTask, shellout, ensure_minimum_filesize
+from labe.base import BaseTask, ensure_minimum_filesize, shellout
 from labe.oci import OpenCitationsDataset
 
 __all__ = [
@@ -71,7 +71,6 @@ class Task(BaseTask):
         """
         url = self.open_citations_url()
         return hashlib.sha1(url.encode("utf-8")).hexdigest()
-
 
 
 class OpenCitationsDownload(Task):
@@ -192,7 +191,9 @@ class OpenCitationsRanked(Task):
                          tr ',' '\n' |
                          grep ^10 |
                          zstd -T0 -c >> {output}
-                         """, input=self.input().path, preserve_whitespace=True)
+                         """,
+                        input=self.input().path,
+                        preserve_whitespace=True)
         output = shellout("""
                           zstd -cd -T0 {input} |
                           LC_ALL=C sort -S50% |
@@ -297,8 +298,7 @@ class SolrDatabase(Task):
                           makta -init -I 1 -o {output}
                           """,
                           input=self.input().path)
-        ensure_minimum_filesize(
-            output, self.minimum_file_size_map["SolrDatabase-{}-{}".format(self.name, self.short)])
+        ensure_minimum_filesize(output, self.minimum_file_size_map["SolrDatabase-{}-{}".format(self.name, self.short)])
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
