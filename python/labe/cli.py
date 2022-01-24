@@ -149,6 +149,7 @@ def main():
         sys.exit(0)
 
     elif args.list_deletable:
+        # TODO: whitelist tasks or directories, e.g. for reports
         labe_data_dir = os.path.join(args.data_dir, Task.TAG)  # hack to get the subdirectory (e.g. "labe")
         # rm -f $(labe.pyz --list-deletable)
         filenames = set()
