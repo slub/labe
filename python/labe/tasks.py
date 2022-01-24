@@ -225,11 +225,13 @@ class WarmServerCache(Task):
 
     def run(self):
         """
+        We can also put this into cron directly.
         """
         shellout("""
                  zstd -q -cd -T0 {input} |
                  awk '{{ print $2 }}' |
                  head -n {n} |
+                 shuf |
                  labed -warm-cache -addr localhost:8000
                  """,
                  input=self.input().path,
