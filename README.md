@@ -4,6 +4,8 @@
 
 Merging citations and catalog data at [SLUB Dresden](https://www.slub-dresden.de/).
 
+![](static/Overview.png)
+
 > Status: testing
 
 ## Project
