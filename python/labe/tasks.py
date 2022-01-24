@@ -212,6 +212,28 @@ class OpenCitationsRanked(Task):
         self.create_symlink(name="current")
 
 
+class WarmServerCache(Task):
+    """
+    Warm the server cache. Takes about 3h for 100K urls.
+    """
+
+    def requires(self):
+        return OpenCitationsRanked()
+
+    def run(self):
+        """
+        """
+        shellout("""
+                 zstd -cd -T0 {input} |
+                 awk '{{ $2 }}' |
+                 head -50000 |
+                 labed -warm-cache -addr localhost:8000
+                 """)
+
+    def complete(self):
+        return False
+
+
 class SolrFetchDocs(Task):
     """
     Fetch JSON data from SOLR; uses solrdump (https://github.com/ubleipzig/solrdump).
