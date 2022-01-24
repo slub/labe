@@ -109,13 +109,7 @@ Flags
 
   -addr string
         host and port to listen on (default "localhost:8000")
-  -c    enable in-memory caching of expensive responses
-  -cg duration
-        cache trigger duration (default 250ms)
-  -ct duration
-        cache cleanup interval (default 8h0m0s)
-  -cx duration
-        cache default expiration (default 72h0m0s)
+  -c    enable caching of expensive responses
   -i string
         identifier database path (id-doi mapping)
   -l    enable logging
@@ -128,8 +122,12 @@ Flags
   -q    no output at all
   -stopwatch
         enable stopwatch
+  -t duration
+        cache trigger duration (default 250ms)
   -version
         show version
+  -warm-cache
+        warm cache, read one DOI per line from stdin
   -z    enable gzip compression
 ```
 
