@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"runtime"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -469,18 +470,23 @@ func httpErrLog(w http.ResponseWriter, err error) {
 // WarmCache reads one DOI per line from reader and requests the fused result.
 // The server will cache the response in the process. The
 func WarmCache(r io.Reader, hostport string) error {
+	client := http.Client{
+		Timeout: 60 * time.Second,
+	}
 	pp := parallel.NewProcessor(r, ioutil.Discard, func(p []byte) ([]byte, error) {
 		p = bytes.TrimSpace(p)
 		var (
 			link      = fmt.Sprintf("http://%s/doi/%s", hostport, string(p))
-			resp, err = http.Get(link)
+			resp, err = client.Get(link)
 		)
+		log.Println(link)
 		if err != nil {
 			return nil, err
 		}
 		defer resp.Body.Close()
 		return nil, nil
 	})
-	pp.BatchSize = 1000
+	pp.BatchSize = 10
+	pp.NumWorkers = runtime.NumCPU()
 	return pp.Run()
 }
