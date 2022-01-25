@@ -343,6 +343,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			// This is where the difference in the benchmark runs comes from,
 			// e.g. 64860/100000; estimated ratio 64% of records with DOI will
 			// have some reference information. TODO: dig a bit deeper.
+			log.Printf("no citations found for %s", vars["id"])
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -479,6 +480,7 @@ func httpErrLogStatus(w http.ResponseWriter, err error, status int) {
 	b, err := json.Marshal(em)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	http.Error(w, string(b), status)
 }
