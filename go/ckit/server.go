@@ -319,6 +319,9 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		// (1) Get the DOI for the local id; or get out.
 		if err := s.IdentifierDatabase.GetContext(ctx, &response.DOI,
 			"SELECT v FROM map WHERE k = ?", response.ID); err != nil {
+			if err == sql.ErrNoRows {
+				log.Printf("no doi for local identifier")
+			}
 			httpErrLog(w, err)
 			return
 		}
