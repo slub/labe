@@ -243,7 +243,7 @@ func (s *Server) handleDOI() http.HandlerFunc {
 		)
 		if err := s.IdentifierDatabase.GetContext(ctx, &response.ID,
 			"SELECT k FROM map WHERE v = ?", response.DOI); err != nil {
-			httpErrLogf(w, "id lookup: %w", err)
+			httpErrLogf(w, "id lookup (%s): %w", response.DOI, err)
 		} else {
 			target := fmt.Sprintf("/id/%s", response.ID)
 			w.Header().Set("Content-Type", "text/plain") // disable http snippet
@@ -322,7 +322,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		if err := s.IdentifierDatabase.GetContext(ctx, &response.DOI,
 			"SELECT v FROM map WHERE k = ?", response.ID); err != nil {
 			if err == sql.ErrNoRows {
-				log.Printf("no doi for local identifier")
+				log.Printf("no doi for local identifier (%s)", response.ID)
 			}
 			httpErrLogf(w, "select id: %w", err)
 			return
@@ -475,6 +475,10 @@ func (s *Server) Ping() error {
 	return nil
 }
 
+func httpErrLogf(w http.ResponseWriter, msg string, a ...interface{}) {
+	httpErrLog(w, fmt.Errorf(msg, a))
+}
+
 // httpErrLog tries to infer an appropriate status code.
 func httpErrLog(w http.ResponseWriter, err error) {
 	var status = http.StatusInternalServerError
@@ -500,8 +504,4 @@ func httpErrLogStatus(w http.ResponseWriter, err error, status int) {
 		return
 	}
 	http.Error(w, string(b), status)
-}
-
-func httpErrLogf(w http.ResponseWriter, msg string, err error) {
-	httpErrLog(w, fmt.Errorf(msg, err))
 }
