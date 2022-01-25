@@ -181,7 +181,7 @@ Available endpoints:
     /              GET
     /id/{id}       GET
     /doi/{doi}     GET
-    /cache/size    GET
+    /cache         GET
     /cache         DELETE
 
 Examples (hostport may be different):
