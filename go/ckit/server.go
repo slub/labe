@@ -120,20 +120,46 @@ func (s *Server) edges(ctx context.Context, doi string) (citing, cited []Map, er
 	return citing, cited, nil
 }
 
+// batchedStrings batches one string slice into a potentially smaller number of
+// strings slices with size at most n.
+func batchedStrings(ss []string, n int) (result [][]string) {
+	b, e := 0, n
+	for {
+		if len(ss) < e {
+			result = append(result, ss[b:])
+			return
+		} else {
+			result = append(result, ss[b:e])
+			b, e = e, e+n
+		}
+	}
+	return
+}
+
 // mapToLocal takes a list of DOI and returns a slice of Maps containing the
 // local id and DOI.
 // TODO: "too many SQL variables", SQLITE_LIMIT_VARIABLE_NUMBER (default value:
 // 999, cf: https://www.daemon-systems.org/man/sqlite3_bind_blob.3.html).
 func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err error) {
-	query, args, err := sqlx.In("SELECT * FROM map WHERE v IN (?)", dois)
-	if err != nil {
-		return nil, fmt.Errorf("query (%d): %v", len(dois), err)
-	}
-	query = s.IdentifierDatabase.Rebind(query)
-	if err := s.IdentifierDatabase.SelectContext(ctx, &ids, query, args...); err != nil {
-		// 2022/01/25 14:14:16 failed [500]: select: too many SQL variables
-		// 127.0.0.1 - - [25/Jan/2022:14:14:14 +0100] "GET /id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEwMy9waHlzcmV2bGV0dC43Ny4zODY1 HTTP/1.1" 500 24
-		return nil, fmt.Errorf("select (%d): %v", len(dois), err)
+	// sqlite has a limit on the variable count, which at most is 999.
+	//
+	//   The NNN value must be between 1 and the sqlite3_limit() parameter
+	//   SQLITE_LIMIT_VARIABLE_NUMBER (default value: 999)
+	for _, batch := range batchedStrings(dois, 500) {
+		query, args, err := sqlx.In("SELECT * FROM map WHERE v IN (?)", batch)
+		if err != nil {
+			return nil, fmt.Errorf("query (%d): %v", len(dois), err)
+		}
+		var result []Map
+		query = s.IdentifierDatabase.Rebind(query)
+		if err := s.IdentifierDatabase.SelectContext(ctx, &result, query, args...); err != nil {
+			// 2022/01/25 14:14:16 failed [500]: select: too many SQL variables
+			// 127.0.0.1 - - [25/Jan/2022:14:14:14 +0100] "GET /id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEwMy9waHlzcmV2bGV0dC43Ny4zODY1 HTTP/1.1" 500 24
+			return nil, fmt.Errorf("select (%d): %v", len(dois), err)
+		}
+		for _, r := range result {
+			ids = append(ids, r)
+		}
 	}
 	return ids, nil
 }
