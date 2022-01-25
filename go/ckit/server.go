@@ -246,7 +246,8 @@ func (s *Server) handleDOI() http.HandlerFunc {
 		)
 		if err := s.IdentifierDatabase.GetContext(ctx, &response.ID,
 			"SELECT k FROM map WHERE v = ?", response.DOI); err != nil {
-			httpErrLogf(w, "id lookup: %w", err)
+			http.Error(w, "no id found", http.StatusNotFound)
+			return
 		} else {
 			target := fmt.Sprintf("/id/%s", response.ID)
 			w.Header().Set("Content-Type", "text/plain") // disable http snippet
