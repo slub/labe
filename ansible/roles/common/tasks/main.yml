@@ -20,6 +20,7 @@
       - locales
       - logrotate
       - moreutils
+      - multitail
       - ncdu
       - netcat
       - parallel
