@@ -127,11 +127,13 @@ func (s *Server) edges(ctx context.Context, doi string) (citing, cited []Map, er
 func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err error) {
 	query, args, err := sqlx.In("SELECT * FROM map WHERE v IN (?)", dois)
 	if err != nil {
-		return nil, fmt.Errorf("query: %v", err)
+		return nil, fmt.Errorf("query (%d): %v", len(dois), err)
 	}
 	query = s.IdentifierDatabase.Rebind(query)
 	if err := s.IdentifierDatabase.SelectContext(ctx, &ids, query, args...); err != nil {
-		return nil, fmt.Errorf("select: %v", err)
+		// 2022/01/25 14:14:16 failed [500]: select: too many SQL variables
+		// 127.0.0.1 - - [25/Jan/2022:14:14:14 +0100] "GET /id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEwMy9waHlzcmV2bGV0dC43Ny4zODY1 HTTP/1.1" 500 24
+		return nil, fmt.Errorf("select (%d): %v", len(dois), err)
 	}
 	return ids, nil
 }
