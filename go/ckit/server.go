@@ -243,7 +243,7 @@ func (s *Server) handleDOI() http.HandlerFunc {
 		)
 		if err := s.IdentifierDatabase.GetContext(ctx, &response.ID,
 			"SELECT k FROM map WHERE v = ?", response.DOI); err != nil {
-			httpErrLogf(w, "id lookup (%s): %w", response.DOI, err)
+			httpErrLogf(w, "id lookup: %w", err)
 		} else {
 			target := fmt.Sprintf("/id/%s", response.ID)
 			w.Header().Set("Content-Type", "text/plain") // disable http snippet
@@ -475,8 +475,8 @@ func (s *Server) Ping() error {
 	return nil
 }
 
-func httpErrLogf(w http.ResponseWriter, msg string, a ...interface{}) {
-	httpErrLog(w, fmt.Errorf(msg, a))
+func httpErrLogf(w http.ResponseWriter, s string, a ...interface{}) {
+	httpErrLog(w, fmt.Errorf(s, a))
 }
 
 // httpErrLog tries to infer an appropriate status code.
