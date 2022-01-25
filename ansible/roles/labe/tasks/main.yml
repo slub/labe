@@ -22,9 +22,17 @@
   systemd:
     daemon_reload: true
 
-- name: "Change logging file ownership"
+- name: "Change application log file ownership"
   ansible.builtin.file:
     path: /var/log/labe.log
+    owner: labe
+    group: labe
+    state: touch
+    mode: '0644'
+
+- name: "Change access log file ownership"
+  ansible.builtin.file:
+    path: /var/log/labe-access.log
     owner: labe
     group: labe
     state: touch
@@ -52,7 +60,16 @@
           /var/log/labe.log {
               daily
               rotate 3
-              size 200M
+              size 100M
+              compress
+              delaycompress
+          }
+      - path: labe-access
+        conf: |
+          /var/log/labe-access.log {
+              daily
+              rotate 3
+              size 100M
               compress
               delaycompress
           }

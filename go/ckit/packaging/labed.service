@@ -9,7 +9,7 @@ User=labe
 WorkingDirectory=/tmp
 ExecStart=/usr/local/bin/labed \
                 -addr 0.0.0.0:8000 \
-                -l \
+                -a /var/log/labe-access.log \
                 -logfile /var/log/labe.log \
                 -c \
                 -z \

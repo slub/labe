@@ -30,17 +30,17 @@ import (
 )
 
 var (
+	listenAddr             = flag.String("addr", "localhost:8000", "host and port to listen on")
 	identifierDatabasePath = flag.String("i", "", "identifier database path (id-doi mapping)")
 	ociDatabasePath        = flag.String("o", "", "oci as a datbase path (citations)")
-	listenAddr             = flag.String("addr", "localhost:8000", "host and port to listen on")
 	enableStopWatch        = flag.Bool("stopwatch", false, "enable stopwatch")
 	enableGzip             = flag.Bool("z", false, "enable gzip compression")
-	enableLogging          = flag.Bool("l", false, "enable logging")
 	enableCache            = flag.Bool("c", false, "enable caching of expensive responses")
 	cacheTriggerDuration   = flag.Duration("t", 250*time.Millisecond, "cache trigger duration")
 	showVersion            = flag.Bool("version", false, "show version")
-	logFile                = flag.String("logfile", "", "file to log to")
-	quiet                  = flag.Bool("q", false, "no output at all")
+	accessLogFile          = flag.String("a", "", "path to access log file, do not write access log if empty")
+	logFile                = flag.String("logfile", "", "application log file (stderr if empty)")
+	quiet                  = flag.Bool("q", false, "no application logging at all")
 	warmCache              = flag.Bool("warm-cache", false, "warm cache, read one DOI per line from stdin")
 
 	sqliteFetcherPaths xflag.Array // allows to specify multiple database to get catalog metadata from
@@ -195,8 +195,13 @@ func main() {
 	if *enableGzip {
 		h = handlers.CompressHandler(srv)
 	}
-	if *enableLogging {
-		h = handlers.LoggingHandler(logWriter, h)
+	if *accessLogFile != "" {
+		f, err := os.OpenFile(*accessLogFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 644)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		h = handlers.LoggingHandler(f, h)
 	}
 	log.Fatal(http.ListenAndServe(*listenAddr, h))
 }
