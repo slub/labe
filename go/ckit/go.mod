@@ -19,5 +19,6 @@ require (
 require (
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
+	github.com/thoas/stats v0.0.0-20190407194641-965cb2de1678 // indirect
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
 )

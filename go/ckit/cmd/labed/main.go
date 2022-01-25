@@ -27,6 +27,7 @@ import (
 	"github.com/slub/labe/go/ckit/cache"
 	"github.com/slub/labe/go/ckit/tabutils"
 	"github.com/slub/labe/go/ckit/xflag"
+	"github.com/thoas/stats"
 )
 
 var (
@@ -159,6 +160,7 @@ func main() {
 		IndexData:          fetcher,
 		Router:             mux.NewRouter(),
 		StopWatchEnabled:   *enableStopWatch,
+		Stats:              stats.New(),
 	}
 	// Setup caching.
 	if *enableCache {
@@ -186,8 +188,9 @@ func main() {
 	// Print banner.
 	fmt.Fprintln(os.Stderr, strings.Replace(Banner, `{{ .listenAddr }}`, *listenAddr, -1))
 	log.Printf("labed starting %s %s http://%s", Version, Buildtime, *listenAddr)
-	// Add middleware.
+	// Our server handler.
 	var h http.Handler = srv
+	// Add middleware.
 	if *enableGzip {
 		h = handlers.CompressHandler(srv)
 	}

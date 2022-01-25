@@ -19,6 +19,7 @@ import (
 	"github.com/segmentio/encoding/json"
 	"github.com/slub/labe/go/ckit/cache"
 	"github.com/slub/labe/go/ckit/set"
+	"github.com/thoas/stats"
 )
 
 // Server wraps three data sources required for index and citation data fusion.
@@ -45,6 +46,7 @@ type Server struct {
 	StopWatchEnabled     bool
 	Cache                *cache.Cache
 	CacheTriggerDuration time.Duration
+	Stats                *stats.Stats
 }
 
 // Map is a generic lookup table. We use it together with sqlite3. This
@@ -98,6 +100,9 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/cache", s.handleCachePurge()).Methods("DELETE")
 	s.Router.HandleFunc("/id/{id}", s.handleLocalIdentifier()).Methods("GET")
 	s.Router.HandleFunc("/doi/{doi:.*}", s.handleDOI()).Methods("GET")
+	if s.Stats != nil {
+		s.Router.HandleFunc("/stats", s.handleStats()).Methods("GET")
+	}
 }
 
 // ServeHTTP turns the server into an HTTP handler.
@@ -126,6 +131,7 @@ Available endpoints:
     /doi/{doi}     GET
     /cache         GET
     /cache         DELETE
+	/stats         GET
 
 Examples (hostport may be different):
 
@@ -170,6 +176,20 @@ func (s *Server) handleCachePurge() http.HandlerFunc {
 		if s.Cache != nil {
 			s.Cache.Flush()
 			log.Println("flushed cached")
+		}
+	}
+}
+
+func (s *Server) handleStats() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if s.Stats == nil {
+			httpErrLog(w, http.StatusNotFound, fmt.Errorf("stats not configured"))
+			return
+		}
+		enc := json.NewEncoder(w)
+		if err := enc.Encode(s.Stats.Data()); err != nil {
+			httpErrLog(w, http.StatusInternalServerError, err)
+			return
 		}
 	}
 }
