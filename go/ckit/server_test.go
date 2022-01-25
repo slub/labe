@@ -26,6 +26,11 @@ func TestBatchedStrings(t *testing.T) {
 				[]string{"a", "b"}, []string{"c"},
 			},
 		},
+		{
+			[]string{"a", "b", "c", "d"}, 2, [][]string{
+				[]string{"a", "b"}, []string{"c", "d"},
+			},
+		},
 	}
 	for _, c := range cases {
 		result := batchedStrings(c.s, c.n)

@@ -123,7 +123,7 @@ func (s *Server) edges(ctx context.Context, doi string) (citing, cited []Map, er
 func batchedStrings(ss []string, n int) (result [][]string) {
 	b, e := 0, n
 	for {
-		if len(ss) < e {
+		if len(ss) <= e {
 			result = append(result, ss[b:])
 			return
 		} else {
@@ -144,6 +144,9 @@ func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err 
 	//   The NNN value must be between 1 and the sqlite3_limit() parameter
 	//   SQLITE_LIMIT_VARIABLE_NUMBER (default value: 999)
 	for _, batch := range batchedStrings(dois, 500) {
+		if len(batch) == 0 {
+			continue
+		}
 		query, args, err := sqlx.In("SELECT * FROM map WHERE v IN (?)", batch)
 		if err != nil {
 			return nil, fmt.Errorf("query (%d): %v", len(dois), err)
@@ -476,7 +479,7 @@ func (s *Server) Ping() error {
 }
 
 func httpErrLogf(w http.ResponseWriter, s string, a ...interface{}) {
-	httpErrLog(w, fmt.Errorf(s, a))
+	httpErrLog(w, fmt.Errorf(s, a...))
 }
 
 // httpErrLog tries to infer an appropriate status code.
