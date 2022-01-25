@@ -7,17 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"regexp"
-	"runtime"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	"github.com/klauspost/compress/zstd"
-	"github.com/miku/parallel"
 	"github.com/segmentio/encoding/json"
 	"github.com/slub/labe/go/ckit/cache"
 	"github.com/slub/labe/go/ckit/set"
@@ -241,12 +238,12 @@ func (s *Server) handleDOI() http.HandlerFunc {
 		)
 		if err := s.IdentifierDatabase.GetContext(ctx, &response.ID,
 			"SELECT k FROM map WHERE v = ?", response.DOI); err != nil {
-			httpErrLog(w, err)
-			return
+			httpErrLogf(w, "id lookup: %w", err)
+		} else {
+			target := fmt.Sprintf("/id/%s", response.ID)
+			w.Header().Set("Content-Type", "text/plain") // disable http snippet
+			http.Redirect(w, r, target, http.StatusTemporaryRedirect)
 		}
-		target := fmt.Sprintf("/id/%s", response.ID)
-		w.Header().Set("Content-Type", "text/plain") // disable http snippet
-		http.Redirect(w, r, target, http.StatusTemporaryRedirect)
 	}
 }
 
@@ -291,12 +288,12 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				// decompress the value
 				r, err := zstd.NewReader(bytes.NewReader(b))
 				if err != nil {
-					httpErrLog(w, err)
+					httpErrLogf(w, "cache decompress: %w", err)
 					return
 				}
 				var buf bytes.Buffer
 				if _, err := io.Copy(&buf, r); err != nil {
-					httpErrLog(w, err)
+					httpErrLogf(w, "cache copy: %w", err)
 					return
 				}
 				// Hack to update "extra.took" field w/o parsing and
@@ -308,7 +305,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				took := fmt.Sprintf(`"took":%f`, time.Since(started).Seconds())
 				b = tookRegexp.ReplaceAll(buf.Bytes(), []byte(took))
 				if _, err := w.Write(b); err != nil {
-					httpErrLog(w, err)
+					httpErrLogf(w, "write: %w", err)
 					return
 				}
 				sw.Record("used cached value")
@@ -322,14 +319,14 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			if err == sql.ErrNoRows {
 				log.Printf("no doi for local identifier")
 			}
-			httpErrLog(w, err)
+			httpErrLogf(w, "select id: %w", err)
 			return
 		}
 		sw.Recordf("found doi for id: %s", response.DOI)
 		// (2) Get outbound and inbound edges.
 		citing, cited, err := s.edges(ctx, response.DOI)
 		if err != nil {
-			httpErrLog(w, err)
+			httpErrLogf(w, "edges: %w", err)
 			return
 		}
 		sw.Recordf("found %d outbound and %d inbound edges", len(citing), len(cited))
@@ -352,7 +349,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		}
 		// (4) Map relevant DOI back to local identifiers.
 		if ids, err = s.mapToLocal(ctx, ss.Slice()); err != nil {
-			httpErrLog(w, err)
+			httpErrLogf(w, "map: %w", err)
 			return
 		}
 		sw.Recordf("mapped %d dois back to ids", ss.Len())
@@ -391,7 +388,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				continue
 			}
 			if err != nil {
-				httpErrLog(w, err)
+				httpErrLogf(w, "index data fetch: %w", err)
 				return
 			}
 			switch {
@@ -415,7 +412,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			)
 			zw, err := zstd.NewWriter(&zbuf)
 			if err != nil {
-				httpErrLog(w, err)
+				httpErrLogf(w, "cache compress: %w", err)
 				return
 			}
 			var (
@@ -425,11 +422,11 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				enc = json.NewEncoder(mw)
 			)
 			if err := enc.Encode(response); err != nil {
-				httpErrLog(w, err)
+				httpErrLogf(w, "cache encode: %w", err)
 				return
 			}
 			if err := zw.Close(); err != nil {
-				httpErrLog(w, err)
+				httpErrLogf(w, "cache close: %w", err)
 				return
 			}
 			if err := s.Cache.Set(vars["id"], zbuf.Bytes()); err != nil {
@@ -438,7 +435,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				sw.Recordf("cached value (r: %0.2f)", float64(zbuf.Len())/float64(buf.Len()))
 			}
 			if _, err := w.Write(buf.Bytes()); err != nil {
-				httpErrLog(w, err)
+				httpErrLogf(w, "cache write: %w", err)
 				return
 			} else {
 				sw.Record("encoded json")
@@ -446,7 +443,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		default:
 			enc := json.NewEncoder(w)
 			if err := enc.Encode(response); err != nil {
-				httpErrLog(w, err)
+				httpErrLogf(w, "encode: %w", err)
 				return
 			}
 			sw.Record("encoded JSON")
@@ -473,6 +470,18 @@ func (s *Server) Ping() error {
 	return nil
 }
 
+// httpErrLog tries to infer an appropriate status code.
+func httpErrLog(w http.ResponseWriter, err error) {
+	var status = http.StatusInternalServerError
+	if errors.Is(err, context.Canceled) {
+		return
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		status = http.StatusNotFound
+	}
+	httpErrLogStatus(w, err, status)
+}
+
 // httpErrLogStatus logs the error and returns.
 func httpErrLogStatus(w http.ResponseWriter, err error, status int) {
 	log.Printf("failed [%d]: %v", status, err)
@@ -488,38 +497,6 @@ func httpErrLogStatus(w http.ResponseWriter, err error, status int) {
 	http.Error(w, string(b), status)
 }
 
-// httpErrLog tries to infer an appropriate status code.
-func httpErrLog(w http.ResponseWriter, err error) {
-	var status = http.StatusInternalServerError
-	if errors.Is(err, context.Canceled) {
-		return
-	}
-	if errors.Is(err, sql.ErrNoRows) {
-		status = http.StatusNotFound
-	}
-	httpErrLogStatus(w, err, status)
-}
-
-// WarmCache reads one DOI per line from reader and requests the fused result.
-// The server will cache the response in the process. The
-func WarmCache(r io.Reader, hostport string) error {
-	client := http.Client{
-		Timeout: 60 * time.Second,
-	}
-	pp := parallel.NewProcessor(r, ioutil.Discard, func(p []byte) ([]byte, error) {
-		p = bytes.TrimSpace(p)
-		var (
-			link      = fmt.Sprintf("http://%s/doi/%s", hostport, string(p))
-			resp, err = client.Get(link)
-		)
-		log.Println(link)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-		return nil, nil
-	})
-	pp.BatchSize = 10
-	pp.NumWorkers = 4 * runtime.NumCPU()
-	return pp.Run()
+func httpErrLogf(w http.ResponseWriter, msg string, err error) {
+	httpErrLog(w, fmt.Errorf(msg, err))
 }

@@ -41,7 +41,6 @@ var (
 	accessLogFile          = flag.String("a", "", "path to access log file, do not write access log if empty")
 	logFile                = flag.String("logfile", "", "application log file (stderr if empty)")
 	quiet                  = flag.Bool("q", false, "no application logging at all")
-	warmCache              = flag.Bool("warm-cache", false, "warm cache, read one DOI per line from stdin")
 
 	sqliteFetcherPaths xflag.Array // allows to specify multiple database to get catalog metadata from
 
@@ -110,12 +109,6 @@ func main() {
 	// Show version.
 	if *showVersion {
 		fmt.Printf("labed %v %v\n", Version, Buildtime)
-		os.Exit(0)
-	}
-	if *warmCache {
-		if err := ckit.WarmCache(os.Stdin, *listenAddr); err != nil {
-			log.Fatal(err)
-		}
 		os.Exit(0)
 	}
 	var (

@@ -232,11 +232,10 @@ class WarmServerCache(Task):
                  awk '{{ print $2 }}' |
                  head -n {n} |
                  shuf |
-                 labed -warm-cache -addr localhost:8000
+                 parallel -I {} 'curl -sL "http://localhost:8000/doi/{}"'
                  """,
                  input=self.input().path,
-                 n=self.n,
-                 ignoremap={141: "broken pipe ok"})
+                 n=self.n)
 
     def complete(self):
         return False
