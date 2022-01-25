@@ -105,66 +105,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.Router.ServeHTTP(w, r)
 }
 
-// edges returns citing (outbound) and citing (inbound) edges for a given DOI.
-func (s *Server) edges(ctx context.Context, doi string) (citing, cited []Map, err error) {
-	if err := s.OciDatabase.SelectContext(ctx, &citing,
-		"SELECT * FROM map WHERE k = ?", doi); err != nil {
-		return nil, nil, err
-	}
-	if err := s.OciDatabase.SelectContext(ctx, &cited,
-		"SELECT * FROM map WHERE v = ?", doi); err != nil {
-		return nil, nil, err
-	}
-	return citing, cited, nil
-}
-
-// batchedStrings batches one string slice into a potentially smaller number of
-// strings slices with size at most n.
-func batchedStrings(ss []string, n int) (result [][]string) {
-	b, e := 0, n
-	for {
-		if len(ss) <= e {
-			result = append(result, ss[b:])
-			return
-		} else {
-			result = append(result, ss[b:e])
-			b, e = e, e+n
-		}
-	}
-	return
-}
-
-// mapToLocal takes a list of DOI and returns a slice of Maps containing the
-// local id and DOI.
-// TODO: "too many SQL variables", SQLITE_LIMIT_VARIABLE_NUMBER (default value:
-// 999, cf: https://www.daemon-systems.org/man/sqlite3_bind_blob.3.html).
-func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err error) {
-	// sqlite has a limit on the variable count, which at most is 999.
-	//
-	//   The NNN value must be between 1 and the sqlite3_limit() parameter
-	//   SQLITE_LIMIT_VARIABLE_NUMBER (default value: 999)
-	for _, batch := range batchedStrings(dois, 500) {
-		if len(batch) == 0 {
-			continue
-		}
-		query, args, err := sqlx.In("SELECT * FROM map WHERE v IN (?)", batch)
-		if err != nil {
-			return nil, fmt.Errorf("query (%d): %v", len(dois), err)
-		}
-		var result []Map
-		query = s.IdentifierDatabase.Rebind(query)
-		if err := s.IdentifierDatabase.SelectContext(ctx, &result, query, args...); err != nil {
-			// 2022/01/25 14:14:16 failed [500]: select: too many SQL variables
-			// 127.0.0.1 - - [25/Jan/2022:14:14:14 +0100] "GET /id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEwMy9waHlzcmV2bGV0dC43Ny4zODY1 HTTP/1.1" 500 24
-			return nil, fmt.Errorf("select (%d): %v", len(dois), err)
-		}
-		for _, r := range result {
-			ids = append(ids, r)
-		}
-	}
-	return ids, nil
-}
-
 // handleIndex handles the root route.
 func (s *Server) handleIndex() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -209,7 +149,7 @@ func (s *Server) handleCacheInfo() http.HandlerFunc {
 		if s.Cache != nil {
 			count, err := s.Cache.ItemCount()
 			if err != nil {
-				httpErrLog(w, err)
+				httpErrLog(w, http.StatusInternalServerError, err)
 				return
 			}
 			err = json.NewEncoder(w).Encode(map[string]interface{}{
@@ -217,7 +157,7 @@ func (s *Server) handleCacheInfo() http.HandlerFunc {
 				"path":  s.Cache.Path,
 			})
 			if err != nil {
-				httpErrLog(w, err)
+				httpErrLog(w, http.StatusInternalServerError, err)
 				return
 			}
 		}
@@ -244,9 +184,14 @@ func (s *Server) handleDOI() http.HandlerFunc {
 				DOI: vars["doi"],
 			}
 		)
-		if err := s.IdentifierDatabase.GetContext(ctx, &response.ID,
-			"SELECT k FROM map WHERE v = ?", response.DOI); err != nil {
-			http.Error(w, "no id found", http.StatusNotFound)
+		if err := s.IdentifierDatabase.GetContext(
+			ctx, &response.ID, "SELECT k FROM map WHERE v = ?", response.DOI); err != nil {
+			switch {
+			case err == context.Canceled:
+				log.Println(err)
+			default:
+				http.Error(w, "no id found", http.StatusNotFound)
+			}
 			return
 		} else {
 			target := fmt.Sprintf("/id/%s", response.ID)
@@ -297,12 +242,12 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				// decompress the value
 				r, err := zstd.NewReader(bytes.NewReader(b))
 				if err != nil {
-					httpErrLogf(w, "cache decompress: %w", err)
+					httpErrLogf(w, http.StatusInternalServerError, "cache decompress: %w", err)
 					return
 				}
 				var buf bytes.Buffer
 				if _, err := io.Copy(&buf, r); err != nil {
-					httpErrLogf(w, "cache copy: %w", err)
+					httpErrLogf(w, http.StatusInternalServerError, "cache copy: %w", err)
 					return
 				}
 				// Hack to update "extra.took" field w/o parsing and
@@ -314,7 +259,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				took := fmt.Sprintf(`"took":%f`, time.Since(started).Seconds())
 				b = tookRegexp.ReplaceAll(buf.Bytes(), []byte(took))
 				if _, err := w.Write(b); err != nil {
-					httpErrLogf(w, "write: %w", err)
+					httpErrLogf(w, http.StatusInternalServerError, "write: %w", err)
 					return
 				}
 				sw.Record("used cached value")
@@ -323,19 +268,30 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			}
 		}
 		// (1) Get the DOI for the local id; or get out.
-		if err := s.IdentifierDatabase.GetContext(ctx, &response.DOI,
-			"SELECT v FROM map WHERE k = ?", response.ID); err != nil {
-			if err == sql.ErrNoRows {
+		if err := s.IdentifierDatabase.GetContext(
+			ctx, &response.DOI, "SELECT v FROM map WHERE k = ?", response.ID); err != nil {
+			switch {
+			case err == sql.ErrNoRows:
 				log.Printf("no doi for local identifier (%s)", response.ID)
+				httpErrLogf(w, http.StatusNotFound, "select id: %w", err)
+			case err == context.Canceled:
+				log.Printf("select id: %v", err)
+				return
+			default:
+				httpErrLogf(w, http.StatusInternalServerError, "select id: %w", err)
 			}
-			httpErrLogf(w, "select id: %w", err)
 			return
 		}
 		sw.Recordf("found doi for id: %s", response.DOI)
 		// (2) Get outbound and inbound edges.
 		citing, cited, err := s.edges(ctx, response.DOI)
 		if err != nil {
-			httpErrLogf(w, "edges: %w", err)
+			switch {
+			case err == context.Canceled:
+				log.Println(err)
+			default:
+				httpErrLogf(w, http.StatusInternalServerError, "edges: %w", err)
+			}
 			return
 		}
 		sw.Recordf("found %d outbound and %d inbound edges", len(citing), len(cited))
@@ -358,7 +314,12 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		}
 		// (4) Map relevant DOI back to local identifiers.
 		if ids, err = s.mapToLocal(ctx, ss.Slice()); err != nil {
-			httpErrLogf(w, "map: %w", err)
+			switch {
+			case err == context.Canceled:
+				log.Println(err)
+			default:
+				httpErrLogf(w, http.StatusInternalServerError, "map: %w", err)
+			}
 			return
 		}
 		sw.Recordf("mapped %d dois back to ids", ss.Len())
@@ -397,7 +358,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				continue
 			}
 			if err != nil {
-				httpErrLogf(w, "index data fetch: %w", err)
+				httpErrLogf(w, http.StatusInternalServerError, "index data fetch: %w", err)
 				return
 			}
 			switch {
@@ -421,7 +382,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			)
 			zw, err := zstd.NewWriter(&zbuf)
 			if err != nil {
-				httpErrLogf(w, "cache compress: %w", err)
+				httpErrLogf(w, http.StatusInternalServerError, "cache compress: %w", err)
 				return
 			}
 			var (
@@ -431,11 +392,11 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				enc = json.NewEncoder(mw)
 			)
 			if err := enc.Encode(response); err != nil {
-				httpErrLogf(w, "cache encode: %w", err)
+				httpErrLogf(w, http.StatusInternalServerError, "cache encode: %w", err)
 				return
 			}
 			if err := zw.Close(); err != nil {
-				httpErrLogf(w, "cache close: %w", err)
+				httpErrLogf(w, http.StatusInternalServerError, "cache close: %w", err)
 				return
 			}
 			if err := s.Cache.Set(vars["id"], zbuf.Bytes()); err != nil {
@@ -444,7 +405,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				sw.Recordf("cached value (r: %0.2f)", float64(zbuf.Len())/float64(buf.Len()))
 			}
 			if _, err := w.Write(buf.Bytes()); err != nil {
-				httpErrLogf(w, "cache write: %w", err)
+				httpErrLogf(w, http.StatusInternalServerError, "cache write: %w", err)
 				return
 			} else {
 				sw.Record("encoded json")
@@ -452,7 +413,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		default:
 			enc := json.NewEncoder(w)
 			if err := enc.Encode(response); err != nil {
-				httpErrLogf(w, "encode: %w", err)
+				httpErrLogf(w, http.StatusInternalServerError, "encode: %w", err)
 				return
 			}
 			sw.Record("encoded JSON")
@@ -479,30 +440,75 @@ func (s *Server) Ping() error {
 	return nil
 }
 
-func httpErrLogf(w http.ResponseWriter, s string, a ...interface{}) {
-	httpErrLog(w, fmt.Errorf(s, a...))
+// edges returns citing (outbound) and citing (inbound) edges for a given DOI.
+func (s *Server) edges(ctx context.Context, doi string) (citing, cited []Map, err error) {
+	if err := s.OciDatabase.SelectContext(
+		ctx, &citing, "SELECT * FROM map WHERE k = ?", doi); err != nil {
+		return nil, nil, err
+	}
+	if err := s.OciDatabase.SelectContext(
+		ctx, &cited, "SELECT * FROM map WHERE v = ?", doi); err != nil {
+		return nil, nil, err
+	}
+	return citing, cited, nil
 }
 
-// httpErrLog tries to infer an appropriate status code.
-func httpErrLog(w http.ResponseWriter, err error) {
-	var status = http.StatusInternalServerError
-	if errors.Is(err, context.Canceled) {
-		return
+// batchedStrings batches one string slice into a potentially smaller number of
+// strings slices with size at most n.
+func batchedStrings(ss []string, n int) (result [][]string) {
+	b, e := 0, n
+	for {
+		if len(ss) <= e {
+			result = append(result, ss[b:])
+			return
+		} else {
+			result = append(result, ss[b:e])
+			b, e = e, e+n
+		}
 	}
-	if errors.Is(err, sql.ErrNoRows) {
-		status = http.StatusNotFound
-	}
-	httpErrLogStatus(w, err, status)
+	return
 }
 
-// httpErrLogStatus logs the error and returns.
-func httpErrLogStatus(w http.ResponseWriter, err error, status int) {
+// mapToLocal takes a list of DOI and returns a slice of Maps containing the
+// local id and DOI.
+// TODO: "too many SQL variables", SQLITE_LIMIT_VARIABLE_NUMBER (default value:
+// 999, cf: https://www.daemon-systems.org/man/sqlite3_bind_blob.3.html).
+func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err error) {
+	// sqlite has a limit on the variable count, which at most is 999.
+	//
+	//   The NNN value must be between 1 and the sqlite3_limit() parameter
+	//   SQLITE_LIMIT_VARIABLE_NUMBER (default value: 999)
+	for _, batch := range batchedStrings(dois, 500) {
+		query, args, err := sqlx.In("SELECT * FROM map WHERE v IN (?)", batch)
+		if err != nil {
+			return nil, fmt.Errorf("query (%d): %v", len(dois), err)
+		}
+		var result []Map
+		query = s.IdentifierDatabase.Rebind(query)
+		if err := s.IdentifierDatabase.SelectContext(ctx, &result, query, args...); err != nil {
+			// 2022/01/25 14:14:16 failed [500]: select: too many SQL variables
+			// 127.0.0.1 - - [25/Jan/2022:14:14:14 +0100] "GET /id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEwMy9waHlzcmV2bGV0dC43Ny4zODY1 HTTP/1.1" 500 24
+			return nil, fmt.Errorf("select (%d): %v", len(dois), err)
+		}
+		for _, r := range result {
+			ids = append(ids, r)
+		}
+	}
+	return ids, nil
+}
+
+// httpErrLogf is a log helper.
+func httpErrLogf(w http.ResponseWriter, status int, s string, a ...interface{}) {
+	httpErrLog(w, status, fmt.Errorf(s, a...))
+}
+
+// httpErrLogStatus returns an error to the client and logs the error.
+func httpErrLog(w http.ResponseWriter, status int, err error) {
 	log.Printf("failed [%d]: %v", status, err)
-	em := ErrorMessage{
+	b, err := json.Marshal(&ErrorMessage{
 		Status: status,
 		Err:    err,
-	}
-	b, err := json.Marshal(em)
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
