@@ -166,7 +166,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer f.Close()
+		defer func() {
+			f.Close()
+			os.Remove(f.Name())
+		}()
 		c, err := cache.New(f.Name())
 		if err != nil {
 			log.Fatal(err)

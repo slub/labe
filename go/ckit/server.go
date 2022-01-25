@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"time"
 
@@ -92,11 +93,11 @@ func (r *Response) updateCounts() {
 
 // Routes sets up route.
 func (s *Server) Routes() {
-	s.Router.HandleFunc("/", s.handleIndex())
-	s.Router.HandleFunc("/cache/size", s.handleCacheSize())
+	s.Router.HandleFunc("/", s.handleIndex()).Methods("GET")
+	s.Router.HandleFunc("/cache", s.handleCacheInfo()).Methods("GET")
 	s.Router.HandleFunc("/cache", s.handleCachePurge()).Methods("DELETE")
-	s.Router.HandleFunc("/id/{id}", s.handleLocalIdentifier())
-	s.Router.HandleFunc("/doi/{doi:.*}", s.handleDOI())
+	s.Router.HandleFunc("/id/{id}", s.handleLocalIdentifier()).Methods("GET")
+	s.Router.HandleFunc("/doi/{doi:.*}", s.handleDOI()).Methods("GET")
 }
 
 // ServeHTTP turns the server into an HTTP handler.
@@ -173,6 +174,8 @@ func (s *Server) handleIndex() http.HandlerFunc {
   \:\__\     /:/  /   \::/  /   \:\/  /   \::/  /
    \/__/     \/__/     \/__/     \/__/     \/__/
 
+Pid: %d
+
 Available endpoints:
 
     /              GET
@@ -191,13 +194,14 @@ Examples (hostport may be different):
   http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
   http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
 
+
 `
-		fmt.Fprintf(w, docs)
+		fmt.Fprintf(w, docs, os.Getpid())
 	}
 }
 
-// handleCacheSize returns the number of currently cached items.
-func (s *Server) handleCacheSize() http.HandlerFunc {
+// handleCacheInfo returns the number of currently cached items.
+func (s *Server) handleCacheInfo() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if s.Cache != nil {
 			count, err := s.Cache.ItemCount()
@@ -207,6 +211,7 @@ func (s *Server) handleCacheSize() http.HandlerFunc {
 			}
 			err = json.NewEncoder(w).Encode(map[string]interface{}{
 				"count": count,
+				"path":  s.Cache.Path,
 			})
 			if err != nil {
 				httpErrLog(w, err)
