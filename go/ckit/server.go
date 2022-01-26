@@ -40,6 +40,9 @@ var bufPool = sync.Pool{
 // sustained load will flat out at about 12K SQL qps, 150MB/s reads off disk.
 // Total size of databases involved at about 224GB plus 7 GB cache (ie. at most
 // 6% of the data can be held in memory at any time).
+//
+// Under load requesting the most costly 150K docs (with 32 threads) the server
+// will hover at around 4% RAM (or about 640MB).
 type Server struct {
 	// IdentifierDatabase maps local ids to DOI. The expected schema documented
 	// here: https://github.com/miku/labe/tree/main/go/ckit#makta
