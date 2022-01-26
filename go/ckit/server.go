@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -23,6 +24,12 @@ import (
 	"github.com/slub/labe/go/ckit/set"
 	"github.com/thoas/stats"
 )
+
+var bufPool = sync.Pool{
+	New: func() interface{} {
+		return new(bytes.Buffer)
+	},
+}
 
 // Server wraps three data sources required for index and citation data fusion.
 // The IdentifierDatabase is a map from local identifier (e.g. 0-1238201) to
@@ -403,11 +410,14 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			t := time.Now()
 			response.Extra.Cached = true
 			var (
-				// TODO: could use a sync.Pool here
-				buf  bytes.Buffer
-				zbuf bytes.Buffer
+				// TODO: could use a sync.Pool here; also large cached items
+				// can be 50MB or more, may clobber RAM or spill to swap
+				buf  = bufPool.Get().(*bytes.Buffer)
+				zbuf = bufPool.Get().(*bytes.Buffer)
 			)
-			zw, err := zstd.NewWriter(&zbuf)
+			buf.Reset()
+			zbuf.Reset()
+			zw, err := zstd.NewWriter(zbuf)
 			if err != nil {
 				httpErrLogf(w, http.StatusInternalServerError, "cache compress: %w", err)
 				return
@@ -415,7 +425,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			var (
 				// Encode both into a plain (response) and a zstd-compressed
 				// (cache) buffer.
-				mw  = io.MultiWriter(&buf, zw)
+				mw  = io.MultiWriter(buf, zw)
 				enc = json.NewEncoder(mw)
 			)
 			if err := enc.Encode(response); err != nil {
