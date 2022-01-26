@@ -35,6 +35,11 @@ var bufPool = sync.Pool{
 // The IdentifierDatabase is a map from local identifier (e.g. 0-1238201) to
 // DOI, the OciDatabase contains citing and cited relationships from OCI/COCI
 // citation corpus and IndexData allows to fetch a metadata blob from a backing store.
+//
+// A performance data point: On a 8 core 16G RAM machine we can keep a
+// sustained load will flat out at about 12K SQL qps, 150MB/s reads off disk.
+// Total size of databases involved at about 224GB plus 7 GB cache (ie. at most
+// 6% of the data can be held in memory at any time).
 type Server struct {
 	// IdentifierDatabase maps local ids to DOI. The expected schema documented
 	// here: https://github.com/miku/labe/tree/main/go/ckit#makta
@@ -409,13 +414,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		case s.Cache != nil && time.Since(started) > s.CacheTriggerDuration:
 			t := time.Now()
 			response.Extra.Cached = true
-			var (
-				// TODO: could use a sync.Pool here; also large cached items
-				// can be 50MB or more, may clobber RAM or spill to swap
-				buf  = bufPool.Get().(*bytes.Buffer)
-				zbuf = bufPool.Get().(*bytes.Buffer)
-			)
-			buf.Reset()
+			zbuf := bufPool.Get().(*bytes.Buffer)
 			zbuf.Reset()
 			zw, err := zstd.NewWriter(zbuf)
 			if err != nil {
@@ -423,29 +422,23 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				return
 			}
 			var (
-				// Encode both into a plain (response) and a zstd-compressed
-				// (cache) buffer.
-				mw  = io.MultiWriter(buf, zw)
+				mw  = io.MultiWriter(w, zw)
 				enc = json.NewEncoder(mw)
 			)
 			if err := enc.Encode(response); err != nil {
-				httpErrLogf(w, http.StatusInternalServerError, "cache encode: %w", err)
+				httpErrLogf(w, http.StatusInternalServerError, "cache json encode: %w", err)
 				return
 			}
+			sw.Record("encoded json")
+			// Wrap up compression and caching.
 			if err := zw.Close(); err != nil {
 				httpErrLogf(w, http.StatusInternalServerError, "cache close: %w", err)
 				return
 			}
-			if err := s.Cache.Set(vars["id"], zbuf.Bytes()); err != nil {
-				log.Printf("failed to cache value for %s: %v", vars["id"], err)
+			if err := s.Cache.Set(response.ID, zbuf.Bytes()); err != nil {
+				log.Printf("failed to cache value for %s: %v", response.ID, err)
 			} else {
-				sw.Recordf("cached value (r: %0.2f)", float64(zbuf.Len())/float64(buf.Len()))
-			}
-			if _, err := w.Write(buf.Bytes()); err != nil {
-				httpErrLogf(w, http.StatusInternalServerError, "cache write: %w", err)
-				return
-			} else {
-				sw.Record("encoded json")
+				sw.Record("cached value")
 			}
 			s.Stats.MeasureSinceWithLabels("cached", t, nil)
 		default:

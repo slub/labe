@@ -16,6 +16,19 @@
 // A data point: The hundert most expensive ids take 175s to request (in
 // parallel). After caching, this time reduces to 2.78s. Individual requests
 // from cache are in the 1-10ms range.
+//
+// Another data point: Warming the cache with the most expensive 150K DOI takes
+// less than 2h.
+//
+//   $ time zstd -qcd -T0 /usr/share/labe/data/OpenCitationsRanked/current | \
+//       awk '{ print $2 }' | head -n 150000 | shuf | \
+//       parallel -j 32 -I {} 'curl -sL "http://localhost:8000/doi/{}"' > /dev/null
+//
+//   real    103m36.376s
+//   user    21m57.202s
+//   sys     18m15.376s
+//
+// The cache database (with zstd compressed values) is about 8GB in size.
 package cache
 
 import (
