@@ -96,7 +96,7 @@
 # As of 01/2022, (b) takes about 3-4 hours, (d) maybe 1-2 hours.
 - name: "Setup crontab for data updates, cleanups and cache warmup"
   cron:
-    name: Data updates for labe
+    name: Data updates for labe, cleanups, cache warmup
     user: labe
     hour: "0"
     minute: "5"
