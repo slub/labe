@@ -214,33 +214,6 @@ class OpenCitationsRanked(Task):
         self.create_symlink(name="current")
 
 
-class WarmServerCache(Task):
-    """
-    Warm the server cache. Takes about 3h for 100K urls.
-    """
-    n = luigi.IntParameter(default=50000, description="number of doi to request", significant=False)
-
-    def requires(self):
-        return OpenCitationsRanked()
-
-    def run(self):
-        """
-        We can also put this into cron directly.
-        """
-        shellout("""
-                 zstd -q -cd -T0 {input} |
-                 awk '{{ print $2 }}' |
-                 head -n {n} |
-                 shuf |
-                 parallel -I {} 'curl -sL "http://localhost:8000/doi/{}"'
-                 """,
-                 input=self.input().path,
-                 n=self.n)
-
-    def complete(self):
-        return False
-
-
 class SolrFetchDocs(Task):
     """
     Fetch JSON data from SOLR; uses solrdump (https://github.com/ubleipzig/solrdump).
