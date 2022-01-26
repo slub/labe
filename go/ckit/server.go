@@ -398,6 +398,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		// (7) If this request was expensive, cache it.
 		switch {
 		case s.Cache != nil && time.Since(started) > s.CacheTriggerDuration:
+			t := time.Now()
 			response.Extra.Cached = true
 			var (
 				// TODO: could use a sync.Pool here
@@ -434,6 +435,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			} else {
 				sw.Record("encoded json")
 			}
+			s.Stats.MeasureSinceWithLabels("cached", t, nil)
 		default:
 			enc := json.NewEncoder(w)
 			if err := enc.Encode(response); err != nil {
