@@ -2,16 +2,22 @@
 
 Helpers to fetch and build the databases required for LABE API server. Specifically we need:
 
-* [x] checks for new OCI/COCI releases
-* [x] regular dumps of internal SOLR indices and conversion into sqlite3 databases
+* [x] checks for new OCI/COCI releases, from [https://opencitations.net/download](https://opencitations.net/download)
+* [x] regular dumps of internal SOLR indices and conversion into sqlite3 databases, using [solrdump](https://github.com/ubleipzig/solrdump)
 
-The [luigi](https://github.com/spotify/luigi) orchestrator is already used by
+The [luigi](https://github.com/spotify/luigi) task orchestrator is already used by
 [SLUB Dresden](https://www.slub-dresden.de/), so we'll use it for modelling the
 dependency graph of tasks.
 
 ## Deploy Option
 
-We build a single executable with [shiv](https://github.com/linkedin/shiv).
+We build a single executable with [shiv](https://github.com/linkedin/shiv) (see
+LI ENG [blog
+post](https://engineering.linkedin.com/blog/2018/05/introducing-and-open-sourcing-shiv)).
+
+> shiv allows us to create a single binary artifact from a Python project that
+> includes all of its dependencies. The only thing required to run a
+> full-fledged Python application is an interpreter.
 
 ## Tasks
 
@@ -22,37 +28,26 @@ We build a single executable with [shiv](https://github.com/linkedin/shiv).
 * [x] turn SOLR JSON files into (id, doc) TSV
 * [x] create sqlite3 database from TSV with [makta](https://github.com/miku/labe/tree/main/go/ckit#makta)
 * [x] move databases into place
-* [ ] inform API server to reset database connections via [SIGHUP](https://en.wikipedia.org/wiki/SIGHUP)
 
 Additionally, we want:
 
 * [ ] monitoring, if a task fails (to a service email)
 * [ ] a delta report
-* [ ] cache warmup, if necessary
-* [ ] cleanup of obsolete tasks
+* [x] cache warmup, if necessary (yes, it is; currently squashed into the "cron" [line](https://github.com/slub/labe/blob/9b27980ebc3bfaf72358287c514681b8c4126803/ansible/roles/labe/tasks/main.yml#L117))
+* [x] cleanup of obsolete tasks
 
 Constraints: We will only have disk space for a single update. We may want to
 reduce the index data size, e.g. reduce in a pipe while dumping from solr or
-select a number of fields (`solrdump -fl ...`).
+select a number of fields (`solrdump -fl ...`) -- **Update**: we abridge the SOLR
+documents ("short"), and save disk space; one complete update with intermediate
+artifacts occupies about 310G as of 01/2022.
 
 ## Deployment
 
 * run "labe.pyz -r CombinedUpdate", e.g. daily
 * run "rm -f $(labe.pyz --list-deletable)", e.g. daily
 
-Example cron:
-
-```shell
-
-# For more information see the manual pages of crontab(5) and cron(8)
-#
-# m h  dom mon dow   command
-SHELL=/bin/bash
-PATH=$PATH:/home/czygan/bin/:/usr/local/bin
-
-15 0 * * * rm -f $(/home/czygan/bin/labe.pyz --list-deletable)
-45 0 * * * /home/czygan/bin/labe.pyz -r CombinedUpdate
-```
+Example cron: [roles/labe/tasks/main.yml](https://github.com/slub/labe/blob/9b27980ebc3bfaf72358287c514681b8c4126803/ansible/roles/labe/tasks/main.yml#L99-L118)
 
 ## Directory layout
 
