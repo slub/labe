@@ -148,7 +148,7 @@ func main() {
 			log.Fatal(err)
 		}
 		fetcher = g
-		log.Printf("setup group fetcher over %d databases: %v",
+		log.Printf("[ok] setup group fetcher over %d databases: %v",
 			len(g.Backends), sqliteFetcherPaths)
 	default:
 		log.Fatal("need sqlite3 metadata index database (-Q)")
@@ -187,8 +187,8 @@ func main() {
 	}
 	// Print banner.
 	fmt.Fprintln(os.Stderr, strings.Replace(Banner, `{{ .listenAddr }}`, *listenAddr, -1))
-	log.Printf("labed starting %s %s http://%s", Version, Buildtime, *listenAddr)
-	// Our server handler.
+	log.Printf("[ok] labed ≋ starting %s %s http://%s", Version, Buildtime, *listenAddr)
+	// Our handler.
 	var h http.Handler = srv
 	// Add middleware.
 	if *enableGzip {
@@ -202,7 +202,7 @@ func main() {
 		defer f.Close()
 		h = handlers.LoggingHandler(f, h)
 	}
-	log.Fatal(http.ListenAndServe(*listenAddr, h))
+	log.Fatal(http.ListenAndServe(*listenAddr, srv.Stats.Handler(h)))
 }
 
 // openDatabase first ensures a file does actually exists, then create as

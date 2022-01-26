@@ -46,7 +46,8 @@ type Server struct {
 	StopWatchEnabled     bool
 	Cache                *cache.Cache
 	CacheTriggerDuration time.Duration
-	Stats                *stats.Stats
+	// Stats.
+	Stats *stats.Stats
 }
 
 // Map is a generic lookup table. We use it together with sqlite3. This
@@ -100,9 +101,7 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/cache", s.handleCachePurge()).Methods("DELETE")
 	s.Router.HandleFunc("/id/{id}", s.handleLocalIdentifier()).Methods("GET")
 	s.Router.HandleFunc("/doi/{doi:.*}", s.handleDOI()).Methods("GET")
-	if s.Stats != nil {
-		s.Router.HandleFunc("/stats", s.handleStats()).Methods("GET")
-	}
+	s.Router.HandleFunc("/stats", s.handleStats()).Methods("GET")
 }
 
 // ServeHTTP turns the server into an HTTP handler.
@@ -181,11 +180,10 @@ func (s *Server) handleCachePurge() http.HandlerFunc {
 }
 
 func (s *Server) handleStats() http.HandlerFunc {
+	s.Stats.MetricsCounts = make(map[string]int)
+	s.Stats.MetricsTimers = make(map[string]time.Time)
 	return func(w http.ResponseWriter, r *http.Request) {
-		if s.Stats == nil {
-			httpErrLog(w, http.StatusNotFound, fmt.Errorf("stats not configured"))
-			return
-		}
+		w.Header().Set("Content-Type", "application/json")
 		enc := json.NewEncoder(w)
 		if err := enc.Encode(s.Stats.Data()); err != nil {
 			httpErrLog(w, http.StatusInternalServerError, err)
@@ -288,6 +286,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			}
 		}
 		// (1) Get the DOI for the local id; or get out.
+		t := time.Now()
 		if err := s.IdentifierDatabase.GetContext(
 			ctx, &response.DOI, "SELECT v FROM map WHERE k = ?", response.ID); err != nil {
 			switch {
@@ -302,6 +301,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			}
 			return
 		}
+		s.Stats.MeasureSinceWithLabels("sql_num_queries", t, nil)
 		sw.Recordf("found doi for id: %s", response.DOI)
 		// (2) Get outbound and inbound edges.
 		citing, cited, err := s.edges(ctx, response.DOI)
@@ -373,7 +373,9 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		// index data content, it can contain the full metadata record, or just
 		// a few fields.
 		for _, v := range ids {
+			t := time.Now()
 			b, err := s.IndexData.Fetch(v.Key)
+			s.Stats.MeasureSinceWithLabels("index_data_fetch", t, nil)
 			if errors.Is(err, ErrBlobNotFound) {
 				continue
 			}
@@ -462,14 +464,19 @@ func (s *Server) Ping() error {
 
 // edges returns citing (outbound) and citing (inbound) edges for a given DOI.
 func (s *Server) edges(ctx context.Context, doi string) (citing, cited []Map, err error) {
+	var t time.Time
+	t = time.Now()
 	if err := s.OciDatabase.SelectContext(
 		ctx, &citing, "SELECT * FROM map WHERE k = ?", doi); err != nil {
 		return nil, nil, err
 	}
+	s.Stats.MeasureSinceWithLabels("sql_num_queries", t, nil)
+	t = time.Now()
 	if err := s.OciDatabase.SelectContext(
 		ctx, &cited, "SELECT * FROM map WHERE v = ?", doi); err != nil {
 		return nil, nil, err
 	}
+	s.Stats.MeasureSinceWithLabels("sql_num_queries", t, nil)
 	return citing, cited, nil
 }
 
@@ -499,6 +506,7 @@ func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err 
 	//   The NNN value must be between 1 and the sqlite3_limit() parameter
 	//   SQLITE_LIMIT_VARIABLE_NUMBER (default value: 999)
 	for _, batch := range batchedStrings(dois, 500) {
+		t := time.Now()
 		query, args, err := sqlx.In("SELECT * FROM map WHERE v IN (?)", batch)
 		if err != nil {
 			return nil, fmt.Errorf("query (%d): %v", len(dois), err)
@@ -510,6 +518,7 @@ func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err 
 			// 127.0.0.1 - - [25/Jan/2022:14:14:14 +0100] "GET /id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEwMy9waHlzcmV2bGV0dC43Ny4zODY1 HTTP/1.1" 500 24
 			return nil, fmt.Errorf("select (%d): %v", len(dois), err)
 		}
+		s.Stats.MeasureSinceWithLabels("sql_num_queries", t, nil)
 		for _, r := range result {
 			ids = append(ids, r)
 		}
