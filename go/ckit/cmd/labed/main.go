@@ -16,6 +16,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
 	"time"
 
@@ -162,16 +163,30 @@ func main() {
 		StopWatchEnabled:   *enableStopWatch,
 		Stats:              stats.New(),
 	}
-	// Setup caching.
+	// Setup caching. Albeit the cache will be persistant, treat it like an
+	// emphemeral thing, e.g. the cache file does not survive the process.
 	if *enableCache {
 		f, err := ioutil.TempFile("", "labed-cache-")
 		if err != nil {
 			log.Fatal(err)
 		}
+		// Cleanup on exit and ...
 		defer func() {
 			f.Close()
 			os.Remove(f.Name())
 		}()
+		// ... also react to SIGTERM (e.g. via systemd restart) with removal of
+		// old file.
+		ch := make(chan os.Signal, 1)
+		signal.Notify(ch, os.Interrupt)
+		go func() {
+			for sig := range ch {
+				log.Printf("graceful shutdown: %v", sig)
+				f.Close()
+				os.Remove(f.Name())
+			}
+		}()
+		// Setup cache and attach to our handler.
 		c, err := cache.New(f.Name())
 		if err != nil {
 			log.Fatal(err)
@@ -180,6 +195,7 @@ func main() {
 		srv.Cache = c
 		srv.CacheTriggerDuration = *cacheTriggerDuration
 	}
+	// Setup routes.
 	srv.Routes()
 	// Basic reachability checks.
 	if err := srv.Ping(); err != nil {
