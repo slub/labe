@@ -16,6 +16,6 @@ deb: ## shortcut to build both ckit and labe debian packages
 	(cd go/ckit && make clean && make -j deb)
 
 .PHONY: clean
-clean:
+clean: ## clean arfifacts
 	(cd python && make clean)
 	(cd go/ckit && make clean)
