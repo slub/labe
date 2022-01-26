@@ -173,6 +173,49 @@ Examples:
 > XVlB    S    84.294786ms    1.0     total
 ```
 
+### Live Stats
+
+The server collects a few metrics interally and exposes them via URL:
+
+```
+$ curl -s localhost:8000/stats | jq .
+{
+  "pid": 82132,
+  "hostname": "",
+  "uptime": "39m35.668250841s",
+  "uptime_sec": 2375.668250841,
+  "time": "2022-01-26 14:39:20.662511775 +0100 CET m=+2375.669845497",
+  "unixtime": 1643204360,
+  "status_code_count": {},
+  "total_status_code_count": {
+    "200": 1579,
+    "307": 411,
+    "404": 249,
+    "500": 8
+  },
+  "count": 0,
+  "total_count": 2247,
+  "total_response_time": "1h16m48.617898515s",
+  "total_response_time_sec": 4608.617898515,
+  "total_response_size": 4333804080,
+  "average_response_size": 1928706,
+  "average_response_time": "2.0510093s",
+  "average_response_time_sec": 2.0510093,
+  "total_metrics_counts": {
+    "cache_hit": 213,
+    "cached": 182,
+    "index_data_fetch": 2613454,
+    "sql_query": 7524
+  },
+  "average_metrics_timers": {
+    "cache_hit": 0.3651285,
+    "cached": 0.17130907,
+    "index_data_fetch": 0.000639452,
+    "sql_query": 0.364669177
+  }
+}
+```
+
 ### TODO
 
 * [ ] a detailed performance report
