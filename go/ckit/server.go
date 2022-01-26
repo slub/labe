@@ -415,31 +415,36 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			response.Extra.Cached = true
 			zbuf := bufPool.Get().(*bytes.Buffer)
 			zbuf.Reset()
-			zw, err := zstd.NewWriter(zbuf)
-			if err != nil {
-				httpErrLogf(w, http.StatusInternalServerError, "cache compress: %w", err)
+			wrap := func() error {
+				defer bufPool.Put(zbuf)
+				zw, err := zstd.NewWriter(zbuf)
+				if err != nil {
+					return fmt.Errorf("cache compress: %w", err)
+				}
+				var (
+					mw  = io.MultiWriter(w, zw)
+					enc = json.NewEncoder(mw)
+				)
+				if err := enc.Encode(response); err != nil {
+					return fmt.Errorf("cache json encode: %w", err)
+				}
+				sw.Record("encoded json")
+				// Wrap up compression and caching.
+				if err := zw.Close(); err != nil {
+					return fmt.Errorf("cache close: %w", err)
+				}
+				if err := s.Cache.Set(response.ID, zbuf.Bytes()); err != nil {
+					log.Printf("failed to cache value for %s: %v", response.ID, err)
+				} else {
+					sw.Record("cached value")
+				}
+				s.Stats.MeasureSinceWithLabels("cached", t, nil)
+				return nil
+			}
+			if err := wrap(); err != nil {
+				httpErrLog(w, http.StatusInternalServerError, err)
 				return
 			}
-			var (
-				mw  = io.MultiWriter(w, zw)
-				enc = json.NewEncoder(mw)
-			)
-			if err := enc.Encode(response); err != nil {
-				httpErrLogf(w, http.StatusInternalServerError, "cache json encode: %w", err)
-				return
-			}
-			sw.Record("encoded json")
-			// Wrap up compression and caching.
-			if err := zw.Close(); err != nil {
-				httpErrLogf(w, http.StatusInternalServerError, "cache close: %w", err)
-				return
-			}
-			if err := s.Cache.Set(response.ID, zbuf.Bytes()); err != nil {
-				log.Printf("failed to cache value for %s: %v", response.ID, err)
-			} else {
-				sw.Record("cached value")
-			}
-			s.Stats.MeasureSinceWithLabels("cached", t, nil)
 		default:
 			enc := json.NewEncoder(w)
 			if err := enc.Encode(response); err != nil {
