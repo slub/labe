@@ -89,11 +89,21 @@
     env: true
     job: /usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
+- name: "Set shell of cron explicitly"
+  cron:
+    name: SHELL
+    user: labe
+    env: true
+    job: /bin/bash
+
 # Setup crontab for data updates. We squash the various steps into a one-liner:
 # (a) delete obsolete artifacts, (b) run data updates, (c) restart the server,
 # (d) warm cache.
 #
 # As of 01/2022, (b) takes about 3-4 hours, (d) maybe 1-2 hours.
+#
+# Note that changing the "cron.name" will add a new entry in crontab (may need
+# to remove entries manually).
 - name: "Setup crontab for data updates, cleanups and cache warmup"
   cron:
     name: Data updates for labe, cleanups, cache warmup
@@ -104,5 +114,5 @@
       rm -f $(labe.pyz --data-dir /usr/share/labe --list-deletable) &&
       labe.pyz --data-dir /usr/share/labe -r CombinedUpdate --workers 4 &&
       sudo systemctl restart labed &&
-      zstd -qcd -T0 /usr/share/labe/data/OpenCitationsRanked/current | awk '{ print $2 }' | head -n 100000 | shuf | parallel -I {} 'curl -sL "http://localhost:8000/doi/{}"' > /dev/null
+      zstd -qcd -T0 /usr/share/labe/data/OpenCitationsRanked/current | awk '{ print $2 }' | head -n 100000 | shuf | parallel -j 32 -I {} 'curl -sL "http://localhost:8000/doi/{}"' > /dev/null
 

@@ -1,4 +1,16 @@
 # Makefile for building executables for labe.
+#
+# Release build:
+#
+#   $ make
+#
+# Debug build:
+#
+#   $ make all EXTRA_BUILD_FLAGS="-tags debug"
+#
+# Create debian package:
+#
+#   $ make deb
 
 SHELL := /bin/bash
 PKGNAME := ckit
@@ -17,7 +29,7 @@ BUILDTIME := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 GOLDFLAGS += -X main.Version=$(VERSION)
 GOLDFLAGS += -X main.Buildtime=$(BUILDTIME)
 GOLDFLAGS += -w -s
-GOFLAGS = -ldflags "$(GOLDFLAGS)"
+EXTRA_BUILD_FLAGS = # e.g. add "-tags debug" here for debug builds
 GOFILES = $(shell find . -name \*.go -print)
 
 .PHONY: help
@@ -29,8 +41,8 @@ help: ## print info about all commands
 all: $(TARGETS) ## build all targets
 
 .PHONY: build
-%: cmd/%/main.go server.go set/set.go
-	go build -o $@ -ldflags "$(GOLDFLAGS)" $<
+%: cmd/%/main.go $(GOFILES)
+	go build -o $@ -ldflags "$(GOLDFLAGS)" $(EXTRA_BUILD_FLAGS) $<
 
 .PHONY: clean
 clean: ## clean artifacts

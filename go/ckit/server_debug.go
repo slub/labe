@@ -1,4 +1,4 @@
-//go:build !debug
+//go:build debug
 
 package ckit
 
@@ -22,6 +22,8 @@ import (
 	"github.com/slub/labe/go/ckit/cache"
 	"github.com/slub/labe/go/ckit/set"
 	"github.com/thoas/stats"
+
+	_ "net/http/pprof"
 )
 
 // Server wraps three data sources required for index and citation data fusion.
@@ -104,6 +106,8 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/id/{id}", s.handleLocalIdentifier()).Methods("GET")
 	s.Router.HandleFunc("/doi/{doi:.*}", s.handleDOI()).Methods("GET")
 	s.Router.HandleFunc("/stats", s.handleStats()).Methods("GET")
+	// Debug route.
+	s.Router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
 }
 
 // ServeHTTP turns the server into an HTTP handler.
