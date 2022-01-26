@@ -1,5 +1,5 @@
 ---
-- name: labe setup (wip)
+- name: labe production deployment
   hosts: labe
   roles:
     - common
