@@ -301,7 +301,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			}
 			return
 		}
-		s.Stats.MeasureSinceWithLabels("sql_num_queries", t, nil)
+		s.Stats.MeasureSinceWithLabels("sql_query", t, nil)
 		sw.Recordf("found doi for id: %s", response.DOI)
 		// (2) Get outbound and inbound edges.
 		citing, cited, err := s.edges(ctx, response.DOI)
@@ -470,13 +470,13 @@ func (s *Server) edges(ctx context.Context, doi string) (citing, cited []Map, er
 		ctx, &citing, "SELECT * FROM map WHERE k = ?", doi); err != nil {
 		return nil, nil, err
 	}
-	s.Stats.MeasureSinceWithLabels("sql_num_queries", t, nil)
+	s.Stats.MeasureSinceWithLabels("sql_query", t, nil)
 	t = time.Now()
 	if err := s.OciDatabase.SelectContext(
 		ctx, &cited, "SELECT * FROM map WHERE v = ?", doi); err != nil {
 		return nil, nil, err
 	}
-	s.Stats.MeasureSinceWithLabels("sql_num_queries", t, nil)
+	s.Stats.MeasureSinceWithLabels("sql_query", t, nil)
 	return citing, cited, nil
 }
 
@@ -518,7 +518,7 @@ func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err 
 			// 127.0.0.1 - - [25/Jan/2022:14:14:14 +0100] "GET /id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEwMy9waHlzcmV2bGV0dC43Ny4zODY1 HTTP/1.1" 500 24
 			return nil, fmt.Errorf("select (%d): %v", len(dois), err)
 		}
-		s.Stats.MeasureSinceWithLabels("sql_num_queries", t, nil)
+		s.Stats.MeasureSinceWithLabels("sql_query", t, nil)
 		for _, r := range result {
 			ids = append(ids, r)
 		}
