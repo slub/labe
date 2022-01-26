@@ -4,7 +4,7 @@
 
 ## TOP
 
-* [.] ansible deployment on sdvlabe, config setup, auto-mode
+* [ ] ansible deployment on sdvlabe, config setup, auto-mode
 * [ ] diff report
 
 ## Notes
