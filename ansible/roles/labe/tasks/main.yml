@@ -104,9 +104,5 @@
       rm -f $(labe.pyz --data-dir /usr/share/labe --list-deletable) &&
       labe.pyz --data-dir /usr/share/labe -r CombinedUpdate --workers 4 &&
       sudo systemctl restart labed &&
-      zstd -qcd -T0 /usr/share/labe/data/OpenCitationsRanked/current |
-          awk '{ print $2 }' |
-          head -n 100000 |
-          shuf |
-          parallel -I {} 'curl -sL "http://localhost:8000/doi/{}"' > /dev/null
+      zstd -qcd -T0 /usr/share/labe/data/OpenCitationsRanked/current | awk '{ print $2 }' | head -n 100000 | shuf | parallel -I {} 'curl -sL "http://localhost:8000/doi/{}"'
 
