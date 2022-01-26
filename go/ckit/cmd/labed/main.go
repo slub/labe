@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/gorilla/handlers"
@@ -178,7 +179,7 @@ func main() {
 		// ... also react to SIGTERM (e.g. via systemd restart) with removal of
 		// old file.
 		ch := make(chan os.Signal, 1)
-		signal.Notify(ch, os.Interrupt)
+		signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 		go func() {
 			for sig := range ch {
 				log.Printf("graceful shutdown: %v", sig)
