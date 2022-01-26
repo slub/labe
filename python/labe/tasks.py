@@ -32,7 +32,7 @@ class Task(BaseTask):
     Superclass for labe tasks.
     """
     # Put all task outputs under BASE/TAG/...
-    TAG = "labe"
+    TAG = "data"
 
     # Where all output will go by default.
     BASE = os.path.join(tempfile.gettempdir())
@@ -403,3 +403,5 @@ class CombinedUpdate(luigi.WrapperTask):
         yield SolrDatabase(date=self.date, name="slub-production", short=False)
         yield IdMappingDatabase(date=self.date)
         yield OpenCitationsDatabase()
+        # We want OpenCitationsRanked for cache warmup.
+        yield OpenCitationsRanked()

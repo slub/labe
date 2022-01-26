@@ -13,11 +13,11 @@ ExecStart=/usr/local/bin/labed \
                 -logfile /var/log/labe.log \
                 -c \
                 -z \
-                -i /usr/share/labe/IdMappingDatabase/current \
-                -o /usr/share/labe/OpenCitationsDatabase/current \
-                -m /usr/share/labe/SolrDatabase/current-ai-short \
-                -m /usr/share/labe/SolrDatabase/current-main-short \
-                -m /usr/share/labe/SolrDatabase/current-slub-production
+                -i /usr/share/labe/data/IdMappingDatabase/current \
+                -o /usr/share/labe/data/OpenCitationsDatabase/current \
+                -m /usr/share/labe/data/SolrDatabase/current-ai-short \
+                -m /usr/share/labe/data/SolrDatabase/current-main-short \
+                -m /usr/share/labe/data/SolrDatabase/current-slub-production
 Restart=on-failure
 
 [Install]

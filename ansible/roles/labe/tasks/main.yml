@@ -40,7 +40,7 @@
 
 - name: "Change default data file ownership"
   ansible.builtin.file:
-    path: /usr/share/labe
+    path: /usr/share/labe/data
     owner: labe
     group: labe
     state: directory
@@ -94,14 +94,19 @@
 # (d) warm cache.
 #
 # As of 01/2022, (b) takes about 3-4 hours, (d) maybe 1-2 hours.
-- name: "Setup crontab for data updates"
+- name: "Setup crontab for data updates, cleanups and cache warmup"
   cron:
     name: Data updates for labe
     user: labe
     hour: "0"
     minute: "5"
     job: >
-      rm -f $(/usr/local/bin/labe.pyz --data-dir /usr/share --list-deletable) &&
-      /usr/local/bin/labe.pyz --data-dir /usr/share -r CombinedUpdate --workers 4 &&
-      sudo /usr/bin/systemctl restart labed &&
-      /usr/local/bin/labe.pyz --data-dir /usr/share -r WarmServerCache
+      rm -f $(labe.pyz --data-dir /usr/share/labe --list-deletable) &&
+      labe.pyz --data-dir /usr/share/labe -r CombinedUpdate --workers 4 &&
+      sudo systemctl restart labed &&
+      zstd -qcd -T0 /usr/share/labe/data/OpenCitationsRanked/current |
+          awk '{ print $2 }' |
+          head -n 100000 |
+          shuf |
+          parallel -I {} 'curl -sL "http://localhost:8000/doi/{}"' > /dev/null
+
