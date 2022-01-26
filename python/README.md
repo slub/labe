@@ -9,6 +9,10 @@ The [luigi](https://github.com/spotify/luigi) task orchestrator is already used 
 [SLUB Dresden](https://www.slub-dresden.de/), so we'll use it for modelling the
 dependency graph of tasks.
 
+Everything lives in files.
+
+![](../static/labe-tree.png)
+
 ## Deploy Option
 
 We build a single executable with [shiv](https://github.com/linkedin/shiv) (see
