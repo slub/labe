@@ -1,3 +1,21 @@
+// Package cache implements caching helpers, e.g. an sqlite3 based cache.
+// Caching is important for the most cited items, these can take seconds to
+// assemble; so we cache the serialized JSON in sqlite3 and serve subsequent
+// requests from there.
+//
+// Without cache:
+//
+//   | Rank    | Links | T    |
+//   |---------+-------+------|
+//   | ~5000   |  2999 | 2.8s |
+//   | ~10000  |  2108 | 3.5s |
+//   | ~50000  |   937 | 1.2s |
+//   | ~100000 |   659 | 0.8s |
+//   | ~150000 |   538 | 0.6s |
+//
+// A data point: The hundert most expensive ids take 175s to request (in
+// parallel). After caching, this time reduces to 2.78s. Individual requests
+// from cache are in the 1-10ms range.
 package cache
 
 import (
