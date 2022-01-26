@@ -262,6 +262,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		if s.Cache != nil {
 			b, err := s.Cache.Get(vars["id"])
 			if err == nil {
+				t := time.Now()
 				sw.Record("retrieved value from cache")
 				// decompress the value
 				r, err := zstd.NewReader(bytes.NewReader(b))
@@ -288,6 +289,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				}
 				sw.Record("used cached value")
 				sw.LogTable()
+				s.Stats.MeasureSinceWithLabels("cache_hit", t, nil)
 				return
 			}
 		}
@@ -402,6 +404,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		// (7) If this request was expensive, cache it.
 		switch {
 		case s.Cache != nil && time.Since(started) > s.CacheTriggerDuration:
+			t := time.Now()
 			response.Extra.Cached = true
 			var (
 				// TODO: could use a sync.Pool here
@@ -438,6 +441,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			} else {
 				sw.Record("encoded json")
 			}
+			s.Stats.MeasureSinceWithLabels("cached", t, nil)
 		default:
 			enc := json.NewEncoder(w)
 			if err := enc.Encode(response); err != nil {

@@ -258,6 +258,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		if s.Cache != nil {
 			b, err := s.Cache.Get(vars["id"])
 			if err == nil {
+				t := time.Now()
 				sw.Record("retrieved value from cache")
 				// decompress the value
 				r, err := zstd.NewReader(bytes.NewReader(b))
@@ -284,6 +285,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				}
 				sw.Record("used cached value")
 				sw.LogTable()
+				s.Stats.MeasureSinceWithLabels("cache_hit", t, nil)
 				return
 			}
 		}
