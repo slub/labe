@@ -181,10 +181,17 @@ func main() {
 		ch := make(chan os.Signal, 1)
 		signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 		go func() {
-			for sig := range ch {
-				log.Printf("graceful shutdown: %v", sig)
-				f.Close()
-				os.Remove(f.Name())
+			<-ch
+			log.Printf("[..] attempting graceful shutdown")
+			cerr := f.Close()
+			rerr := os.Remove(f.Name())
+			switch {
+			case cerr != nil || rerr != nil:
+				log.Printf("[xx] cleanup failed: %v %v", cerr, rerr)
+				os.Exit(1)
+			default:
+				log.Printf("[ok] shutdown successful")
+				os.Exit(0)
 			}
 		}()
 		// Setup cache and attach to our handler.
