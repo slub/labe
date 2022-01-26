@@ -9,16 +9,17 @@ require (
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.4
-	github.com/klauspost/compress v1.14.1
+	github.com/klauspost/compress v1.14.2
 	github.com/matryer/is v1.4.0
 	github.com/mattn/go-sqlite3 v1.14.10
 	github.com/miku/parallel v0.0.0-20210205192328-1a799ab70294
 	github.com/segmentio/encoding v0.3.3
+	github.com/thoas/stats v0.0.0-20190407194641-965cb2de1678
 )
 
 require (
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
-	github.com/thoas/stats v0.0.0-20190407194641-965cb2de1678 // indirect
+	golang.org/x/net v0.0.0-20220121210141-e204ce36a2ba // indirect
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
 )
