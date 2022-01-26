@@ -140,11 +140,11 @@ Pid: %d
 Available endpoints:
 
     /              GET
-    /id/{id}       GET
-    /doi/{doi}     GET
-    /cache         GET
     /cache         DELETE
-	/stats         GET
+    /cache         GET
+    /doi/{doi}     GET
+    /id/{id}       GET
+    /stats         GET
 
 Examples (hostport may be different):
 
@@ -155,7 +155,6 @@ Examples (hostport may be different):
   http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
   http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
   http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
-
 
 `
 		fmt.Fprintf(w, docs, os.Getpid())
