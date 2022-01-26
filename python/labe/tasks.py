@@ -18,8 +18,10 @@ from labe.oci import OpenCitationsDataset
 __all__ = [
     'CombinedUpdate',
     'IdMappingDatabase',
+    'IdMappingTable',
     'OpenCitationsDatabase',
     'OpenCitationsDownload',
+    'OpenCitationsRanked',
     'OpenCitationsSingleFile',
     'SolrDatabase',
     'SolrFetchDocs',
