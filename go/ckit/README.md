@@ -175,7 +175,7 @@ Examples:
 
 ### Live Stats
 
-The server collects a few metrics interally and exposes them via URL:
+The server collects a few metrics internally and exposes them via URL:
 
 ```
 $ curl -s localhost:8000/stats | jq .
