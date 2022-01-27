@@ -224,6 +224,7 @@ func (s *Server) handleDOI() http.HandlerFunc {
 			case err == context.Canceled:
 				log.Println(err)
 			default:
+				// TODO: render a JSON response
 				http.Error(w, "no id found", http.StatusNotFound)
 			}
 			return
