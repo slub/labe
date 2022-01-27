@@ -265,12 +265,12 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			sw StopWatch
 		)
 		sw.SetEnabled(s.StopWatchEnabled)
-		sw.Recordf("started query for: %s", vars["id"])
+		sw.Recordf("started query for: %s", response.ID)
 		// Ganz sicher application/json.
 		w.Header().Add("Content-Type", "application/json")
 		// (0) Check cache first.
 		if s.Cache != nil {
-			b, err := s.Cache.Get(vars["id"])
+			b, err := s.Cache.Get(response.ID)
 			if err == nil {
 				t := time.Now()
 				sw.Record("retrieved value from cache")
