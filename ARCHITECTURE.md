@@ -1,21 +1,27 @@
 # Architecture
 
 [Luigi](https://github.com/spotify/luigi) for orchestration (but trying to keep
-task code minimal). Structured directories and filenames for data artifacts.
+[task code](https://github.com/slub/labe/blob/main/python/labe/tasks.py)
+minimal). Structured directories and filenames for data artifacts.
 
 ![](static/labe-tree.png)
 
-The result are three [sqlite3](https://sqlite.org/) databases:
+Data acquisition and processing results in three [sqlite3](https://sqlite.org/)
+databases:
 
-* a) id-doi "mapping" database
-* b) "citations" databases (doi-doi)
-* c) index "metadata" key value store (id-doc)
+* a) one id-doi "mapping" database
+* b) one "citations" databases (doi-doi)
+* c) one or more index "metadata" [fetcher](https://github.com/slub/labe/blob/838fdd6c935d9d2d18693ba6dd9625eb34accb7e/go/ckit/fetcher.go#L31-L34) (id-doc)
 
-There is one "mapping" and one "citations" database, but there can be one or
-more "metadata" databases.
+Currently, we use a
+[FetchGroup](https://github.com/slub/labe/blob/838fdd6c935d9d2d18693ba6dd9625eb34accb7e/go/ckit/fetcher.go#L56-L62)
+over multiple
+[sqlite3](https://github.com/slub/labe/blob/838fdd6c935d9d2d18693ba6dd9625eb34accb7e/go/ckit/fetcher.go#L36-L40)
+databases, but the interface would allow to use a different local or remote backing stores.
 
-A server assembles fused results from these databases on the fly (and caches
-expesive requests).
+A [server](https://github.com/slub/labe/blob/main/go/ckit/server.go#L32-L68)
+assembles fused results from these databases on the fly (and caches expesive
+requests) and builds JSON responses.
 
 ![](static/Labe-Sequence.png)
 
@@ -23,9 +29,9 @@ This way we should get a good balance:
 
 * we need *little preprocessing*, we mostly turn CSV or SOLR JSON into sqlite databases
 * we still can *be fast* through caching, which can be done forehandedly ("cache
-  warming") or as data is actually requests
+  warming") or as data is actually requested
 
-The server delivers JSON responses, which can be included in catalog frontends.
+The server delivers JSON responses, which can be processed in catalog frontends.
 
 ```json
 $ curl -sL "http://localhost:8000/doi/10.1016/s0273-1177(97)00070-7" | jq .
