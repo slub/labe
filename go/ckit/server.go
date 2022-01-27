@@ -283,7 +283,8 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				// "extra.took" field in the cached JSON response. As cached
 				// responses are generally fast, we could also just ignore
 				// "extra.took" altogether and save some memory. TODO:
-				// streaming string replace
+				// streaming string replace (e.g. via
+				// https://github.com/icholy/replace).
 				buf := bufPool.Get().(*bytes.Buffer)
 				buf.Reset()
 				wrap := func() error {
