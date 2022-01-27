@@ -282,7 +282,8 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				// We only need the buffer, because we want to rewrite the
 				// "extra.took" field in the cached JSON response. As cached
 				// responses are generally fast, we could also just ignore
-				// "extra.took" altogether and save some memory.
+				// "extra.took" altogether and save some memory. TODO:
+				// streaming string replace
 				buf := bufPool.Get().(*bytes.Buffer)
 				buf.Reset()
 				wrap := func() error {
