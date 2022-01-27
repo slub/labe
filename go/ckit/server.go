@@ -58,10 +58,12 @@ type Server struct {
 	// Router to register routes on.
 	Router *mux.Router
 	// StopWatchEnabled enabled the stopwatch, a builtin, simplistic request tracer.
-	StopWatchEnabled     bool
-	Cache                *cache.Cache
+	StopWatchEnabled bool
+	// Cache for expensive items.
+	Cache *cache.Cache
+	// CacheTriggerDuration determines which items to cache.
 	CacheTriggerDuration time.Duration
-	// Stats.
+	// Stats, like request counts and status codes.
 	Stats *stats.Stats
 }
 
