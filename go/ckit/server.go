@@ -1,5 +1,3 @@
-//go:build !debug
-
 package ckit
 
 import (
@@ -274,7 +272,6 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			if err == nil {
 				t := time.Now()
 				sw.Record("retrieved value from cache")
-				// decompress the value
 				r, err := zstd.NewReader(bytes.NewReader(b))
 				if err != nil {
 					httpErrLogf(w, http.StatusInternalServerError, "cache decompress: %w", err)
@@ -346,7 +343,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			// This is where the difference in the benchmark runs comes from,
 			// e.g. 64860/100000; estimated ratio 64% of records with DOI will
 			// have some reference information. TODO: dig a bit deeper.
-			log.Printf("no citations found for %s", vars["id"])
+			log.Printf("no citations found for %s", response.ID)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -373,11 +370,9 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			b := []byte(fmt.Sprintf(`{"doi": %q}`, k))
 			switch {
 			case outbound.Contains(k):
-				response.Unmatched.Citing = append(
-					response.Unmatched.Citing, b)
+				response.Unmatched.Citing = append(response.Unmatched.Citing, b)
 			case inbound.Contains(k):
-				response.Unmatched.Cited = append(
-					response.Unmatched.Cited, b)
+				response.Unmatched.Cited = append(response.Unmatched.Cited, b)
 			default:
 				// If this happens, the content of either inbound, outbound or
 				// their union changed in-flight, which should not happen.
@@ -411,13 +406,14 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		sw.Recordf("fetched %d blob from index data store", len(ids))
 		response.updateCounts()
 		response.Extra.Took = time.Since(started).Seconds()
-		// (7) If this request was expensive, cache it.
 		switch {
 		case s.Cache != nil && time.Since(started) > s.CacheTriggerDuration:
+			// (7a) If this request was expensive, cache it.
 			t := time.Now()
 			response.Extra.Cached = true
 			zbuf := bufPool.Get().(*bytes.Buffer)
 			zbuf.Reset()
+			// Wrap cache handling, so we can use defer to reclaim the buffer.
 			wrap := func() error {
 				defer bufPool.Put(zbuf)
 				zw, err := zstd.NewWriter(zbuf)
@@ -432,7 +428,6 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 					return fmt.Errorf("cache json encode: %w", err)
 				}
 				sw.Record("encoded json")
-				// Wrap up compression and caching.
 				if err := zw.Close(); err != nil {
 					return fmt.Errorf("cache close: %w", err)
 				}
@@ -449,6 +444,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				return
 			}
 		default:
+			// (7b) Request was fast, no need to cache.
 			enc := json.NewEncoder(w)
 			if err := enc.Encode(response); err != nil {
 				httpErrLogf(w, http.StatusInternalServerError, "encode: %w", err)
@@ -460,7 +456,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 	}
 }
 
-// Ping returns an error, if any of the datastores are not available.
+// Ping returns an error, if any of the datastores is not available.
 func (s *Server) Ping() error {
 	if err := s.IdentifierDatabase.Ping(); err != nil {
 		return err
@@ -478,7 +474,7 @@ func (s *Server) Ping() error {
 	return nil
 }
 
-// edges returns citing (outbound) and citing (inbound) edges for a given DOI.
+// edges returns citing (outbound) and cited (inbound) edges for a given DOI.
 func (s *Server) edges(ctx context.Context, doi string) (citing, cited []Map, err error) {
 	var t time.Time
 	t = time.Now()
@@ -494,6 +490,37 @@ func (s *Server) edges(ctx context.Context, doi string) (citing, cited []Map, er
 	}
 	s.Stats.MeasureSinceWithLabels("sql_query", t, nil)
 	return citing, cited, nil
+}
+
+// mapToLocal takes a list of DOI and returns a slice of Maps containing the
+// local id and DOI.
+func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err error) {
+	// sqlite has a limit on the variable count, which at most is 999; it may
+	// lead to "too many SQL variables", SQLITE_LIMIT_VARIABLE_NUMBER (default
+	// value: 999, cf:
+	// https://www.daemon-systems.org/man/sqlite3_bind_blob.3.html).
+	//
+	//   The NNN value must be between 1 and the sqlite3_limit() parameter
+	//   SQLITE_LIMIT_VARIABLE_NUMBER (default value: 999)
+	//
+	// I cannot say, what the optimal batch size here would be.
+	for _, batch := range batchedStrings(dois, 500) {
+		t := time.Now()
+		query, args, err := sqlx.In("SELECT * FROM map WHERE v IN (?)", batch)
+		if err != nil {
+			return nil, fmt.Errorf("query (%d): %v", len(dois), err)
+		}
+		var result []Map
+		query = s.IdentifierDatabase.Rebind(query)
+		if err := s.IdentifierDatabase.SelectContext(ctx, &result, query, args...); err != nil {
+			return nil, fmt.Errorf("select (%d): %v", len(dois), err)
+		}
+		s.Stats.MeasureSinceWithLabels("sql_query", t, nil)
+		for _, r := range result {
+			ids = append(ids, r)
+		}
+	}
+	return ids, nil
 }
 
 // batchedStrings batches one string slice into a potentially smaller number of
@@ -512,37 +539,7 @@ func batchedStrings(ss []string, n int) (result [][]string) {
 	return
 }
 
-// mapToLocal takes a list of DOI and returns a slice of Maps containing the
-// local id and DOI.
-// TODO: "too many SQL variables", SQLITE_LIMIT_VARIABLE_NUMBER (default value:
-// 999, cf: https://www.daemon-systems.org/man/sqlite3_bind_blob.3.html).
-func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err error) {
-	// sqlite has a limit on the variable count, which at most is 999.
-	//
-	//   The NNN value must be between 1 and the sqlite3_limit() parameter
-	//   SQLITE_LIMIT_VARIABLE_NUMBER (default value: 999)
-	for _, batch := range batchedStrings(dois, 500) {
-		t := time.Now()
-		query, args, err := sqlx.In("SELECT * FROM map WHERE v IN (?)", batch)
-		if err != nil {
-			return nil, fmt.Errorf("query (%d): %v", len(dois), err)
-		}
-		var result []Map
-		query = s.IdentifierDatabase.Rebind(query)
-		if err := s.IdentifierDatabase.SelectContext(ctx, &result, query, args...); err != nil {
-			// 2022/01/25 14:14:16 failed [500]: select: too many SQL variables
-			// 127.0.0.1 - - [25/Jan/2022:14:14:14 +0100] "GET /id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTEwMy9waHlzcmV2bGV0dC43Ny4zODY1 HTTP/1.1" 500 24
-			return nil, fmt.Errorf("select (%d): %v", len(dois), err)
-		}
-		s.Stats.MeasureSinceWithLabels("sql_query", t, nil)
-		for _, r := range result {
-			ids = append(ids, r)
-		}
-	}
-	return ids, nil
-}
-
-// httpErrLogf is a log helper.
+// httpErrLogf is a log formatting helper.
 func httpErrLogf(w http.ResponseWriter, status int, s string, a ...interface{}) {
 	httpErrLog(w, status, fmt.Errorf(s, a...))
 }

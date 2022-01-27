@@ -4,10 +4,6 @@
 #
 #   $ make
 #
-# Debug build:
-#
-#   $ make all EXTRA_BUILD_FLAGS="-tags debug"
-#
 # Create debian package:
 #
 #   $ make deb
@@ -29,7 +25,6 @@ BUILDTIME := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 GOLDFLAGS += -X main.Version=$(VERSION)
 GOLDFLAGS += -X main.Buildtime=$(BUILDTIME)
 GOLDFLAGS += -w -s
-EXTRA_BUILD_FLAGS = # e.g. add "-tags debug" here for debug builds
 GOFILES = $(shell find . -name \*.go -print)
 
 .PHONY: help
@@ -42,7 +37,7 @@ all: $(TARGETS) ## build all targets
 
 .PHONY: build
 %: cmd/%/main.go $(GOFILES)
-	go build -o $@ -ldflags "$(GOLDFLAGS)" $(EXTRA_BUILD_FLAGS) $<
+	go build -o $@ -ldflags "$(GOLDFLAGS)" $<
 
 .PHONY: clean
 clean: ## clean artifacts
