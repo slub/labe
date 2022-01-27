@@ -279,27 +279,37 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 					httpErrLogf(w, http.StatusInternalServerError, "cache decompress: %w", err)
 					return
 				}
-				var buf bytes.Buffer
-				if _, err := io.Copy(&buf, r); err != nil {
-					httpErrLogf(w, http.StatusInternalServerError, "cache copy: %w", err)
+				// We only need the buffer, because we want to rewrite the
+				// "extra.took" field in the cached JSON response. As cached
+				// responses are generally fast, we could also just ignore
+				// "extra.took" altogether and save some memory.
+				buf := bufPool.Get().(*bytes.Buffer)
+				buf.Reset()
+				wrap := func() error {
+					defer bufPool.Put(buf)
+					if _, err := io.Copy(buf, r); err != nil {
+						return fmt.Errorf("cache copy: %w", err)
+					}
+					// Hack to update "extra.took" field w/o parsing and
+					// serializing json; we expect something like:
+					// ...}]},"extra":{"took":1.443760546,"unmatc...  If this
+					// fails, we do not care; the chance this pattern appears
+					// in the data is very low.  Note that JSON will use
+					// scienfic notation by default, while %f would not.
+					took := fmt.Sprintf(`"took":%f`, time.Since(started).Seconds())
+					b = tookRegexp.ReplaceAll(buf.Bytes(), []byte(took))
+					if _, err := w.Write(b); err != nil {
+						return fmt.Errorf("write: %w", err)
+					}
+					sw.Record("used cached value")
+					sw.LogTable()
+					s.Stats.MeasureSinceWithLabels("cache_hit", t, nil)
+					return nil
+				}
+				if err := wrap(); err != nil {
+					httpErrLog(w, http.StatusInternalServerError, err)
 					return
 				}
-				// Hack to update "extra.took" field w/o parsing and
-				// serializing json; we expect something like:
-				// ...}]},"extra":{"took":1.443760546,"unmatc...  If this
-				// fails, we do not care; the chance this pattern appears
-				// in the data is very low.  Note that JSON will use
-				// scienfic notation by default, while %f would not.
-				took := fmt.Sprintf(`"took":%f`, time.Since(started).Seconds())
-				b = tookRegexp.ReplaceAll(buf.Bytes(), []byte(took))
-				if _, err := w.Write(b); err != nil {
-					httpErrLogf(w, http.StatusInternalServerError, "write: %w", err)
-					return
-				}
-				sw.Record("used cached value")
-				sw.LogTable()
-				s.Stats.MeasureSinceWithLabels("cache_hit", t, nil)
-				return
 			}
 		}
 		// (1) Get the DOI for the local id; or get out.
