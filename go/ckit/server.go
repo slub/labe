@@ -105,7 +105,8 @@ type Response struct {
 	} `json:"extra"`
 }
 
-// updateCounts updates extra fields containing counts.
+// updateCounts updates extra fields containing counts. Best called after the
+// slice fields are not changed any more.
 func (r *Response) updateCounts() {
 	r.Extra.CitingCount = len(r.Citing)
 	r.Extra.CitedCount = len(r.Cited)
@@ -261,14 +262,19 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				ID: vars["id"],
 			}
 			sw StopWatch
+			// Experimental, hacky support for limiting results to the documents of
+			// a particular institution, given as it appears in the "institution"
+			// fields of the index data, e.g. "DE-14".
+			isil     = r.URL.Query().Get("i")
+			cacheKey = response.ID + "@" + isil
 		)
 		sw.SetEnabled(s.StopWatchEnabled)
-		sw.Recordf("started query for: %s", response.ID)
+		sw.Recordf("started query for [%s]: %s", isil, response.ID)
 		// Ganz sicher application/json.
 		w.Header().Add("Content-Type", "application/json")
 		// (0) Check cache first.
 		if s.Cache != nil {
-			b, err := s.Cache.Get(response.ID)
+			b, err := s.Cache.Get(cacheKey)
 			if err == nil {
 				t := time.Now()
 				sw.Record("retrieved value from cache")
@@ -390,6 +396,19 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				httpErrLogf(w, http.StatusInternalServerError, "index data fetch: %w", err)
 				return
 			}
+			// TODO: at this point, we could plug in some additional checks, as
+			// for whether to include an item in the response or not; for
+			// example we could reduce items that match a given institution.
+			if isil != "" {
+				ok, err := hasInstitutionTag(b, isil)
+				if err != nil {
+					httpErrLogf(w, http.StatusInternalServerError, "metadata decode: %w", err)
+					return
+				}
+				if !ok {
+					continue
+				}
+			}
 			switch {
 			case outbound.Contains(v.Value):
 				response.Citing = append(response.Citing, b)
@@ -425,7 +444,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				if err := zw.Close(); err != nil {
 					return fmt.Errorf("cache close: %w", err)
 				}
-				if err := s.Cache.Set(response.ID, buf.Bytes()); err != nil {
+				if err := s.Cache.Set(cacheKey, buf.Bytes()); err != nil {
 					log.Printf("failed to cache value for %s: %v", response.ID, err)
 				} else {
 					sw.Record("cached value")
@@ -553,4 +572,23 @@ func httpErrLog(w http.ResponseWriter, status int, err error) {
 		return
 	}
 	http.Error(w, string(b), status)
+}
+
+// hasInstitutionTag is a filter that takes an index metadata document and tries to parse
+// the "institution" field. Returns true, if one or more institution given
+// match the institition value in the document.
+func hasInstitutionTag(b []byte, tags ...string) (bool, error) {
+	var data = struct {
+		Institutions []string `json:"institution"`
+	}{}
+	if err := json.Unmarshal(b, &data); err != nil {
+		return false, err
+	}
+	s := set.FromSlice(data.Institutions)
+	for _, t := range tags {
+		if s.Contains(t) {
+			return true, nil
+		}
+	}
+	return false, nil
 }
