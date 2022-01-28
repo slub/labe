@@ -405,12 +405,12 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			// (7a) If this request was expensive, cache it.
 			t := time.Now()
 			response.Extra.Cached = true
-			zbuf := bufPool.Get().(*bytes.Buffer)
-			zbuf.Reset()
+			buf := bufPool.Get().(*bytes.Buffer)
+			buf.Reset()
 			// Wrap cache handling, so we can use defer to reclaim the buffer.
 			wrap := func() error {
-				defer bufPool.Put(zbuf)
-				zw, err := zstd.NewWriter(zbuf)
+				defer bufPool.Put(buf)
+				zw, err := zstd.NewWriter(buf)
 				if err != nil {
 					return fmt.Errorf("cache compress: %w", err)
 				}
@@ -425,7 +425,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				if err := zw.Close(); err != nil {
 					return fmt.Errorf("cache close: %w", err)
 				}
-				if err := s.Cache.Set(response.ID, zbuf.Bytes()); err != nil {
+				if err := s.Cache.Set(response.ID, buf.Bytes()); err != nil {
 					log.Printf("failed to cache value for %s: %v", response.ID, err)
 				} else {
 					sw.Record("cached value")
