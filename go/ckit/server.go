@@ -429,7 +429,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		// Finalize response.
 		response.updateCounts()
 		response.Extra.Took = time.Since(started).Seconds()
-		response.Institution = isil
+		response.Extra.Institution = isil
 		switch {
 		case s.Cache != nil && time.Since(started) > s.CacheTriggerDuration:
 			// (7a) If this request was expensive, cache it.
