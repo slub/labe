@@ -287,6 +287,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 					httpErrLogf(w, http.StatusInternalServerError, "cache copy: %w", err)
 					return
 				}
+				r.Close()
 				s.Stats.MeasureSinceWithLabels("cache_hit", t, nil)
 				sw.Record("used cached value")
 				sw.LogTable()
