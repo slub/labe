@@ -102,6 +102,7 @@ type Response struct {
 		CitingCount          int     `json:"citing_count"`
 		CitedCount           int     `json:"cited_count"`
 		Cached               bool    `json:"cached"`
+		Institution          string  `json:"institution,omitempty"`
 	} `json:"extra"`
 }
 
@@ -425,8 +426,10 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			}
 		}
 		sw.Recordf("fetched %d blob from index data store", len(ids))
+		// Finalize response.
 		response.updateCounts()
 		response.Extra.Took = time.Since(started).Seconds()
+		response.Institution = isil
 		switch {
 		case s.Cache != nil && time.Since(started) > s.CacheTriggerDuration:
 			// (7a) If this request was expensive, cache it.
