@@ -367,7 +367,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			// We shortcut and do not use a proper JSON marshaller to save a
 			// bit of time. TODO: may switch to proper JSON encoding, if other
 			// parts are more optimized.
-			b := []byte(fmt.Sprintf(`{"doi": %q}`, k))
+			b := []byte(fmt.Sprintf(`{"doi_str_mv": %q}`, k))
 			switch {
 			case outbound.Contains(k):
 				response.Unmatched.Citing = append(response.Unmatched.Citing, b)
@@ -406,6 +406,14 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 					return
 				}
 				if !ok {
+					// Document is not held by the institution, so we add the
+					// docs to the unmatched sets.
+					switch {
+					case outbound.Contains(v.Value):
+						response.Unmatched.Citing = append(response.Unmatched.Citing, b)
+					case inbound.Contains(v.Value):
+						response.Unmatched.Cited = append(response.Unmatched.Cited, b)
+					}
 					continue
 				}
 			}
