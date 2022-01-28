@@ -296,8 +296,8 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		}
 		// (1) Get the DOI for the local id; or get out.
 		t := time.Now()
-		if err := s.IdentifierDatabase.GetContext(
-			ctx, &response.DOI, "SELECT v FROM map WHERE k = ?", response.ID); err != nil {
+		err := s.IdentifierDatabase.GetContext(ctx, &response.DOI, "SELECT v FROM map WHERE k = ?", response.ID)
+		if err != nil {
 			switch {
 			case err == sql.ErrNoRows:
 				log.Printf("no doi for local identifier (%s)", response.ID)
@@ -490,23 +490,26 @@ func (s *Server) edges(ctx context.Context, doi string) (citing, cited []Map, er
 // local id and DOI.
 func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err error) {
 	// sqlite has a limit on the variable count, which at most is 999; it may
-	// lead to "too many SQL variables", SQLITE_LIMIT_VARIABLE_NUMBER (default
-	// value: 999, cf:
-	// https://www.daemon-systems.org/man/sqlite3_bind_blob.3.html).
-	//
-	//   The NNN value must be between 1 and the sqlite3_limit() parameter
-	//   SQLITE_LIMIT_VARIABLE_NUMBER (default value: 999)
+	// lead to "too many SQL variables", SQLITE_LIMIT_VARIABLE_NUMBER (default:
+	// 999; https://www.daemon-systems.org/man/sqlite3_bind_blob.3.html).
 	//
 	// I cannot say, what the optimal batch size here would be.
-	for _, batch := range batchedStrings(dois, 500) {
-		t := time.Now()
-		query, args, err := sqlx.In("SELECT * FROM map WHERE v IN (?)", batch)
+	var (
+		t     time.Time
+		query string
+		args  []interface{}
+		size  = 500
+	)
+	for _, batch := range batchedStrings(dois, size) {
+		t = time.Now()
+		query, args, err = sqlx.In("SELECT * FROM map WHERE v IN (?)", batch)
 		if err != nil {
 			return nil, fmt.Errorf("query (%d): %v", len(dois), err)
 		}
 		var result []Map
 		query = s.IdentifierDatabase.Rebind(query)
-		if err := s.IdentifierDatabase.SelectContext(ctx, &result, query, args...); err != nil {
+		err = s.IdentifierDatabase.SelectContext(ctx, &result, query, args...)
+		if err != nil {
 			return nil, fmt.Errorf("select (%d): %v", len(dois), err)
 		}
 		s.Stats.MeasureSinceWithLabels("sql_query", t, nil)

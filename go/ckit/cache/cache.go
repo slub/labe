@@ -120,5 +120,6 @@ func (c *Cache) Get(key string) ([]byte, error) {
 	if v == "" {
 		return nil, ErrCacheMiss
 	}
+	// TODO: can we read into a byte slice directly?
 	return []byte(v), nil
 }
