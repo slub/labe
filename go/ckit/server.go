@@ -83,9 +83,9 @@ type ErrorMessage struct {
 	Err    error `json:"err,omitempty"`
 }
 
-// Response contains a subset of index data fused with citation data.  Citing
+// Response contains a subset of index data fused with citation data. Citing
 // and cited documents are raw bytes, but typically will contain JSON. For
-// unmatched docs, we only transmit the DOI, e.g. as {"doi": "10.123/123"}.
+// unmatched docs, we only transmit the DOI, e.g. {"doi_str_mv": "10.12/34"}.
 type Response struct {
 	ID        string            `json:"id"`
 	DOI       string            `json:"doi"`
