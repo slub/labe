@@ -41,8 +41,8 @@ var bufPool = sync.Pool{
 // Total size of databases involved at about 224GB plus 7 GB cache (ie. at most
 // 6% of the data can be held in memory at any time).
 //
-// Under load requesting the most costly 150K docs (with 32 threads) the server
-// will hover at around 4% RAM (or about 640MB).
+// Under load requesting the most costly 150K docs the server will hover at
+// around 10% (of 16GB) RAM.
 type Server struct {
 	// IdentifierDatabase maps local ids to DOI. The expected schema documented
 	// here: https://github.com/miku/labe/tree/main/go/ckit#makta
@@ -264,7 +264,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			sw StopWatch
 			// Experimental, hacky support for limiting results to the documents of
 			// a particular institution, given as it appears in the "institution"
-			// fields of the index data, e.g. "DE-14".
+			// field of the index data, e.g. "DE-14".
 			isil     = r.URL.Query().Get("i")
 			cacheKey = response.ID + "@" + isil
 		)
@@ -585,18 +585,12 @@ func httpErrLog(w http.ResponseWriter, status int, err error) {
 // hasInstitutionTag is a filter that takes an index metadata document and tries to parse
 // the "institution" field. Returns true, if one or more institution given
 // match the institition value in the document.
-func hasInstitutionTag(b []byte, tags ...string) (bool, error) {
+func hasInstitutionTag(b []byte, tag string) (bool, error) {
 	var data = struct {
 		Institutions []string `json:"institution"`
 	}{}
 	if err := json.Unmarshal(b, &data); err != nil {
 		return false, err
 	}
-	s := set.FromSlice(data.Institutions)
-	for _, t := range tags {
-		if s.Contains(t) {
-			return true, nil
-		}
-	}
-	return false, nil
+	return set.FromSlice(data.Institutions).Contains(tag), nil
 }
