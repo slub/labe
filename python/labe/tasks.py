@@ -1,5 +1,12 @@
 """
 Derivation tasks.
+
+Additional ideas:
+
+* [ ] see, whether openalex citation data would yield more edges
+* [ ] see, whether refcat citation data would yield more edges
+* [ ] make open citations data acquisition more robust
+
 """
 
 import configparser
