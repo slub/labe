@@ -299,6 +299,7 @@ class IdMappingTable(Task):
     date = luigi.DateParameter(default=datetime.date.today())
 
     def requires(self):
+        # TODO: may require per-index id to doi mapping
         return {
             "slub-production": SolrFetchDocs(date=self.date, name="slub-production", short=False),
             "main": SolrFetchDocs(date=self.date, name="main", short=False),
