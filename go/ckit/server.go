@@ -98,8 +98,8 @@ type ErrorMessage struct {
 // and cited documents are raw bytes, but typically will contain JSON. For
 // unmatched docs, we only transmit the DOI, e.g. {"doi_str_mv": "10.12/34"}.
 type Response struct {
-	ID        string            `json:"id"`
-	DOI       string            `json:"doi"`
+	ID        string            `json:"id,omitempty"`
+	DOI       string            `json:"doi,omitempty"`
 	Citing    []json.RawMessage `json:"citing,omitempty"`
 	Cited     []json.RawMessage `json:"cited,omitempty"`
 	Unmatched struct {
@@ -114,11 +114,11 @@ type Response struct {
 		CitedCount           int     `json:"cited_count"`
 		Cached               bool    `json:"cached"`
 		Institution          string  `json:"institution,omitempty"`
-	} `json:"extra"`
+	} `json:"extra,omitempty"`
 }
 
 // applyInstitutionFilter rearranges cited and citing documents in place based
-// on holdings of an instutition, given by its ISIL.
+// on holdings of an instutition, given by its ISIL (ISO 15511).
 func (r *Response) applyInstitutionFilter(institution string) {
 	var (
 		citing []json.RawMessage
@@ -344,6 +344,8 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				)
 				switch {
 				case isil != "":
+					// If we need to filter on isil, we need to unwrap the raw
+					// message and adjust the response.
 					var resp Response
 					dec := json.NewDecoder(replacer)
 					if err := dec.Decode(&resp); err != nil {
@@ -466,28 +468,6 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				httpErrLogf(w, http.StatusInternalServerError, "index data fetch: %w", err)
 				return
 			}
-			// TODO: at this point, we could plug in some additional checks, as
-			// for whether to include an item in the response or not; for
-			// example we could reduce items that match a given institution.
-			//
-			// if isil != "" {
-			// 	ok, err := hasInstitutionTag(b, isil)
-			// 	if err != nil {
-			// 		httpErrLogf(w, http.StatusInternalServerError, "metadata decode: %w", err)
-			// 		return
-			// 	}
-			// 	if !ok {
-			// 		// Document is not held by the institution, so we add the
-			// 		// docs to the unmatched sets.
-			// 		switch {
-			// 		case outbound.Contains(v.Value):
-			// 			response.Unmatched.Citing = append(response.Unmatched.Citing, b)
-			// 		case inbound.Contains(v.Value):
-			// 			response.Unmatched.Cited = append(response.Unmatched.Cited, b)
-			// 		}
-			// 		continue
-			// 	}
-			// }
 			switch {
 			case outbound.Contains(v.Value):
 				response.Citing = append(response.Citing, b)
@@ -499,10 +479,8 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		// Finalize response.
 		response.updateCounts()
 		response.Extra.Took = time.Since(started).Seconds()
-		response.Extra.Institution = isil
-		switch {
-		case s.Cache != nil && time.Since(started) > s.CacheTriggerDuration:
-			// (7a) If this request was expensive, cache it.
+		// (7) Send, possibly filter; if this request was expensive, cache it.
+		if s.Cache != nil && time.Since(started) > s.CacheTriggerDuration {
 			t := time.Now()
 			response.Extra.Cached = true
 			buf := bufPool.Get().(*bytes.Buffer)
@@ -514,38 +492,32 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				if err != nil {
 					return fmt.Errorf("cache compress: %w", err)
 				}
-				var (
-					mw  = io.MultiWriter(w, zw)
-					enc = json.NewEncoder(mw)
-				)
-				if err := enc.Encode(response); err != nil {
+				if err := json.NewEncoder(zw).Encode(response); err != nil {
 					return fmt.Errorf("cache json encode: %w", err)
 				}
-				sw.Record("encoded json")
 				if err := zw.Close(); err != nil {
 					return fmt.Errorf("cache close: %w", err)
 				}
 				if err := s.Cache.Set(response.ID, buf.Bytes()); err != nil {
-					log.Printf("failed to cache value for %s: %v", response.ID, err)
-				} else {
-					sw.Record("cached value")
+					return fmt.Errorf("failed to cache value for %s: %v", response.ID, err)
 				}
 				s.Stats.MeasureSinceWithLabels("cached", t, nil)
+				sw.Record("cached value")
 				return nil
 			}
 			if err := wrap(); err != nil {
 				httpErrLog(w, http.StatusInternalServerError, err)
 				return
 			}
-		default:
-			// (7b) Request was fast, no need to cache.
-			enc := json.NewEncoder(w)
-			if err := enc.Encode(response); err != nil {
-				httpErrLogf(w, http.StatusInternalServerError, "encode: %w", err)
-				return
-			}
-			sw.Record("encoded JSON")
 		}
+		if isil != "" {
+			response.applyInstitutionFilter(isil)
+		}
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			httpErrLogf(w, http.StatusInternalServerError, "encode: %w", err)
+			return
+		}
+		sw.Record("sent response")
 		sw.LogTable()
 	}
 }
@@ -653,17 +625,4 @@ func httpErrLog(w http.ResponseWriter, status int, err error) {
 		return
 	}
 	http.Error(w, string(b), status)
-}
-
-// hasInstitutionTag is a filter that takes an index metadata document and tries to parse
-// the "institution" field. Returns true, if one or more institution given
-// match the institition value in the document.
-func hasInstitutionTag(b []byte, tag string) (bool, error) {
-	var data = struct {
-		Institutions []string `json:"institution"`
-	}{}
-	if err := json.Unmarshal(b, &data); err != nil {
-		return false, err
-	}
-	return set.FromSlice(data.Institutions).Contains(tag), nil
 }

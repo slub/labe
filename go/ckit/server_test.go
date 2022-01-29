@@ -63,7 +63,47 @@ func TestApplyInstitutionFilter(t *testing.T) {
 			resp:        []byte("{}"),
 			expected:    []byte(`{"extra": {"institution": "any"}}`),
 		},
-		// TODO: add more cases
+		{
+			desc:        "one cited doc matches",
+			institution: "a",
+			resp: []byte(`
+            {
+              "cited": [
+                {
+                  "institution": "a"
+                },
+                {
+                  "institution": "b"
+                }
+              ]
+            }
+			`),
+			expected: []byte(`
+			{
+			  "cited": [
+				{
+				  "institution": "a"
+				}
+			  ],
+			  "unmatched": {
+				"cited": [
+				  {
+					"institution": "b"
+				  }
+				]
+			  },
+			  "extra": {
+				"took": 0,
+				"unmatched_citing_count": 0,
+				"unmatched_cited_count": 1,
+				"citing_count": 0,
+				"cited_count": 1,
+				"cached": false,
+				"institution": "a"
+			  }
+			}
+			`),
+		},
 	}
 	for _, c := range cases {
 		var (
@@ -78,7 +118,18 @@ func TestApplyInstitutionFilter(t *testing.T) {
 		}
 		resp.applyInstitutionFilter(c.institution)
 		if !cmp.Equal(resp, expected) {
-			t.Fatalf("[%s] got %v, want %v", c.desc, resp, expected)
+			t.Fatalf("[%s] got %v, want %v", c.desc,
+				string(mustMarshal(resp)),
+				string(c.expected),
+			)
 		}
 	}
+}
+
+func mustMarshal(v interface{}) []byte {
+	b, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
