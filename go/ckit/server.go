@@ -31,6 +31,17 @@ var bufPool = sync.Pool{
 	},
 }
 
+var snippetPool = sync.Pool{
+	New: func() interface{} {
+		return new(Snippet)
+	},
+}
+
+// Snippet is a small piece of index metadata used for institution filter.
+type Snippet struct {
+	Institution string `json:"institution"`
+}
+
 // Server wraps three data sources required for index and citation data fusion.
 // The IdentifierDatabase is a map from local identifier (e.g. 0-1238201) to
 // DOI, the OciDatabase contains citing and cited relationships from OCI/COCI
@@ -104,6 +115,43 @@ type Response struct {
 		Cached               bool    `json:"cached"`
 		Institution          string  `json:"institution,omitempty"`
 	} `json:"extra"`
+}
+
+// applyInstitutionFilter rearranges cited and citing documents in place based
+// on holdings of an instutition, given by its ISIL.
+func (r *Response) applyInstitutionFilter(institution string) {
+	var (
+		citing []json.RawMessage
+		cited  []json.RawMessage
+	)
+	for _, b := range r.Citing {
+		v := snippetPool.Get().(*Snippet)
+		if err := json.Unmarshal(b, v); err != nil {
+			panic("internal data broken")
+		}
+		if v.Institution == institution {
+			citing = append(citing, b)
+		} else {
+			r.Unmatched.Citing = append(r.Unmatched.Citing, b)
+		}
+		snippetPool.Put(v)
+	}
+	for _, b := range r.Cited {
+		v := snippetPool.Get().(*Snippet)
+		if err := json.Unmarshal(b, v); err != nil {
+			panic("internal data broken")
+		}
+		if v.Institution == institution {
+			cited = append(cited, b)
+		} else {
+			r.Unmatched.Cited = append(r.Unmatched.Cited, b)
+		}
+		snippetPool.Put(v)
+	}
+	r.Citing = citing
+	r.Cited = cited
+	r.updateCounts()
+	r.Extra.Institution = institution
 }
 
 // updateCounts updates extra fields containing counts. Best called after the
@@ -271,8 +319,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			// want to cache the unfiltered results. This saves space and time,
 			// when warming the cache. The filter will be fast to apply
 			// on-the-fly.
-			isil     = r.URL.Query().Get("i")
-			cacheKey = response.ID + "@" + isil
+			isil = r.URL.Query().Get("i")
 		)
 		sw.SetEnabled(s.StopWatchEnabled)
 		sw.Recordf("started query for [%s]: %s", isil, response.ID)
@@ -280,7 +327,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		w.Header().Add("Content-Type", "application/json")
 		// (0) Check cache first.
 		if s.Cache != nil {
-			b, err := s.Cache.Get(cacheKey)
+			b, err := s.Cache.Get(response.ID)
 			if err == nil {
 				t := time.Now()
 				sw.Record("retrieved value from cache")
@@ -295,9 +342,26 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 						regexp.MustCompile(`"took":[0-9.]+`), took),
 					)
 				)
-				if _, err := io.Copy(w, replacer); err != nil {
-					httpErrLogf(w, http.StatusInternalServerError, "cache copy: %w", err)
-					return
+				switch {
+				case isil != "":
+					var resp Response
+					dec := json.NewDecoder(replacer)
+					if err := dec.Decode(&resp); err != nil {
+						httpErrLogf(w, http.StatusInternalServerError, "cache json decode: %w", err)
+						return
+					}
+					resp.applyInstitutionFilter(isil)
+					sw.Record("applied institution filter")
+					enc := json.NewEncoder(w)
+					if err := enc.Encode(resp); err != nil {
+						httpErrLogf(w, http.StatusInternalServerError, "encode: %w", err)
+						return
+					}
+				default:
+					if _, err := io.Copy(w, replacer); err != nil {
+						httpErrLogf(w, http.StatusInternalServerError, "cache copy: %w", err)
+						return
+					}
 				}
 				r.Close()
 				s.Stats.MeasureSinceWithLabels("cache_hit", t, nil)
@@ -405,24 +469,25 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			// TODO: at this point, we could plug in some additional checks, as
 			// for whether to include an item in the response or not; for
 			// example we could reduce items that match a given institution.
-			if isil != "" {
-				ok, err := hasInstitutionTag(b, isil)
-				if err != nil {
-					httpErrLogf(w, http.StatusInternalServerError, "metadata decode: %w", err)
-					return
-				}
-				if !ok {
-					// Document is not held by the institution, so we add the
-					// docs to the unmatched sets.
-					switch {
-					case outbound.Contains(v.Value):
-						response.Unmatched.Citing = append(response.Unmatched.Citing, b)
-					case inbound.Contains(v.Value):
-						response.Unmatched.Cited = append(response.Unmatched.Cited, b)
-					}
-					continue
-				}
-			}
+			//
+			// if isil != "" {
+			// 	ok, err := hasInstitutionTag(b, isil)
+			// 	if err != nil {
+			// 		httpErrLogf(w, http.StatusInternalServerError, "metadata decode: %w", err)
+			// 		return
+			// 	}
+			// 	if !ok {
+			// 		// Document is not held by the institution, so we add the
+			// 		// docs to the unmatched sets.
+			// 		switch {
+			// 		case outbound.Contains(v.Value):
+			// 			response.Unmatched.Citing = append(response.Unmatched.Citing, b)
+			// 		case inbound.Contains(v.Value):
+			// 			response.Unmatched.Cited = append(response.Unmatched.Cited, b)
+			// 		}
+			// 		continue
+			// 	}
+			// }
 			switch {
 			case outbound.Contains(v.Value):
 				response.Citing = append(response.Citing, b)
@@ -460,7 +525,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				if err := zw.Close(); err != nil {
 					return fmt.Errorf("cache close: %w", err)
 				}
-				if err := s.Cache.Set(cacheKey, buf.Bytes()); err != nil {
+				if err := s.Cache.Set(response.ID, buf.Bytes()); err != nil {
 					log.Printf("failed to cache value for %s: %v", response.ID, err)
 				} else {
 					sw.Record("cached value")
