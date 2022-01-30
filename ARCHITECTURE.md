@@ -32,7 +32,6 @@ $ time zstdcat -T0 /usr/share/labe/data/OpenCitationsRanked/current | \
     parallel -j 32 -I {} "curl -sL 'http://localhost:8000/doi/{}'" > /dev/null
 ```
 
-
 ![](static/Labe-Sequence.png)
 
 This way we should get a good balance between a batch and on-the-fly approach:
