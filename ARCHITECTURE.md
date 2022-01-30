@@ -8,8 +8,8 @@ Structured directories and filenames for data artifacts.
 
 ![](static/labe-tree.png)
 
-Data acquisition and processing results in three [sqlite3](https://sqlite.org/)
-databases:
+Data acquisition and processing results in three (kinds of)
+[sqlite3](https://sqlite.org/) databases:
 
 * a) one id-doi "mapping" database
 * b) one "citations" databases (doi-doi)
