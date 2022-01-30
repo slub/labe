@@ -57,16 +57,34 @@ type Snippet struct {
 type Server struct {
 	// IdentifierDatabase maps local ids to DOI. The expected schema documented
 	// here: https://github.com/miku/labe/tree/main/go/ckit#makta
+	//
+	// 0-025152688     10.1007/978-3-476-03951-4
+	// 0-025351737     10.13109/9783666551536
+	// 0-024312134     10.1007/978-1-4612-1116-7
+	// 0-025217100     10.1007/978-3-322-96667-4
+	// ...
 	IdentifierDatabase *sqlx.DB
 	// OciDatabase contains DOI to DOI mappings representing a citation
 	// relationship. The expected schema documented here:
 	// https://github.com/miku/labe/tree/main/go/ckit#makta
+	//
+	// 10.1002/9781119393351.ch1       10.1109/icelmach.2012.6350005
+	// 10.1002/9781119393351.ch1       10.1115/detc2011-48151
+	// 10.1002/9781119393351.ch1       10.1109/ical.2009.5262972
+	// 10.1002/9781119393351.ch1       10.1109/cdc.2013.6760196
+	// ...
 	OciDatabase *sqlx.DB
 	// IndexData allows to fetch a metadata blob given an identifier. This is
 	// an interface that in the past has been implemented by types wrapping
 	// microblob, SOLR and sqlite3, as well as a FetchGroup, that allows to
 	// query multiple backends. We settled on sqlite3 and FetchGroup, the other
 	// implementation are now gone.
+	//
+	// dswarm-126-ZnR0aG9zdHdlc3RsaX...   {"id":"dswarm-126-ZnR0aG9zdHdlc3RsaXBwZ...
+	// dswarm-126-ZnR0aG9zdHdlc3RsaX...   {"id":"dswarm-126-ZnR0aG9zdHdlc3RsaXBwZ...
+	// dswarm-126-ZnR0dW11ZW5jaGVuOm...   {"id":"dswarm-126-ZnR0dW11ZW5jaGVuOm9ha...
+	// dswarm-126-ZnR0dW11ZW5jaGVuOm...   {"id":"dswarm-126-ZnR0dW11ZW5jaGVuOm9ha...
+	// ...
 	IndexData Fetcher
 	// Router to register routes on.
 	Router *mux.Router
@@ -117,8 +135,9 @@ type Response struct {
 	} `json:"extra,omitempty"`
 }
 
-// applyInstitutionFilter rearranges cited and citing documents in place based
-// on holdings of an instutition, given by its ISIL (ISO 15511).
+// applyInstitutionFilter rearranges cited and citing documents in-place based
+// on holdings of an institution (as found in the index data), given by its
+// ISIL (ISO 15511).
 func (r *Response) applyInstitutionFilter(institution string) {
 	var (
 		citing []json.RawMessage
@@ -240,8 +259,13 @@ func (s *Server) handleCacheInfo() http.HandlerFunc {
 // handleCachePurge empties the cache.
 func (s *Server) handleCachePurge() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if s.Cache != nil {
-			s.Cache.Flush()
+		if s.Cache == nil {
+			return
+		}
+		if err := s.Cache.Flush(); err != nil {
+			httpErrLog(w, http.StatusInternalServerError, err)
+			return
+		} else {
 			log.Println("flushed cached")
 		}
 	}
@@ -253,8 +277,7 @@ func (s *Server) handleStats() http.HandlerFunc {
 	s.Stats.MetricsTimers = make(map[string]time.Time)
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		enc := json.NewEncoder(w)
-		if err := enc.Encode(s.Stats.Data()); err != nil {
+		if err := json.NewEncoder(w).Encode(s.Stats.Data()); err != nil {
 			httpErrLog(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -275,7 +298,7 @@ func (s *Server) handleDOI() http.HandlerFunc {
 		if err != nil {
 			switch {
 			case err == context.Canceled:
-				log.Println(err)
+				log.Printf("handle doi: %v", err)
 			default:
 				http.Error(w, `{"msg": "no id found", "status": 404}`, http.StatusNotFound)
 			}
@@ -298,6 +321,8 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		// (5) include unmatched ids
 		// (6) assemble result
 		// (7) cache, if request was expensive
+		// (8) optional: apply institution filter
+		// (9) send response
 		var (
 			ctx          = r.Context()
 			started      = time.Now()
@@ -317,30 +342,24 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			isil = r.URL.Query().Get("i")
 		)
 		sw.SetEnabled(s.StopWatchEnabled)
-		sw.Recordf("started query for [%s]: %s", isil, response.ID)
+		sw.Recordf("[%s] started query: %s", isil, response.ID)
 		// Ganz sicher application/json.
 		w.Header().Add("Content-Type", "application/json")
 		// (0) Check cache first.
 		if s.Cache != nil {
+			t := time.Now()
 			b, err := s.Cache.Get(response.ID)
 			if err == nil {
-				t := time.Now()
-				sw.Record("retrieved value from cache")
+				sw.Recordf("retrieved value (%db) from cache", len(b))
 				r, err := zstd.NewReader(bytes.NewReader(b))
 				if err != nil {
 					httpErrLogf(w, http.StatusInternalServerError, "cache decompress: %w", err)
 					return
 				}
-				var (
-					took     = fmt.Sprintf(`"took":%f`, time.Since(started).Seconds())
-					replacer = transform.NewReader(r, replace.RegexpString(
-						regexp.MustCompile(`"took":[0-9.]+`), took),
-					)
-				)
+				took := fmt.Sprintf(`"took":%f`, time.Since(started).Seconds())
+				replacer := transform.NewReader(r, replace.RegexpString(regexp.MustCompile(`"took":[0-9.]+`), took))
 				switch {
 				case isil != "":
-					// If we need to filter on isil, we need to unwrap the raw
-					// message and adjust the response.
 					var resp Response
 					if err := json.NewDecoder(replacer).Decode(&resp); err != nil {
 						httpErrLogf(w, http.StatusInternalServerError, "cache json decode: %w", err)
@@ -348,8 +367,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 					}
 					resp.applyInstitutionFilter(isil)
 					sw.Record("applied institution filter")
-					enc := json.NewEncoder(w)
-					if err := enc.Encode(resp); err != nil {
+					if err := json.NewEncoder(w).Encode(resp); err != nil {
 						httpErrLogf(w, http.StatusInternalServerError, "encode: %w", err)
 						return
 					}
@@ -361,7 +379,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				}
 				r.Close()
 				s.Stats.MeasureSinceWithLabels("cache_hit", t, nil)
-				sw.Record("used cached value")
+				sw.Record("sent cached value")
 				sw.LogTable()
 				return
 			}
@@ -372,10 +390,10 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		if err != nil {
 			switch {
 			case err == sql.ErrNoRows:
-				log.Printf("no doi for local identifier (%s)", response.ID)
-				httpErrLogf(w, http.StatusNotFound, "select id: %w", err)
+				log.Printf("doi lookup (%s): %v", response.ID, err)
+				httpErrLogf(w, http.StatusNotFound, "doi lookup (%s): %w", response.ID, err)
 			case err == context.Canceled:
-				log.Printf("select id: %v", err)
+				log.Printf("doi lookup (%s): %v", response.ID, err)
 				return
 			default:
 				httpErrLogf(w, http.StatusInternalServerError, "select id: %w", err)
@@ -383,7 +401,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			return
 		}
 		s.Stats.MeasureSinceWithLabels("sql_query", t, nil)
-		sw.Recordf("found doi for id: %s", response.DOI)
+		sw.Recordf("found doi: %s", response.DOI)
 		// (2) Get outbound and inbound edges.
 		citing, cited, err := s.edges(ctx, response.DOI)
 		if err != nil {
@@ -404,17 +422,14 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		for _, v := range cited {
 			inbound.Add(v.Key)
 		}
-		ss := outbound.Union(inbound)
-		if ss.IsEmpty() {
-			// This is where the difference in the benchmark runs comes from,
-			// e.g. 64860/100000; estimated ratio 64% of records with DOI will
-			// have some reference information. TODO: dig a bit deeper.
-			log.Printf("no citations found for %s", response.ID)
+		ds := outbound.Union(inbound)
+		if ds.IsEmpty() {
+			log.Printf("no citations found: %s", response.ID)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 		// (4) Map relevant DOI back to local identifiers.
-		if ids, err = s.mapToLocal(ctx, ss.Slice()); err != nil {
+		if ids, err = s.mapToLocal(ctx, ds.Slice()); err != nil {
 			switch {
 			case err == context.Canceled:
 				log.Println(err)
@@ -423,12 +438,12 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			}
 			return
 		}
-		sw.Recordf("mapped %d dois back to ids", ss.Len())
+		sw.Recordf("mapped %d dois back to ids", ds.Len())
 		// (5) Here, we can find unmatched items, via DOI.
 		for _, v := range ids {
 			matched = append(matched, v.Value)
 		}
-		unmatchedSet = ss.Difference(set.FromSlice(matched))
+		unmatchedSet = ds.Difference(set.FromSlice(matched))
 		for k := range unmatchedSet {
 			// We shortcut and do not use a proper JSON marshaller to save a
 			// bit of time. TODO: may switch to proper JSON encoding, if other
@@ -440,17 +455,17 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			case inbound.Contains(k):
 				response.Unmatched.Cited = append(response.Unmatched.Cited, b)
 			default:
-				// If this happens, the content of either inbound, outbound or
-				// their union changed in-flight, which should not happen.
-				panic("in-flight change of inbound or outbound values")
+				panic("cosmic rays detected (in-flight change of inbound or outbound values)")
 			}
 		}
 		sw.Record("recorded unmatched ids")
 		// (6) At this point, we need to assemble the result. For each
-		// identifier we want the full metadata. We use an local copy of the
-		// index. We could also ask a live index here. This is agnostic to the
-		// index data content, it can contain the full metadata record, or just
-		// a few fields.
+		// identifier we want the full metadata. We currently use an local
+		// sqlite copy of the index data as this seems to be the fastest
+		// option.
+		//
+		// This is agnostic to the index data content, it can contain
+		// the full metadata record, or just a few fields.
 		for _, v := range ids {
 			t := time.Now()
 			b, err := s.IndexData.Fetch(v.Key)
@@ -473,7 +488,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		// Finalize response.
 		response.updateCounts()
 		response.Extra.Took = time.Since(started).Seconds()
-		// (7) Send, possibly filter; if this request was expensive, cache it.
+		// (7) Cache expensive results.
 		if s.Cache != nil && time.Since(started) > s.CacheTriggerDuration {
 			t := time.Now()
 			response.Extra.Cached = true
@@ -486,6 +501,8 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				if err != nil {
 					return fmt.Errorf("cache compress: %w", err)
 				}
+				// We cache the unfiltered response (otherwise the cache would
+				// waste disk space).
 				if err := json.NewEncoder(zw).Encode(response); err != nil {
 					return fmt.Errorf("cache json encode: %w", err)
 				}
@@ -504,10 +521,12 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				return
 			}
 		}
+		// (8) Optional: Apply institution filter.
 		if isil != "" {
 			response.applyInstitutionFilter(isil)
 			sw.Record("applied institution filter")
 		}
+		// (9) Send response.
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			httpErrLogf(w, http.StatusInternalServerError, "encode: %w", err)
 			return
@@ -537,8 +556,7 @@ func (s *Server) Ping() error {
 
 // edges returns citing (outbound) and cited (inbound) edges for a given DOI.
 func (s *Server) edges(ctx context.Context, doi string) (citing, cited []Map, err error) {
-	var t time.Time
-	t = time.Now()
+	t := time.Now()
 	if err := s.OciDatabase.SelectContext(
 		ctx, &citing, "SELECT * FROM map WHERE k = ?", doi); err != nil {
 		return nil, nil, err
@@ -556,16 +574,14 @@ func (s *Server) edges(ctx context.Context, doi string) (citing, cited []Map, er
 // mapToLocal takes a list of DOI and returns a slice of Maps containing the
 // local id and DOI.
 func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err error) {
-	// sqlite has a limit on the variable count, which at most is 999; it may
-	// lead to "too many SQL variables", SQLITE_LIMIT_VARIABLE_NUMBER (default:
-	// 999; https://www.daemon-systems.org/man/sqlite3_bind_blob.3.html).
-	//
-	// I cannot say, what the optimal batch size here would be.
 	var (
 		t     time.Time
 		query string
 		args  []interface{}
-		size  = 500
+		// sqlite has a limit on the variable count, which at most is 999; it may
+		// lead to "too many SQL variables", SQLITE_LIMIT_VARIABLE_NUMBER (default:
+		// 999; https://www.daemon-systems.org/man/sqlite3_bind_blob.3.html).
+		size = 500 // Anything between 1 and 999.
 	)
 	for _, batch := range batchedStrings(dois, size) {
 		t = time.Now()
