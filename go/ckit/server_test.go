@@ -70,10 +70,10 @@ func TestApplyInstitutionFilter(t *testing.T) {
             {
               "cited": [
                 {
-                  "institution": "a"
+                  "institution": ["a"]
                 },
                 {
-                  "institution": "b"
+                  "institution": ["b"]
                 }
               ]
             }
@@ -82,13 +82,13 @@ func TestApplyInstitutionFilter(t *testing.T) {
 			{
 			  "cited": [
 				{
-				  "institution": "a"
+				  "institution": ["a"]
 				}
 			  ],
 			  "unmatched": {
 				"cited": [
 				  {
-					"institution": "b"
+					"institution": ["b"]
 				  }
 				]
 			  },
