@@ -54,6 +54,9 @@ Format:
 * [100K / 150K / 48 / n](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md#100k--150k--48--n)
 * [1K / 0K / 32 / n](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md#1k--0k--32--n)
 * [1K / 1K / 32 / n](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md#1k--1k--32--n)
+* [100K / 200K / 32 / n](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md#100k--200k--32--n)
+* [100K / 200K / 16 / n](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md#100k--200k--16--n)
+* [100K / 200K / 8 / n](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md#100k--200k--8--n)
 
 ----
 
