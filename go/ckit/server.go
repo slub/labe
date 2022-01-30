@@ -512,6 +512,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		}
 		if isil != "" {
 			response.applyInstitutionFilter(isil)
+			sw.Record("applied institution filter")
 		}
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			httpErrLogf(w, http.StatusInternalServerError, "encode: %w", err)
