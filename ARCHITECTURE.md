@@ -21,7 +21,7 @@ over multiple
 [sqlite3](https://github.com/slub/labe/blob/838fdd6c935d9d2d18693ba6dd9625eb34accb7e/go/ckit/fetcher.go#L36-L40)
 databases, but the [interface](https://github.com/slub/labe/blob/5f8dd0b14eb2293d84fa0e80c9d787f49366ed3f/go/ckit/fetcher.go#L31-L34) would allow to use a different local or remote backing stores.
 
-A [server](https://github.com/slub/labe/blob/main/go/ckit/server.go#L32-L68)
+A [server](https://github.com/slub/labe/blob/aa5cfc6c6dc99ecac8b3abe8b1402a25120a9a55/go/ckit/server.go#L45-L56)
 assembles fused results from these databases on the fly (and caches expensive
 requests) and builds JSON responses.
 
