@@ -342,8 +342,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 					// If we need to filter on isil, we need to unwrap the raw
 					// message and adjust the response.
 					var resp Response
-					dec := json.NewDecoder(replacer)
-					if err := dec.Decode(&resp); err != nil {
+					if err := json.NewDecoder(replacer).Decode(&resp); err != nil {
 						httpErrLogf(w, http.StatusInternalServerError, "cache json decode: %w", err)
 						return
 					}

@@ -111,10 +111,10 @@ func TestApplyInstitutionFilter(t *testing.T) {
 			expected Response
 		)
 		if err := json.Unmarshal(c.resp, &resp); err != nil {
-			t.Fatalf("could not unmarshal test response")
+			t.Fatalf("could not unmarshal test response: %v", err)
 		}
 		if err := json.Unmarshal(c.expected, &expected); err != nil {
-			t.Fatalf("could not unmarshal test response")
+			t.Fatalf("could not unmarshal test response: %v", err)
 		}
 		resp.applyInstitutionFilter(c.institution)
 		if !cmp.Equal(resp, expected) {
