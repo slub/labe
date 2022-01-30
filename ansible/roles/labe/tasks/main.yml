@@ -106,7 +106,10 @@
 # to remove entries manually).
 #
 # The number of docs for cache warming is flexible, e.g. 150K items took about
-# 90min to cache and caching can run easily in the background.
+# 90min to cache and caching can run easily in the background. Another data
+# point, cache warmup with 200K takes 98min (with 32 threads); the resulting
+# sqlite3 cache file is 9GB (values are about 20% of the size due to
+# compression).
 - name: "Setup crontab for data updates, cleanups and cache warmup"
   cron:
     name: Data updates for labe, cleanups, cache warmup
