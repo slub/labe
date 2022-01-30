@@ -39,7 +39,7 @@ var snippetPool = sync.Pool{
 
 // Snippet is a small piece of index metadata used for institution filter.
 type Snippet struct {
-	Institution string `json:"institution"`
+	Institution []string `json:"institution"`
 }
 
 // Server wraps three data sources required for index and citation data fusion.
@@ -127,9 +127,9 @@ func (r *Response) applyInstitutionFilter(institution string) {
 	for _, b := range r.Citing {
 		v := snippetPool.Get().(*Snippet)
 		if err := json.Unmarshal(b, v); err != nil {
-			panic("internal data broken")
+			panic(fmt.Sprintf("internal data broken: %v", err))
 		}
-		if v.Institution == institution {
+		if sliceContains(v.Institution, institution) {
 			citing = append(citing, b)
 		} else {
 			r.Unmatched.Citing = append(r.Unmatched.Citing, b)
@@ -139,9 +139,9 @@ func (r *Response) applyInstitutionFilter(institution string) {
 	for _, b := range r.Cited {
 		v := snippetPool.Get().(*Snippet)
 		if err := json.Unmarshal(b, v); err != nil {
-			panic("internal data broken")
+			panic(fmt.Sprintf("internal data broken: %v", err))
 		}
-		if v.Institution == institution {
+		if sliceContains(v.Institution, institution) {
 			cited = append(cited, b)
 		} else {
 			r.Unmatched.Cited = append(r.Unmatched.Cited, b)
@@ -606,6 +606,16 @@ func batchedStrings(ss []string, n int) (result [][]string) {
 		}
 	}
 	return
+}
+
+// sliceContains returns true, if a string slice contains a given value.
+func sliceContains(ss []string, v string) bool {
+	for _, s := range ss {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }
 
 // httpErrLogf is a log formatting helper.
