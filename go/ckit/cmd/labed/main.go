@@ -115,7 +115,7 @@ func main() {
 		os.Exit(0)
 	}
 	var (
-		logWriter                       io.Writer = os.Stdout
+		logWriter                       io.Writer = os.Stderr
 		identifierDatabase, ociDatabase *sqlx.DB
 		fetcher                         ckit.Fetcher
 		err                             error
