@@ -1,10 +1,10 @@
 # Architecture
 
 [Luigi](https://github.com/spotify/luigi) for orchestration (but trying to keep
-[task code](https://github.com/slub/labe/blob/main/python/labe/tasks.py)
-minimal, [cf.
-bl.uk](https://blogs.bl.uk/webarchive/2022/01/ukwa-2021-technical-update.html)).
-Structured directories and filenames for data artifacts. Scheduling with [cron](https://en.wikipedia.org/wiki/Cron).
+[task code](https://github.com/slub/labe/blob/main/python/labe/tasks.py) small,
+[cf. bl.uk](https://blogs.bl.uk/webarchive/2022/01/ukwa-2021-technical-update.html)).
+Structured paths for data artifacts. Scheduling with
+[cron](https://en.wikipedia.org/wiki/Cron).
 
 ![](static/labe-tree.png)
 
