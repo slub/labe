@@ -21,6 +21,6 @@ if len(sys.argv) < 2:
     sys.exit(1)
 
 df = pd.read_csv(sys.argv[1], skip_blank_lines=True, header=None, names=["s"])
-df.describe(percentiles=[.25, .5, .75, .95, .99, .995, .999, .9999, 1]).to_csv(sys.stdout, sep="\t", header=None)
-# df.describe(percentiles=[.25, .5, .75, .95, .99, 1]).to_json(sys.stdout)
-
+df.describe(percentiles=[0.25, 0.5, 0.75, 0.95, 0.99, 0.995, 0.999, 0.9999, 1]).to_csv(
+    sys.stdout, sep="\t", header=None
+)
