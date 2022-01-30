@@ -25,13 +25,14 @@ A [server](https://github.com/slub/labe/blob/aa5cfc6c6dc99ecac8b3abe8b1402a25120
 assembles fused results from these databases on the fly (and caches expensive
 requests) and builds JSON responses.
 
-Cache warming can be a one-liner and can be run in the background.
+Cache warming can be a one-liner and can be run (in
+[parallel](https://www.gnu.org/software/parallel/) and) in the background.
 
 ```shell
 $ time zstdcat -T0 /usr/share/labe/data/OpenCitationsRanked/current | \
-    awk '{print $2}' |
-    head -200000 |
-    shuf |
+    awk '{print $2}' | \
+    head -200000 | \
+    shuf | \
     parallel -j 32 -I {} "curl -sL 'http://localhost:8000/doi/{}'" > /dev/null
 ```
 
