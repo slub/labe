@@ -39,7 +39,7 @@ This way we should get a good balance between a batch and on-the-fly approach:
 * we need *little preprocessing*, we mostly turn CSV or SOLR JSON into sqlite databases
 * we still can *be fast* through caching, which can be done forehandedly
   ("cache warming") or as data is actually requested; this is in essence the
-  same work that would be needed in a batch approach, but we can do it lazily.
+  same work that would be needed in a batch approach, but we can do it lazily (ie. we pre-compute only about **0.3%** of the results).
 
 The server delivers JSON responses, which can be processed in catalog frontends.
 
