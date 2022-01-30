@@ -289,3 +289,105 @@ min     0.000658
 100%    0.721374
 max     0.721374
 ```
+
+## 100K / 200K / 32 / n
+
+```
+$ time zstdcat -T0 /usr/share/labe/data/IdMappingTable/current | \
+    awk '{print $1}' | shuf -n 100000 | \
+    parallel -j 32 -I {} "curl -sL 'http://localhost:8000/id/{}'" | \
+    jq -rc .extra.took > 100_200_32_n.tsv
+
+real    6m16.495s
+user    13m44.408s
+sys     9m58.037s
+```
+
+> Results
+
+```
+count   59737.0
+mean    0.05532090641736277
+std     0.10440201029001707
+min     0.000249
+25%     0.013934712
+50%     0.031817175
+75%     0.0605167
+95%     0.16639817
+99%     0.42079971239999975
+99.5%   0.6734620138799999
+99.9%   1.379923397320045
+99.99%  1.8354236451565984
+100%    5.056811688
+max     5.056811688
+```
+
+In words: 99.5% of requests are answered in less than 670 ms.
+
+## 100K / 200K / 16 / n
+
+```
+$ time zstdcat -T0 /usr/share/labe/data/IdMappingTable/current | \
+    awk '{print $1}' | shuf -n 100000 | \
+    parallel -j 16 -I {} "curl -sL 'http://localhost:8000/id/{}'" | \
+    jq -rc .extra.took > 100_200_32_n.tsv
+
+real    6m3.838s
+user    13m24.944s
+sys     9m34.430s
+```
+
+> Results
+
+```
+count   59811.0
+mean    0.04729659819080102
+std     0.08968581700254126
+min     0.000283073
+25%     0.0120395895
+50%     0.027985846
+75%     0.0531296815
+95%     0.14187775149999998
+99%     0.35084227190000117
+99.5%   0.49099134694999996
+99.9%   1.1225115812200386
+99.99%  1.5513531715020963
+100%    8.153026578
+max     8.153026578
+```
+
+In words: 99.5% of requests are answered in less than 490 ms.
+
+## 100K / 200K / 8 / n
+
+```
+$ time zstdcat -T0 /usr/share/labe/data/IdMappingTable/current | \
+    awk '{print $1}' | shuf -n 100000 | \
+    parallel -j 8 -I {} "curl -sL 'http://localhost:8000/id/{}'" | \
+    jq -rc .extra.took > 100_200_32_n.tsv
+
+real    8m36.202s
+user    13m3.800s
+sys     9m3.214s
+```
+
+> Results
+
+```
+count   59720.0
+mean    0.041847604683104486
+std     0.07908671543896699
+min     0.000118
+25%     0.01072277375
+50%     0.0247479445
+75%     0.0472173865
+95%     0.12424948984999996
+99%     0.30989023608999944
+99.5%   0.4216174154949996
+99.9%   1.0876998167700243
+99.99%  2.411902293074092
+100%    5.277846136
+max     5.277846136
+```
+
+In words: 99.5% of requests are answered in less than 420 ms.
