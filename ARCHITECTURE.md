@@ -2,7 +2,9 @@
 
 [Luigi](https://github.com/spotify/luigi) for orchestration (but trying to keep
 [task code](https://github.com/slub/labe/blob/main/python/labe/tasks.py)
-minimal). Structured directories and filenames for data artifacts.
+minimal, [cf.
+bl.uk](https://blogs.bl.uk/webarchive/2022/01/ukwa-2021-technical-update.html)).
+Structured directories and filenames for data artifacts.
 
 ![](static/labe-tree.png)
 
@@ -20,16 +22,28 @@ over multiple
 databases, but the interface would allow to use a different local or remote backing stores.
 
 A [server](https://github.com/slub/labe/blob/main/go/ckit/server.go#L32-L68)
-assembles fused results from these databases on the fly (and caches expesive
+assembles fused results from these databases on the fly (and caches expensive
 requests) and builds JSON responses.
+
+Cache warming can be a one-liner and can be run in the background.
+
+```shell
+$ time zstdcat -T0 /usr/share/labe/data/OpenCitationsRanked/current | \
+    awk '{print $2}' |
+    head -200000 |
+    shuf |
+    parallel -j 32 -I {} "curl -sL 'http://localhost:8000/doi/{}'" > /dev/null
+```
+
 
 ![](static/Labe-Sequence.png)
 
-This way we should get a good balance:
+This way we should get a good balance between a batch and on-the-fly approach:
 
 * we need *little preprocessing*, we mostly turn CSV or SOLR JSON into sqlite databases
-* we still can *be fast* through caching, which can be done forehandedly ("cache
-  warming") or as data is actually requested
+* we still can *be fast* through caching, which can be done forehandedly
+  ("cache warming") or as data is actually requested; this is in essence the
+  same work that would be needed in a batch approach, but we can do it lazily.
 
 The server delivers JSON responses, which can be processed in catalog frontends.
 
