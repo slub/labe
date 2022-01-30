@@ -314,11 +314,6 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			// Experimental, hacky support for limiting results to the documents of
 			// a particular institution, given as it appears in the "institution"
 			// field of the index data, e.g. "DE-14".
-			//
-			// TODO: the filtering should come after cache, that is, we only
-			// want to cache the unfiltered results. This saves space and time,
-			// when warming the cache. The filter will be fast to apply
-			// on-the-fly.
 			isil = r.URL.Query().Get("i")
 		)
 		sw.SetEnabled(s.StopWatchEnabled)
