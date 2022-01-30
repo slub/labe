@@ -1,6 +1,6 @@
 # Performance Report
 
-> 2022-01-22
+> 2022-01-30
 
 ```
 $ neofetch
@@ -52,6 +52,8 @@ Format:
 * [10K / 0K / 32 / y](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md#10k--0k--32--y)
 * [100K / 150K / 16 / n](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md#100k--150k--16--n)
 * [100K / 150K / 48 / n](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md#100k--150k--48--n)
+* [1K / 0K / 32 / n](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md#1k--0k--32--n)
+* [1K / 1K / 32 / n](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md#1k--1k--32--n)
 
 ----
 
@@ -217,3 +219,73 @@ min     0.000107
 max     7.522301854
 ```
 
+## 1K / 0K / 32 / n
+
+* top most expensive docs, plus redirect
+
+```
+$ time zstdcat -T0 /usr/share/labe/data/OpenCitationsRanked/current | \
+    awk '{print $2}' | head -n 1000 | \
+    parallel -j 32 -I {} "curl -sL 'http://localhost:8000/doi/{}'" | \
+    jq -rc .extra.took > 1_0_32_n.tsv
+
+real    6m5.641s
+user    1m44.343s
+sys     0m22.553s
+```
+
+> Results
+
+```
+count   661.0
+mean    17.07446426031316
+std     12.36869567471186
+min     4.292194971
+25%     10.47658709
+50%     13.174479671
+75%     18.149221195
+95%     45.129916904
+99%     60.84711251679998
+99.5%   69.00280557950008
+99.9%   101.66116247292209
+99.99%  140.58392134518996
+100%    144.908672331
+max     144.908672331
+```
+
+## 1K / 1K / 32 / n
+
+* top most expensive docs, plus redirect; all items cached
+
+```
+$ time zstdcat -T0 /usr/share/labe/data/OpenCitationsRanked/current | \
+    awk '{print $2}' | head -n 1000 | \
+    parallel -j 32 -I {} "curl -sL 'http://localhost:8000/doi/{}'" | \
+    jq -rc .extra.took > 1_1_32_n.tsv
+
+real    1m20.448s
+user    1m27.920s
+sys     0m22.211s
+```
+
+Note, that for the "real" reading, the bottleneck is `jq` - those documents are
+quite big. The total bytes sent in this case is over 3GB.
+
+> Results
+
+```
+count   661.0
+mean    0.02209813767019667
+std     0.06960397052862143
+min     0.000658
+25%     0.001978
+50%     0.004339
+75%     0.007261
+95%     0.150513
+99%     0.36790879999999954
+99.5%   0.41653480000000054
+99.9%   0.5681860200000074
+99.99%  0.7060552019999928
+100%    0.721374
+max     0.721374
+```
