@@ -137,7 +137,7 @@ type Response struct {
 
 // applyInstitutionFilter rearranges cited and citing documents in-place based
 // on holdings of an institution (as found in the index data), given by its
-// ISIL (ISO 15511).
+// ISIL (ISO 15511). This will panic, if the index metadata is not valid JSON.
 func (r *Response) applyInstitutionFilter(institution string) {
 	var (
 		citing []json.RawMessage
@@ -394,7 +394,6 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				httpErrLogf(w, http.StatusNotFound, "doi lookup (%s): %w", response.ID, err)
 			case err == context.Canceled:
 				log.Printf("doi lookup (%s): %v", response.ID, err)
-				return
 			default:
 				httpErrLogf(w, http.StatusInternalServerError, "select id: %w", err)
 			}
