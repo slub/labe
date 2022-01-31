@@ -12,7 +12,7 @@ Data acquisition and processing results in three (kinds of)
 [sqlite3](https://sqlite.org/) databases:
 
 * a) one id-doi "mapping" database
-* b) one "citations" databases (doi-doi)
+* b) one "citations" database (doi-doi)
 * c) one or more index "metadata" [fetcher](https://github.com/slub/labe/blob/838fdd6c935d9d2d18693ba6dd9625eb34accb7e/go/ckit/fetcher.go#L31-L34) (id-doc)
 
 Currently, we use a

@@ -218,7 +218,7 @@ $ curl -s localhost:8000/stats | jq .
 
 ### TODO
 
-* [ ] a detailed performance report
+* [x] a detailed performance report (see: [](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md))
 
 ----
 
