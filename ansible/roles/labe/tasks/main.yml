@@ -110,6 +110,8 @@
 # point, cache warmup with 200K takes 98min (with 32 threads); the resulting
 # sqlite3 cache file is 9GB (values are about 20% of the size due to
 # compression).
+#
+# May switch to systemd.timer version in the future.
 - name: "Setup crontab for data updates, cleanups and cache warmup"
   cron:
     name: Data updates for labe, cleanups, cache warmup
