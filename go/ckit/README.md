@@ -220,7 +220,7 @@ $ curl -s localhost:8000/stats | jq .
 
 ### TODO
 
-* [x] a detailed performance report (see: [](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md))
+* [x] a detailed performance report (see: [01/2022 Performance Report](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md))
 
 ----
 
