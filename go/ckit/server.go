@@ -182,13 +182,13 @@ func (r *Response) updateCounts() {
 	r.Extra.UnmatchedCitedCount = len(r.Unmatched.Cited)
 }
 
-// Routes sets up route.
+// Routes sets up routes.
 func (s *Server) Routes() {
 	s.Router.HandleFunc("/", s.handleIndex()).Methods("GET")
 	s.Router.HandleFunc("/cache", s.handleCacheInfo()).Methods("GET")
 	s.Router.HandleFunc("/cache", s.handleCachePurge()).Methods("DELETE")
-	s.Router.HandleFunc("/id/{id}", s.handleLocalIdentifier()).Methods("GET")
 	s.Router.HandleFunc("/doi/{doi:.*}", s.handleDOI()).Methods("GET")
+	s.Router.HandleFunc("/id/{id}", s.handleLocalIdentifier()).Methods("GET")
 	s.Router.HandleFunc("/stats", s.handleStats()).Methods("GET")
 }
 
