@@ -4,6 +4,8 @@ Citation graph kit for the LABE project at [SLUB
 Dresden](https://www.slub-dresden.de/). This subproject contains a few
 standalone command lines programs and servers. The task orchestration part lives under [labe/python](../../python).
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/slub/labe/go/ckit.svg)](https://pkg.go.dev/github.com/slub/labe/go/ckit)
+
 * [doisniffer](#doisniffer), [filter](https://en.wikipedia.org/wiki/Filter_(software)) to find DOI by patterns in Solr VuFind JSON documents
 * [labed](#labed), an HTTP server serving Open Citations data fused with catalog metadata
 * [tabjson](#tabjson), turn JSON into TSV
