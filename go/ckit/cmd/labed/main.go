@@ -150,10 +150,10 @@ func main() {
 			log.Fatal(err)
 		}
 		fetcher = g
-		log.Printf("[ok] setup group fetcher over %d databases: %v",
+		log.Printf("[ok] setup group fetcher over %d database(s): %v",
 			len(g.Backends), sqliteFetcherPaths)
 	default:
-		log.Fatal("need sqlite3 metadata index database (-Q)")
+		log.Fatal("need at least one sqlite3 metadata index database (-m)")
 	}
 	// Setup server.
 	srv := &ckit.Server{
