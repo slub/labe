@@ -38,10 +38,21 @@ $ zstdcat -T0 /usr/share/labe/data/IdMappingTable/current | wc -l
 The number of cached items in subsequent tests may be slightly bigger (as
 additional items have been cached).
 
+To debug performance issues:
+
+```
+$ zstdcat -T0 /usr/share/labe/data/IdMappingTable/current | \
+    awk '{print $1}' | \
+    shuf -n 100000 | \
+    parallel -j 8 -I {} "curl -sL 'http://localhost:8000/id/{}'" | \
+    jq -rc '[.id, .extra.citing_count, .extra.cited_count, .extra.took] | @tsv' | \
+    awk '$4 >= 0.7'
+```
+
 Format:
 
-* number of local ids
-* number of cached items
+* number of ids
+* number of cached docs
 * parallel requests
 * filter (y/n)
 
