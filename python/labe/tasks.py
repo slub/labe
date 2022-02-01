@@ -464,7 +464,7 @@ class OpenCitationsStats(Task):
         # TODO: this is totally wasteful, but we may be able to abstract some
         # of this away a bit, later.
         with open(unique_doi_sample) as f:
-            sample = f.readlines()
+            sample = [line.strip() for line in f]
         with open(unique_doi_count) as f:
             unique = int(f.read())
 
