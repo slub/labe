@@ -58,6 +58,7 @@ Format:
 * [100K / 200K / 16 / n](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md#100k--200k--16--n)
 * [100K / 200K / 8 / n](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md#100k--200k--8--n)
 * [10K / 200K / 2 / n](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md#10k--200k--2--n)
+* [100K / 250K / 8 / n](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md#100k--250k--8--n)
 
 ----
 
@@ -431,4 +432,38 @@ max     2.12236816
 
 In words: 99.5% of requests are answered in less than 333 ms.
 
+
+## 100K / 250K / 8 / n
+
+```
+$ time zstdcat -T0 /usr/share/labe/data/IdMappingTable/current | \
+    awk '{print $1}' | shuf -n 100000 | \
+    parallel -j 8 -I {} "curl -sL 'http://localhost:8000/id/{}'" | \
+    jq -rc .extra.took > 100_250_8_n.tsv
+
+real    12m6.887s
+user    15m3.460s
+sys     10m28.117s
+```
+
+> Results
+
+```
+count   59515.0
+mean    0.06580645975290264
+std     0.10183488559427872
+min     0.000315747
+25%     0.017783385999999998
+50%     0.040821632
+75%     0.0774112315
+95%     0.19960330019999997
+99%     0.44929262388000024
+99.5%   0.6034766201400004
+99.9%   1.210110393076014
+99.99%  1.5660877300677754
+100%    8.127795763
+max     8.127795763
+```
+
+In words: 99.5% of requests are answered in less than 603 ms.
 
