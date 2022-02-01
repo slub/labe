@@ -400,18 +400,29 @@ class OpenCitationsStats(Task):
         return OpenCitationsSingleFile()
 
     def run(self):
-        source_dois_list = shellout("""
-                                    zstdcat -T0 {input} |
-                                    LC_ALL=C cut -d, -f 2 |
-                                    zstd -c -T0 > {output}
-                                    """,
-                                    input=self.input().path)
-        target_dois_list = shellout("""
-                                    zstdcat -T0 {input} |
-                                    LC_ALL=C cut -d, -f 3 |
-                                    zstd -c -T0 > {output}
-                                    """,
-                                    input=self.input().path)
+        source_doi_list = shellout("""
+                                   zstdcat -T0 {input} |
+                                   LC_ALL=C cut -d, -f 2 |
+                                   zstd -c -T0 > {output}
+                                   """,
+                                   input=self.input().path)
+        target_doi_list = shellout("""
+                                   zstdcat -T0 {input} |
+                                   LC_ALL=C cut -d, -f 3 |
+                                   zstd -c -T0 > {output}
+                                   """,
+                                   input=self.input().path)
+        sorted_source_doi_list = shellout("""
+                                          zstdcat -T0 {input} |
+                                          LC_ALL=C sort -S40% |
+                                          zstd -c -T0 > {output}
+                                          """, input=source_doi_list)
+        sorted_target_doi_list = shellout("""
+                                          zstdcat -T0 {input} |
+                                          LC_ALL=C sort -S40% |
+                                          zstd -c -T0 > {output}
+                                          """, input=target_doi_list)
+        # TODO: oci frequency distribution
         raise NotImplementedError()
 
     def output(self):
