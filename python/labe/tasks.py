@@ -416,14 +416,51 @@ class OpenCitationsStats(Task):
                                           zstdcat -T0 {input} |
                                           LC_ALL=C sort -S40% |
                                           zstd -c -T0 > {output}
-                                          """, input=source_doi_list)
+                                          """,
+                                          input=source_doi_list)
         sorted_target_doi_list = shellout("""
                                           zstdcat -T0 {input} |
                                           LC_ALL=C sort -S40% |
                                           zstd -c -T0 > {output}
-                                          """, input=target_doi_list)
-        # TODO: oci frequency distribution
-        raise NotImplementedError()
+                                          """,
+                                          input=target_doi_list)
+        unique_source_doi_list = shellout("""
+                                          zstdcat -T0 {input} |
+                                          LC_ALL=C uniq |
+                                          zstd -c -T0 > {output}
+                                          """,
+                                          input=sorted_source_doi_list)
+        unique_target_doi_list = shellout("""
+                                          zstdcat -T0 {input} |
+                                          LC_ALL=C uniq |
+                                          zstd -c -T0 > {output}
+                                          """,
+                                          input=sorted_target_doi_list)
+        unique_doi_list = shellout("""
+                                   zstdcat -T0 {s} {t} | LC_ALL=C sort -S50% -u | zstd -c -T0 > {output}
+                                   """,
+                                   s=unique_source_doi_list,
+                                   t=unique_target_doi_list)
+        unique_doi_sample = shellout("""
+                                     zstdcat -T0 {f} | shuf -n 100
+                                     """,
+                                     f=unique_doi_list)
+        unique_doi_count = shellout("""
+                                    zstdcat -T0 {f} | wc -l > {output}
+                                    """,
+                                    f=unique_doi_list)
+        # TODO: this is totally wasteful, but we may be able to abstract some
+        # of this away a bit, later.
+        with open(unique_doi_sample) as f:
+            sample = f.readlines()
+        with open(unique_doi_count) as f:
+            unique = int(f.read())
+
+        with self.output().open("w") as output:
+            json.dump({
+                "sample": sample,
+                "unique_doi": unique,
+            }, output)
 
     def output(self):
         fingerprint = self.open_citations_url_hash()
