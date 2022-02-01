@@ -194,25 +194,19 @@ class OpenCitationsRanked(Task):
         return OpenCitationsSingleFile()
 
     def run(self):
-        dois = shellout(r"""
-                         zstd -cd -T0 {input} |
-                         cut -d , -f2,3 |
-                         tr ',' '\n' |
-                         grep ^10 |
-                         zstd -T0 -c >> {output}
-                         """,
-                        input=self.input().path,
-                        preserve_whitespace=True)
         output = shellout("""
                           zstd -cd -T0 {input} |
+                          LC_ALL=C cut -d , -f2,3 |
+                          LC_ALL=C tr ',' '\n' |
+                          LC_ALL=C grep ^10 |
                           LC_ALL=C sort -S50% |
                           LC_ALL=C uniq -c |
                           LC_ALL=C sort -nr -S 20% |
                           zstd -c -T0 > {output}
                           """,
-                          input=dois)
+                          input=self.input().path,
+                          preserve_whitespace=True)
         luigi.LocalTarget(output).move(self.output().path)
-        os.remove(dois)
 
     def output(self):
         fingerprint = self.open_citations_url_hash()
@@ -302,6 +296,10 @@ class IdMappingTable(Task):
     Generate a two column TSV mapping local identifiers to their DOI. May
     require the "doisniffer" tool (https://git.io/J9L0D) and GNU parallel,
     about 15min.
+
+    We do not do this per SOLR index currently, because there are two different
+    ways to do this currently, e.g. via "doi_str_mv" field and via
+    "doisniffer" - this distinction is wrapped in this task.
     """
     date = luigi.DateParameter(default=datetime.date.today())
 
@@ -319,24 +317,21 @@ class IdMappingTable(Task):
         output = shellout(""" zstd -q -d -c -T0 {input} |
                               doisniffer |
                               jq -rc '[.id, .doi_str_mv[0]] | @tsv' |
-                              zstd -c -T0 >> {output}
-                          """,
+                              zstd -c -T0 >> {output} """,
                           input=self.input().get("main").path)
 
         # In 01/2022, we use "doisniffer" for slub-production as well.
         shellout(""" zstd -q -d -c -T0 {input} |
-                              doisniffer |
-                              jq -rc '[.id, .doi_str_mv[0]] | @tsv' |
-                              zstd -c -T0 >> {output}
-                 """,
+                     doisniffer |
+                     jq -rc '[.id, .doi_str_mv[0]] | @tsv' |
+                     zstd -c -T0 >> {output} """,
                  output=output,
                  input=self.input().get("slub-production").path)
 
         # In 01/2022, the "doi_str_mv" field is included in "ai" - with 73881207 values.
         shellout(""" zstd -q -d -c -T0 {input} |
                      parallel -j 8 --pipe --block 10M "jq -rc 'select(.doi_str_mv | length > 0) | [.id, .doi_str_mv[0]] | @tsv'" |
-                     zstd -T0 -c >> {output}
-                 """,
+                     zstd -T0 -c >> {output} """,
                  output=output,
                  input=self.input().get("ai").path)
 
