@@ -444,7 +444,7 @@ class OpenCitationsStats(Task):
                                    s=unique_source_doi_list,
                                    t=unique_target_doi_list)
         unique_doi_sample = shellout("""
-                                     zstdcat -T0 {f} | shuf -n 100
+                                     zstdcat -T0 {f} | shuf -n 100 > {output}
                                      """,
                                      f=unique_doi_list)
         unique_doi_count = shellout("""
