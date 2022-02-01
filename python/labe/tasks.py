@@ -400,6 +400,7 @@ class OpenCitationsStats(Task):
         return OpenCitationsSingleFile()
 
     def run(self):
+        cleanup = set()
         source_doi_list = shellout("""
                                    zstdcat -T0 {input} |
                                    LC_ALL=C cut -d, -f 2 |
@@ -449,6 +450,16 @@ class OpenCitationsStats(Task):
                                     zstdcat -T0 {f} | wc -l > {output}
                                     """,
                                     f=unique_doi_list)
+
+        cleanup.add(source_doi_list)
+        cleanup.add(target_doi_list)
+        cleanup.add(sorted_source_doi_list)
+        cleanup.add(sorted_target_doi_list)
+        cleanup.add(unique_source_doi_list)
+        cleanup.add(unique_target_doi_list)
+        cleanup.add(unique_doi_list)
+        cleanup.add(unique_doi_sample)
+        cleanup.add(unique_doi_count)
         # TODO: this is totally wasteful, but we may be able to abstract some
         # of this away a bit, later.
         with open(unique_doi_sample) as f:
@@ -461,6 +472,9 @@ class OpenCitationsStats(Task):
                 "sample": sample,
                 "unique_doi": unique,
             }, output)
+
+        for path in cleanup:
+            os.remove(path)
 
     def output(self):
         fingerprint = self.open_citations_url_hash()
