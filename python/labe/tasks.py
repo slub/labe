@@ -1,7 +1,7 @@
 """
 Derivation tasks.
 
-Additional ideas:
+A few extra ideas:
 
 * [ ] see, whether openalex citation data would yield more edges
 * [ ] see, whether refcat citation data would yield more edges
@@ -383,3 +383,41 @@ class CombinedUpdate(luigi.WrapperTask):
         yield OpenCitationsDatabase()
         # We want OpenCitationsRanked for cache warmup.
         yield OpenCitationsRanked()
+
+
+class OpenCitationsStats(Task):
+    """
+    Some metrics from open citations.
+
+    * number of edges
+    * number of source entities
+    * number of target entities
+    * number of entities which are both source and target
+    * distribution of edges per node
+    """
+
+    def requires(self):
+        return OpenCitationsSingleFile()
+
+    def run(self):
+        source_dois_list = shellout("""
+                                    zstdcat -T0 {input} |
+                                    LC_ALL=C cut -d, -f 2 |
+                                    zstd -c -T0 > {output}
+                                    """,
+                                    input=self.input().path)
+        target_dois_list = shellout("""
+                                    zstdcat -T0 {input} |
+                                    LC_ALL=C cut -d, -f 3 |
+                                    zstd -c -T0 > {output}
+                                    """,
+                                    input=self.input().path)
+        raise NotImplementedError()
+
+    def output(self):
+        fingerprint = self.open_citations_url_hash()
+        filename = "{}.json".format(fingerprint)
+        return luigi.LocalTarget(path=self.path(filename=filename))
+
+    def on_success(self):
+        self.create_symlink(name="current")
