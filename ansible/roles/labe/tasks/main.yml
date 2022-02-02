@@ -129,15 +129,4 @@
       rm -f $(labe.pyz --data-dir /usr/share/labe --list-deletable) &&
       labe.pyz --data-dir /usr/share/labe -r CombinedUpdate --workers 4 &&
       sudo systemctl restart labed &&
-      zstd -qcd -T0 /usr/share/labe/data/OpenCitationsRanked/current |
-          awk '{ print $2 }' |
-          head -n 300000 |
-          shuf |
-          parallel -j 32 -I {} 'curl -sL "http://localhost:8000/doi/{}"' > /dev/null
-
-- name: "Cleanup shiv temporary files"
-  cron:
-    name: Cleanup shiv temporary files
-    user: labe
-    special_time: monthly
-    job: rm -rf /home/labe/.shiv
+      zstd -qcd -T0 /usr/share/labe/data/OpenCitationsRanked/current | awk '{ print $2 }' | head -n 300000 | shuf | parallel -j 32 -I {} 'curl -sL "http://localhost:8000/doi/{}"' > /dev/null
