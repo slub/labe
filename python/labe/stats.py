@@ -4,8 +4,8 @@ Stats related tasks.
 
 import luigi
 
-from labe.tasks import OpenCitationsSingleFile, Task
 from labe.base import shellout
+from labe.tasks import OpenCitationsSingleFile, Task
 
 __all__ = [
     'OpenCitationsSourceDOI',
@@ -60,6 +60,33 @@ class OpenCitationsTargetDOI(Task):
                           """,
                           input=self.input().path)
         luigi.LocalTarget(output).move(self.output().path)
+
+    def output(self):
+        fingerprint = self.open_citations_url_hash()
+        filename = "{}.tsv".format(fingerprint)
+        return luigi.LocalTarget(path=self.path(filename=filename))
+
+    def on_success(self):
+        self.create_symlink(name="current")
+
+
+class OpenCitationsCitedCount(Task):
+    """
+    Generate a table with two columns: inbound link count and DOI.
+    """
+
+    def requires(self):
+        return OpenCitationsTargetDOI()
+
+    def run(self):
+        shellout(r"""
+                  zstdcat -T0 {input} |
+                  LC_ALL=C uniq -c |
+                  LC_ALL=C sort -S 40% -nr |
+                  LC_ALL=C sed -e 's@^[ ]*@@;s@ @\t@' |
+                  zstd -c -T0 > {output}
+                  """,
+                 input=self.input().path)
 
     def output(self):
         fingerprint = self.open_citations_url_hash()
