@@ -116,14 +116,32 @@ class OpenCitationsCitedCount(Task):
 class OpenCitationsInboundStats(Task):
     """
     Inbound edge count distribution.
-    """
 
+      {
+        "inbound_edges": {
+          "count": 58110382,
+          "mean": 21.8783773612,
+          "std": 104.0590729122,
+          "min": 1,
+          "0%": 1,
+          "10%": 1,
+          "25%": 2,
+          "50%": 7,
+          "75%": 20,
+          "95%": 81,
+          "99%": 220,
+          "99.9%": 802,
+          "100%": 200934,
+          "max": 200934
+        }
+      }
+    """
     def requires(self):
         return OpenCitationsCitedCount()
 
     def run(self):
         output = shellout("zstdcat -T0 {input} | cut -f1 > {output}", input=self.input().path)
-        df = pd.read_csv(output, header=None, names=["c"], skip_blank_lines=True)
+        df = pd.read_csv(output, header=None, names=["inbound_edges"], skip_blank_lines=True)
         percentiles = [0, 0.1, 0.25, 0.5, 0.75, 0.95, 0.99, 0.999, 1]
         with tempfile.NamedTemporaryFile(mode="wb", delete=False) as f:
             df.describe(percentiles=percentiles).to_json(f)
