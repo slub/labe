@@ -7,6 +7,7 @@ Stats related tasks. Mainly:
 """
 
 import datetime
+import tempfile
 
 import luigi
 import pandas as pd
@@ -123,8 +124,9 @@ class OpenCitationsInboundStats(Task):
         output = shellout("zstdcat -T0 {input} | cut -f1 > {output}", input=self.input().path)
         df = pd.read_csv(output, header=None, names=["c"], skip_blank_lines=True)
         percentiles = [0, 0.1, 0.25, 0.5, 0.75, 0.95, 0.99, 0.999, 1]
-        with self.output().open("wb") as output:
-            df.describe(percentiles=percentiles).to_json(output)
+        with tempfile.NamedTemporaryFile(mode="wb", delete=False) as f:
+            df.describe(percentiles=percentiles).to_json(f)
+        luigi.LocalTarget(f.name).move(self.output().path)
         os.remove(output)
 
     def output(self):
