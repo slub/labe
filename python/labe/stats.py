@@ -3,6 +3,7 @@ Stats related tasks.
 """
 
 import datetime
+
 import luigi
 
 from labe.base import shellout
@@ -85,14 +86,14 @@ class OpenCitationsCitedCount(Task):
         return OpenCitationsTargetDOI()
 
     def run(self):
-        shellout(r"""
-                  zstdcat -T0 {input} |
-                  LC_ALL=C uniq -c |
-                  LC_ALL=C sort -S 40% -nr |
-                  LC_ALL=C sed -e 's@^[ ]*@@;s@ @\t@' |
-                  zstd -c -T0 > {output}
-                  """,
-                 input=self.input().path)
+        output = shellout(r"""
+                          zstdcat -T0 {input} |
+                          LC_ALL=C uniq -c |
+                          LC_ALL=C sort -S 40% -nr |
+                          LC_ALL=C sed -e 's@^[ ]*@@;s@ @\t@' |
+                          zstd -c -T0 > {output}
+                          """,
+                          input=self.input().path)
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
