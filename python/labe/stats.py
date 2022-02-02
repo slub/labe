@@ -121,7 +121,7 @@ class OpenCitationsUniqueDOI(Task):
                           LC_ALL=C sort -u -S 50%
                             <(zstdcat -T0 {s} | LC_ALL=C uniq)
                             <(zstdcat -T0 {t} | LC_ALL=C uniq)
-                          > | zstd -c -T0 > {output}
+                          | zstd -c -T0 > {output}
                           """,
                           s=self.input().get("s").path,
                           t=self.input().get("t").path)
