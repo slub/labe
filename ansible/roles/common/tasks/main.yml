@@ -1,5 +1,3 @@
-- name: "Sync hwclock"
-  shell: hwclock --hctosys
 - name: "Update packages"
   apt:
     update_cache: true
