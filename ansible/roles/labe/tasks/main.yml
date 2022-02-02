@@ -82,6 +82,13 @@
     line: 'labe ALL=(ALL:ALL) NOPASSWD: /usr/bin/systemctl restart labed'
     validate: visudo -cf %s
 
+- name: "Set XDG_DATA_HOME system-wide"
+  lineinfile:
+    path: /etc/environment
+    state: present
+    regexp: "^XDG_DATA_HOME="
+    line: "XDG_DATA_HOME=/usr/share"
+
 - name: "Creates an entry like `PATH=/opt/bin:...` on top of crontab"
   cron:
     name: PATH
