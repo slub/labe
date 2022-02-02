@@ -26,6 +26,7 @@ __all__ = [
     'OpenCitationsTargetDOI',
     'OpenCitationsUniqueDOI',
     'StatsCommonDOI',
+    'StatsReportData',
 ]
 
 
