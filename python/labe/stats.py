@@ -92,6 +92,7 @@ class OpenCitationsCitedCount(Task):
                   zstd -c -T0 > {output}
                   """,
                  input=self.input().path)
+        luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
         fingerprint = self.open_citations_url_hash()
@@ -147,10 +148,40 @@ class IndexMappedDOI(Task):
                           zstdcat -T0 {input} |
                           LC_ALL=C cut -f 2 |
                           LC_ALL=C tr [:upper:] [:lower:] |
-                          LC_ALL=C sort -S40% |
+                          LC_ALL=C sort -u -S 40% |
                           zstd -c -T0 > {output}
                           """,
                           input=self.input().path)
+        luigi.LocalTarget(output).move(self.output().path)
+
+    def output(self):
+        return luigi.LocalTarget(path=self.path(ext="tsv.zst"))
+
+    def on_success(self):
+        self.create_symlink(name="current")
+
+
+class StatsCommonDOI(Task):
+    """
+    Run `comm` against open citations and index doi list.
+    """
+    date = luigi.DateParameter(default=datetime.date.today())
+
+    def requires(self):
+        return {
+            "index": IndexMappedDOI(date=self.date),
+            "oci": OpenCitationsUniqueDOI(),
+        }
+
+    def run(self):
+        output = shellout("""
+                          LC_ALL=C comm -12
+                            <(zstdcat -T0 {index})
+                            <(zstdcat -T0 {oci}) |
+                          zstd -c -T0 > {output}
+                          """,
+                          index=self.input().get("index").path,
+                          oci=self.input().get("oci").path)
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
