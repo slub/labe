@@ -24,6 +24,7 @@ with open("README.md", "r") as fh:
         entry_points={"console_scripts": ["labe=labe.cli:main"]},
         install_requires=[
             "luigi>=3,<4",
+            "pandas>=1.4,<2",
             "requests>=2.26,<3",
             "xdg>=5,<6",
         ],

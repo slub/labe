@@ -1,20 +1,26 @@
 """
-Stats related tasks.
+Stats related tasks. Mainly:
+
+* [ ] number of DOI in citation corpus
+* [ ] edge count distibution (across the whole graph)
+* [ ] size of overlap with the index
 """
 
 import datetime
 
 import luigi
+import pandas as pd
 
 from labe.base import shellout
 from labe.tasks import IdMappingTable, OpenCitationsSingleFile, Task
 
 __all__ = [
+    'IndexMappedDOI',
     'OpenCitationsCitedCount',
     'OpenCitationsSourceDOI',
     'OpenCitationsTargetDOI',
     'OpenCitationsUniqueDOI',
-    'IndexMappedDOI',
+    'StatsCommonDOI',
 ]
 
 
@@ -105,6 +111,30 @@ class OpenCitationsCitedCount(Task):
         self.create_symlink(name="current")
 
 
+class OpenCitationsInboundStats(Task):
+    """
+    Inbound edge count distribution.
+    """
+
+    def requires(self):
+        return OpenCitationsCitedCount()
+
+    def run(self):
+        output = shellout("zstdcat -T0 {input} | cut -f1 > {output}", input=self.input().path)
+        df = pd.read_csv(output, header=None, names=["c"], skip_blank_lines=True)
+        percentiles = [0, 0.1, 0.25, 0.5, 0.75, 0.95, 0.99, 0.999, 1]
+        with self.output().open("w") as output:
+            df.describe(percentiles=percentiles).to_json(output, )
+
+    def output(self):
+        fingerprint = self.open_citations_url_hash()
+        filename = "{}.json".format(fingerprint)
+        return luigi.LocalTarget(path=self.path(filename=filename))
+
+    def on_success(self):
+        self.create_symlink(name="current")
+
+
 class OpenCitationsUniqueDOI(Task):
     """
     List of unique DOI in citation dataset.
@@ -166,6 +196,10 @@ class IndexMappedDOI(Task):
 class StatsCommonDOI(Task):
     """
     Run `comm` against open citations and index doi list.
+
+    Example data point: 2022-02-02, 44311206 / 72736981; ratio: .6092; about
+    60% of the documents in the index that have a DOI also have an entry in the
+    citation graph.
     """
     date = luigi.DateParameter(default=datetime.date.today())
 
