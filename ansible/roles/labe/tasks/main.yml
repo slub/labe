@@ -76,7 +76,7 @@
 
 - name: "Allow labe user to restart the labe server"
   lineinfile:
-    dest: /etc/sudoers
+    path: /etc/sudoers
     state: present
     regexp: '^labe'
     line: 'labe ALL=(ALL:ALL) NOPASSWD: /usr/bin/systemctl restart labed'
