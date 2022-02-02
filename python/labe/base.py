@@ -57,6 +57,13 @@ class BaseTask(luigi.Task):
     BASE = os.environ.get('LABE_DATA_DIR', tempfile.gettempdir())
     TAG = 'default'
 
+    @property
+    def logger(self):
+        """
+        Return the logger. Module logging uses singleton internally, so no worries.
+        """
+        return logging.getLogger('labe')
+
     # TODO: supply example config.ini in repo
     @property
     def config(self):
