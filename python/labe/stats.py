@@ -304,13 +304,13 @@ class IdMappingTableForInstitution(Task):
     def on_success(self):
         self.create_symlink(name="current")
 
+
 class IndexMappedDOIForInstitution(Task):
     """
     A list of unique DOI which have a mapping to catalog identifier; sorted; for a single institution.
     """
     date = luigi.DateParameter(default=datetime.date.today())
     institution = luigi.Parameter(default="DE-14")
-
 
     def requires(self):
         return IdMappingTableForInstitution(date=self.date, institution=self.institution)
@@ -331,6 +331,7 @@ class IndexMappedDOIForInstitution(Task):
 
     def on_success(self):
         self.create_symlink(name="current")
+
 
 class IndexMappedDOI(Task):
     """
@@ -357,6 +358,7 @@ class IndexMappedDOI(Task):
 
     def on_success(self):
         self.create_symlink(name="current")
+
 
 class StatsCommonDOIForInstitution(Task):
     """
@@ -452,18 +454,19 @@ class StatsReportData(Task):
             "date": str(datetime.date.today()),
             "slub": {
                 "num_mapped_doi": sum(1 for _ in si.get("index_unique_slub").open()),
-                "ratio_corpus": (sum(1 for _ in si.get("common_slub").open()) / sum(1 for _ in si.get("oci_unique").open())),
-            }
+                "num_common_doi": sum(1 for _ in si.get("common_slub").open()),
+                "ratio": (sum(1 for _ in si.get("common_slub").open()) / sum(1 for _ in si.get("oci_unique").open())),
+            },
             "index": {
                 "num_mapped_doi": sum(1 for _ in si.get("index_unique").open()),
+                "num_common_doi": sum(1 for _ in si.get("common").open()),
+                "ratio": (sum(1 for _ in si.get("common").open()) / sum(1 for _ in si.get("oci_unique").open())),
             },
             "oci": {
                 "num_doi": sum(1 for _ in si.get("oci_unique").open()),
                 "stats_inbound": json.load(si.get("oci_inbound").open()),
                 "stats_outbound": json.load(si.get("oci_outbound").open()),
             },
-            "num_common_doi": sum(1 for _ in si.get("common").open()),
-            "ratio_corpus": (sum(1 for _ in si.get("common").open()) / sum(1 for _ in si.get("oci_unique").open())),
         }
         with self.output().open("w") as output:
             json.dump(data, output)
