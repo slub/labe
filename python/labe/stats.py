@@ -1,22 +1,30 @@
 """
 Stats related tasks. Mainly:
 
-* [ ] number of DOI in citation corpus
-* [ ] edge count distibution (across the whole graph)
-* [ ] size of overlap with the index
+* [x] number of DOI in citation corpus
+* [x] edge count distibution (across the whole graph)
+* [x] size of overlap with the index
+
+Other ideas:
+
+* [ ] per institution overlaps
+
 """
 
 import datetime
+import json
 import os
 import tempfile
 
 import luigi
 import pandas as pd
 
-from labe.base import T, shellout
-from labe.tasks import IdMappingTable, OpenCitationsSingleFile, Task
+from labe.base import Zstd, shellout
+from labe.tasks import (IdMappingTable, OpenCitationsSingleFile, SolrFetchDocs,
+                        Task)
 
 __all__ = [
+    'IdMappingTableForInstitution',
     'IndexMappedDOI',
     'OpenCitationsCitedCount',
     'OpenCitationsCitingCount',
@@ -55,7 +63,7 @@ class OpenCitationsSourceDOI(Task):
     def output(self):
         fingerprint = self.open_citations_url_hash()
         filename = "{}.tsv.zst".format(fingerprint)
-        return luigi.LocalTarget(path=self.path(filename=filename))
+        return luigi.LocalTarget(path=self.path(filename=filename), format=Zstd)
 
     def on_success(self):
         self.create_symlink(name="current")
@@ -83,7 +91,7 @@ class OpenCitationsTargetDOI(Task):
     def output(self):
         fingerprint = self.open_citations_url_hash()
         filename = "{}.tsv.zst".format(fingerprint)
-        return luigi.LocalTarget(path=self.path(filename=filename))
+        return luigi.LocalTarget(path=self.path(filename=filename), format=Zstd)
 
     def on_success(self):
         self.create_symlink(name="current")
@@ -111,7 +119,7 @@ class OpenCitationsCitedCount(Task):
     def output(self):
         fingerprint = self.open_citations_url_hash()
         filename = "{}.tsv.zst".format(fingerprint)
-        return luigi.LocalTarget(path=self.path(filename=filename))
+        return luigi.LocalTarget(path=self.path(filename=filename), format=Zstd)
 
     def on_success(self):
         self.create_symlink(name="current")
@@ -139,7 +147,7 @@ class OpenCitationsCitingCount(Task):
     def output(self):
         fingerprint = self.open_citations_url_hash()
         filename = "{}.tsv.zst".format(fingerprint)
-        return luigi.LocalTarget(path=self.path(filename=filename))
+        return luigi.LocalTarget(path=self.path(filename=filename), format=Zstd)
 
     def on_success(self):
         self.create_symlink(name="current")
@@ -241,11 +249,88 @@ class OpenCitationsUniqueDOI(Task):
     def output(self):
         fingerprint = self.open_citations_url_hash()
         filename = "{}.json.zst".format(fingerprint)
-        return luigi.LocalTarget(path=self.path(filename=filename))
+        return luigi.LocalTarget(path=self.path(filename=filename), format=Zstd)
 
     def on_success(self):
         self.create_symlink(name="current")
 
+
+class IdMappingTableForInstitution(Task):
+    """
+    This is like IdMappingTable, but for a single institution.
+    """
+    date = luigi.DateParameter(default=datetime.date.today())
+    institution = luigi.Parameter(default="DE-14")
+
+    def requires(self):
+        return {
+            "slub-production": SolrFetchDocs(date=self.date, name="slub-production", short=False),
+            "main": SolrFetchDocs(date=self.date, name="main", short=False),
+            "ai": SolrFetchDocs(date=self.date, name="ai", short=True),
+        }
+
+    def run(self):
+        # In 01/2022, for "main", we still need to apply "doisniffer", but that
+        # may change in the future.
+        output = shellout(""" zstd -q -d -c -T0 {input} |
+                              doisniffer |
+                              jq -rc 'select((.institution | index("{institution}")) != null) | [.id, .doi_str_mv[0]] | @tsv' |
+                              zstd -c -T0 >> {output} """,
+                          input=self.input().get("main").path,
+                          institution=self.institution)
+
+        # In 01/2022, we use "doisniffer" for slub-production as well.
+        shellout(""" zstd -q -d -c -T0 {input} |
+                     doisniffer |
+                     jq -rc 'select((.institution | index("{institution}")) != null) | [.id, .doi_str_mv[0]] | @tsv' |
+                     zstd -c -T0 >> {output} """,
+                 output=output,
+                 input=self.input().get("slub-production").path,
+                 institution=self.institution)
+
+        # In 01/2022, the "doi_str_mv" field is included in "ai" - with 73881207 values.
+        shellout(r""" zstd -q -d -c -T0 {input} |
+                     parallel -j 8 --pipe --block 10M "jq -rc 'select(.doi_str_mv | length > 0) | select((.institution | index(\"{institution}\")) != null) | [.id, .doi_str_mv[0]] | @tsv'" |
+                     zstd -T0 -c >> {output} """,
+                 output=output,
+                 input=self.input().get("ai").path,
+                 institution=self.institution)
+
+        luigi.LocalTarget(output).move(self.output().path)
+
+    def output(self):
+        return luigi.LocalTarget(path=self.path(ext="tsv.zst"))
+
+    def on_success(self):
+        self.create_symlink(name="current")
+
+class IndexMappedDOIForInstitution(Task):
+    """
+    A list of unique DOI which have a mapping to catalog identifier; sorted; for a single institution.
+    """
+    date = luigi.DateParameter(default=datetime.date.today())
+    institution = luigi.Parameter(default="DE-14")
+
+
+    def requires(self):
+        return IdMappingTableForInstitution(date=self.date, institution=self.institution)
+
+    def run(self):
+        output = shellout("""
+                          zstdcat -T0 {input} |
+                          LC_ALL=C cut -f 2 |
+                          LC_ALL=C tr [:upper:] [:lower:] |
+                          LC_ALL=C sort -u -S 40% |
+                          zstd -c -T0 > {output}
+                          """,
+                          input=self.input().path)
+        luigi.LocalTarget(output).move(self.output().path)
+
+    def output(self):
+        return luigi.LocalTarget(path=self.path(ext="tsv.zst"), format=Zstd)
+
+    def on_success(self):
+        self.create_symlink(name="current")
 
 class IndexMappedDOI(Task):
     """
@@ -268,7 +353,37 @@ class IndexMappedDOI(Task):
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
-        return luigi.LocalTarget(path=self.path(ext="tsv.zst"))
+        return luigi.LocalTarget(path=self.path(ext="tsv.zst"), format=Zstd)
+
+    def on_success(self):
+        self.create_symlink(name="current")
+
+class StatsCommonDOIForInstitution(Task):
+    """
+    Run `comm` against open citations and index doi list for institution.
+    """
+    date = luigi.DateParameter(default=datetime.date.today())
+    institution = luigi.Parameter(default="DE-14")
+
+    def requires(self):
+        return {
+            "index": IndexMappedDOIForInstitution(date=self.date, institution=self.institution),
+            "oci": OpenCitationsUniqueDOI(),
+        }
+
+    def run(self):
+        output = shellout("""
+                          LC_ALL=C comm -12
+                            <(zstdcat -T0 {index})
+                            <(zstdcat -T0 {oci}) |
+                          zstd -c -T0 > {output}
+                          """,
+                          index=self.input().get("index").path,
+                          oci=self.input().get("oci").path)
+        luigi.LocalTarget(output).move(self.output().path)
+
+    def output(self):
+        return luigi.LocalTarget(path=self.path(ext="tsv.zst"), format=Zstd)
 
     def on_success(self):
         self.create_symlink(name="current")
@@ -302,7 +417,7 @@ class StatsCommonDOI(Task):
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
-        return luigi.LocalTarget(path=self.path(ext="tsv.zst"))
+        return luigi.LocalTarget(path=self.path(ext="tsv.zst"), format=Zstd)
 
     def on_success(self):
         self.create_symlink(name="current")
@@ -319,28 +434,36 @@ class StatsReportData(Task):
     def requires(self):
         return {
             "common": StatsCommonDOI(date=self.date),
+            "common_slub": StatsCommonDOIForInstitution(date=self.date, institution="DE-14"),
             "index_unique": IndexMappedDOI(date=self.date),
+            "index_unique_slub": IndexMappedDOIForInstitution(date=self.date, institution="DE-14"),
             "oci_inbound": OpenCitationsInboundStats(),
             "oci_outbound": OpenCitationsOutboundStats(),
             "oci_unique": OpenCitationsUniqueDOI(),
         }
 
     def run(self):
+        """
+        Ok to open files and not close them, as this is a sink task.
+        """
+        si = self.input()
         data = {
-            "date":
-            str(datetime.date.today()),
+            "version": "1",
+            "date": str(datetime.date.today()),
+            "slub": {
+                "num_mapped_doi": sum(1 for _ in si.get("index_unique_slub").open()),
+                "ratio_corpus": (sum(1 for _ in si.get("common_slub").open()) / sum(1 for _ in si.get("oci_unique").open())),
+            }
             "index": {
-                "num_mapped_doi": T(self.input().get("index_unique").path).linecount(),
+                "num_mapped_doi": sum(1 for _ in si.get("index_unique").open()),
             },
             "oci": {
-                "num_doi": T(self.input().get("oci_unique").path).linecount(),
-                "stats_inbound": T(self.input().get("oci_inbound").path).json(),
-                "stats_outbound": T(self.input().get("oci_outbound").path).json(),
+                "num_doi": sum(1 for _ in si.get("oci_unique").open()),
+                "stats_inbound": json.load(si.get("oci_inbound").open()),
+                "stats_outbound": json.load(si.get("oci_outbound").open()),
             },
-            "num_common_doi".path:
-            T(self.input().get("common").path).linecount(),
-            "ratio_corpus":
-            (T(self.input().get("common").path).linecount() / T(self.input().get("oci_unique").path).linecount()),
+            "num_common_doi": sum(1 for _ in si.get("common").open()),
+            "ratio_corpus": (sum(1 for _ in si.get("common").open()) / sum(1 for _ in si.get("oci_unique").open())),
         }
         with self.output().open("w") as output:
             json.dump(data, output)

@@ -49,22 +49,6 @@ def delistify(x):
     return x
 
 
-class T(luigi.LocalTarget):
-    """
-    An extended target.
-    """
-
-    # TODO: could add minimal filesize enforcement and such as well, maybe?
-
-    def json(self):
-        with open(self.path) as f:
-            return json.load(f)
-
-    def linecount(self):
-        with open(self.path) as f:
-            return sum((1 for l in f))
-
-
 class BaseTask(luigi.Task):
     """
     A base task with a `path` method. BASE should be set to the root
@@ -136,10 +120,6 @@ class BaseTask(luigi.Task):
         if os.path.exists(current):
             os.remove(current)
         os.symlink(self.output().path, current)
-
-    def json(self):
-        with self.output().open() as f:
-            return json.load(f)
 
     def path(self, filename=None, ext='tsv', digest=False, shard=False, encoding='utf-8'):
         """
@@ -260,3 +240,28 @@ def shellout(template,
             error.code = code
             raise error
     return kwargs.get('output')
+
+
+class ZstdFormat(luigi.format.Format):
+    """
+    The zstandard format.
+    """
+    input = 'bytes'
+    output = 'bytes'
+
+    def __init__(self, compression_level=None):
+        self.compression_level = compression_level
+        self.zstd = ["zstd"]
+        self.unzstd = ["unzstd"]
+
+    def pipe_reader(self, input_pipe):
+        return luigi.format.InputPipeProcessWrapper(self.unzstd, input_pipe)
+
+    def pipe_writer(self, output_pipe):
+        args = self.zstd
+        if self.compression_level is not None:
+            args.append('-' + str(int(self.compression_level)))
+        return luigi.format.OutputPipeProcessWrapper(args, output_pipe)
+
+
+Zstd = ZstdFormat()
