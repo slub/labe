@@ -134,3 +134,10 @@
           head -n 300000 |
           shuf |
           parallel -j 32 -I {} 'curl -sL "http://localhost:8000/doi/{}"' > /dev/null
+
+- name: "Cleanup shiv temporary files"
+  cron:
+    name: Cleanup shiv temporary files
+    user: labe
+    special_time: monthly
+    job: rm -rf /home/labe/.shiv
