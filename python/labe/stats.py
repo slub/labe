@@ -327,17 +327,20 @@ class StatsReportData(Task):
 
     def run(self):
         data = {
-            "date": str(datetime.date.today()),
+            "date":
+            str(datetime.date.today()),
             "index": {
-                "num_mapped_doi": T(self.input().get("index_unique")).linecount(),
+                "num_mapped_doi": T(self.input().get("index_unique").path).linecount(),
             },
             "oci": {
-                "num_doi": T(self.input().get("oci_unique")).linecount(),
-                "stats_inbound": T(self.input().get("oci_inbound")).json(),
-                "stats_outbound": T(self.input().get("oci_outbound")).json(),
+                "num_doi": T(self.input().get("oci_unique").path).linecount(),
+                "stats_inbound": T(self.input().get("oci_inbound").path).json(),
+                "stats_outbound": T(self.input().get("oci_outbound").path).json(),
             },
-            "num_common_doi": T(self.input().get("common").linecount()),
-            "ratio_corpus": (T(self.input().get("common")).linecount() / T(self.input().get("oci_unique")).linecount()),
+            "num_common_doi".path:
+            T(self.input().get("common").path).linecount(),
+            "ratio_corpus":
+            (T(self.input().get("common").path).linecount() / T(self.input().get("oci_unique").path).linecount()),
         }
         with self.output().open("w") as output:
             json.dump(data, output)
