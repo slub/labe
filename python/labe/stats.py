@@ -5,6 +5,7 @@ Stats related tasks.
 import luigi
 
 from labe.tasks import OpenCitationsSingleFile, Task
+from labe.base import shellout
 
 __all__ = [
     'OpenCitationsSourceDOI',
