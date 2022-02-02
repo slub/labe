@@ -19,6 +19,7 @@ from labe.tasks import IdMappingTable, OpenCitationsSingleFile, Task
 __all__ = [
     'IndexMappedDOI',
     'OpenCitationsCitedCount',
+    'OpenCitationsInboundStats',
     'OpenCitationsSourceDOI',
     'OpenCitationsTargetDOI',
     'OpenCitationsUniqueDOI',
@@ -113,6 +114,34 @@ class OpenCitationsCitedCount(Task):
         self.create_symlink(name="current")
 
 
+class OpenCitationsCitingCount(Task):
+    """
+    Generate a table with two columns: outbound link count and DOI.
+    """
+
+    def requires(self):
+        return OpenCitationsSourceDOI()
+
+    def run(self):
+        output = shellout(r"""
+                          zstdcat -T0 {input} |
+                          LC_ALL=C uniq -c |
+                          LC_ALL=C sort -S 40% -nr |
+                          LC_ALL=C sed -e 's@^[ ]*@@;s@ @\t@' |
+                          zstd -c -T0 > {output}
+                          """,
+                          input=self.input().path)
+        luigi.LocalTarget(output).move(self.output().path)
+
+    def output(self):
+        fingerprint = self.open_citations_url_hash()
+        filename = "{}.tsv.zst".format(fingerprint)
+        return luigi.LocalTarget(path=self.path(filename=filename))
+
+    def on_success(self):
+        self.create_symlink(name="current")
+
+
 class OpenCitationsInboundStats(Task):
     """
     Inbound edge count distribution.
@@ -136,12 +165,39 @@ class OpenCitationsInboundStats(Task):
         }
       }
     """
+
     def requires(self):
         return OpenCitationsCitedCount()
 
     def run(self):
         output = shellout("zstdcat -T0 {input} | cut -f1 > {output}", input=self.input().path)
         df = pd.read_csv(output, header=None, names=["inbound_edges"], skip_blank_lines=True)
+        percentiles = [0, 0.1, 0.25, 0.5, 0.75, 0.95, 0.99, 0.999, 1]
+        with tempfile.NamedTemporaryFile(mode="wb", delete=False) as f:
+            df.describe(percentiles=percentiles).to_json(f)
+        luigi.LocalTarget(f.name).move(self.output().path)
+        os.remove(output)
+
+    def output(self):
+        fingerprint = self.open_citations_url_hash()
+        filename = "{}.json".format(fingerprint)
+        return luigi.LocalTarget(path=self.path(filename=filename))
+
+    def on_success(self):
+        self.create_symlink(name="current")
+
+
+class OpenCitationsOutboundStats(Task):
+    """
+    Outbound edge count distribution.
+    """
+
+    def requires(self):
+        return OpenCitationsCitingCount()
+
+    def run(self):
+        output = shellout("zstdcat -T0 {input} | cut -f1 > {output}", input=self.input().path)
+        df = pd.read_csv(output, header=None, names=["outbound_edges"], skip_blank_lines=True)
         percentiles = [0, 0.1, 0.25, 0.5, 0.75, 0.95, 0.99, 0.999, 1]
         with tempfile.NamedTemporaryFile(mode="wb", delete=False) as f:
             df.describe(percentiles=percentiles).to_json(f)
