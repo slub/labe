@@ -48,12 +48,12 @@ type Snippet struct {
 // citation corpus and IndexData allows to fetch a metadata blob from a backing store.
 //
 // A performance data point: On a 8 core 16G RAM machine we can keep a
-// sustained load will flat out at about 12K SQL qps, 150MB/s reads off disk.
-// Total size of databases involved at about 224GB plus 7 GB cache (ie. at most
-// 6% of the data can be held in memory at any time).
+// sustained load of about 12K SQL qps, 150MB/s reads off disk. Total size of
+// databases involved at about 224GB plus 7 GB cache (ie. at most 6% of the
+// data can be held in memory at any given time).
 //
-// Under load requesting the most costly 150K docs the server will hover at
-// around 10% (of 16GB) RAM.
+// Under load requesting the most costly (and large) 150K docs the server will
+// hover at around 10% (of 16GB) RAM.
 type Server struct {
 	// IdentifierDatabase maps local ids to DOI. The expected schema documented
 	// here: https://github.com/miku/labe/tree/main/go/ckit#makta
@@ -125,13 +125,15 @@ type Response struct {
 		Cited  []json.RawMessage `json:"cited,omitempty"`
 	} `json:"unmatched,omitempty"`
 	Extra struct {
-		Took                 float64 `json:"took"` // seconds
 		UnmatchedCitingCount int     `json:"unmatched_citing_count"`
 		UnmatchedCitedCount  int     `json:"unmatched_cited_count"`
 		CitingCount          int     `json:"citing_count"`
 		CitedCount           int     `json:"cited_count"`
 		Cached               bool    `json:"cached"`
-		Institution          string  `json:"institution,omitempty"`
+		Took                 float64 `json:"took"` // seconds
+		// Institution is set optionally, if the response has been tailored
+		// towards the holdings of a given institution.
+		Institution string `json:"institution,omitempty"`
 	} `json:"extra,omitempty"`
 }
 
