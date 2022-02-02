@@ -17,6 +17,7 @@ __all__ = [
 class OpenCitationsSourceDOI(Task):
     """
     List of DOI that are source of a citation edge. Normalized and sorted.
+    18m54.167s.
     """
 
     def requires(self):
@@ -35,7 +36,7 @@ class OpenCitationsSourceDOI(Task):
 
     def output(self):
         fingerprint = self.open_citations_url_hash()
-        filename = "{}.tsv".format(fingerprint)
+        filename = "{}.tsv.zst".format(fingerprint)
         return luigi.LocalTarget(path=self.path(filename=filename))
 
     def on_success(self):
@@ -63,7 +64,7 @@ class OpenCitationsTargetDOI(Task):
 
     def output(self):
         fingerprint = self.open_citations_url_hash()
-        filename = "{}.tsv".format(fingerprint)
+        filename = "{}.tsv.zst".format(fingerprint)
         return luigi.LocalTarget(path=self.path(filename=filename))
 
     def on_success(self):
@@ -90,7 +91,7 @@ class OpenCitationsCitedCount(Task):
 
     def output(self):
         fingerprint = self.open_citations_url_hash()
-        filename = "{}.tsv".format(fingerprint)
+        filename = "{}.tsv.zst".format(fingerprint)
         return luigi.LocalTarget(path=self.path(filename=filename))
 
     def on_success(self):
@@ -113,7 +114,7 @@ class OpenCitationsUniqueDOI(Task):
                           LC_ALL=C sort -u -S 50%
                             <(zstdcat -T0 {s} | LC_ALL=C uniq)
                             <(zstdcat -T0 {t} | LC_ALL=C uniq)
-                          > {output}
+                          > | zstd -c -T0 > {output}
                           """,
                           s=self.input().get("s").path,
                           t=self.input().get("t").path)
@@ -121,7 +122,7 @@ class OpenCitationsUniqueDOI(Task):
 
     def output(self):
         fingerprint = self.open_citations_url_hash()
-        filename = "{}.json".format(fingerprint)
+        filename = "{}.json.zst".format(fingerprint)
         return luigi.LocalTarget(path=self.path(filename=filename))
 
     def on_success(self):
