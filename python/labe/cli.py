@@ -55,6 +55,7 @@ from xdg import xdg_config_home, xdg_data_home
 
 from labe.deps import dump_deps
 from labe.oci import OpenCitationsDataset
+from labe.stats import *
 # We need a star import to import all tasks.
 from labe.tasks import *
 from labe.tasks import Task
