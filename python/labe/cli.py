@@ -111,7 +111,7 @@ def main():
         default=os.path.join(xdg_config_home(), "labe", "logging.ini"),
         help="path to logging configuration file",
     )
-    parser.add_argument("--data-dir", "-D", default=xdg_data_home(), help="root directory for all tasks, we follow XDG")
+    parser.add_argument("--data-dir", "-D", default=os.path.join(xdg_data_home(), "labe"), help="root directory for all tasks, we follow XDG")
     parser.add_argument("--tmp-dir", "-T", default=tempfile.gettempdir(), help="temporary directory to use")
     parser.add_argument("--labed-server-process-name",
                         default="labed",
