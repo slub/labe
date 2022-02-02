@@ -49,6 +49,22 @@ def delistify(x):
     return x
 
 
+class T(luigi.LocalTarget):
+    """
+    An extended target.
+    """
+
+    # TODO: could add minimal filesize enforcement and such as well, maybe?
+
+    def json(self):
+        with open(self.path) as f:
+            return json.load(f)
+
+    def linecount(self):
+        with open(self.path) as f:
+            return sum((1 for l in f))
+
+
 class BaseTask(luigi.Task):
     """
     A base task with a `path` method. BASE should be set to the root
@@ -120,10 +136,6 @@ class BaseTask(luigi.Task):
         if os.path.exists(current):
             os.remove(current)
         os.symlink(self.output().path, current)
-
-    def linecount(self):
-        with self.output().open() as f:
-            return sum((1 for l in f))
 
     def json(self):
         with self.output().open() as f:

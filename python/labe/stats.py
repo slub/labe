@@ -13,7 +13,7 @@ import tempfile
 import luigi
 import pandas as pd
 
-from labe.base import shellout
+from labe.base import T, shellout
 from labe.tasks import IdMappingTable, OpenCitationsSingleFile, Task
 
 __all__ = [
@@ -329,15 +329,15 @@ class StatsReportData(Task):
         data = {
             "date": str(datetime.date.today()),
             "index": {
-                "num_mapped_doi": self.input().get("index_unique").linecount(),
+                "num_mapped_doi": T(self.input().get("index_unique")).linecount(),
             },
             "oci": {
-                "num_doi": self.input().get("oci_unique").linecount(),
-                "stats_inbound": self.input().get("oci_inbound").json(),
-                "stats_outbound": self.input().get("oci_outbound").json(),
+                "num_doi": T(self.input().get("oci_unique")).linecount(),
+                "stats_inbound": T(self.input().get("oci_inbound")).json(),
+                "stats_outbound": T(self.input().get("oci_outbound")).json(),
             },
-            "num_common_doi": self.input().get("common").linecount(),
-            "ratio_corpus": (self.input().get("common").linecount() / self.input().get("oci_unique").linecount()),
+            "num_common_doi": T(self.input().get("common").linecount()),
+            "ratio_corpus": (T(self.input().get("common")).linecount() / T(self.input().get("oci_unique")).linecount()),
         }
         with self.output().open("w") as output:
             json.dump(data, output)
