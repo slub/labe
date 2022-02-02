@@ -19,7 +19,9 @@ from labe.tasks import IdMappingTable, OpenCitationsSingleFile, Task
 __all__ = [
     'IndexMappedDOI',
     'OpenCitationsCitedCount',
+    'OpenCitationsCitingCount',
     'OpenCitationsInboundStats',
+    'OpenCitationsOutboundStats',
     'OpenCitationsSourceDOI',
     'OpenCitationsTargetDOI',
     'OpenCitationsUniqueDOI',
@@ -303,3 +305,42 @@ class StatsCommonDOI(Task):
 
     def on_success(self):
         self.create_symlink(name="current")
+
+
+class StatsReportData(Task):
+    """
+    A daily overview (data).
+
+    We want some json overview.
+    """
+    date = luigi.DateParameter(default=datetime.date.today())
+
+    def requires(self):
+        return {
+            "common": StatsCommonDOI(date=self.date),
+            "index_unique": IndexMappedDOI(date=self.date),
+            "oci_inbound": OpenCitationsInboundStats(),
+            "oci_outbound": OpenCitationsOutboundStats(),
+            "oci_unique": OpenCitationsUniqueDOI(),
+        }
+
+    def run(self):
+        data = {
+            "date": str(datetime.date.today()),
+            "index": {
+                "num_mapped_doi": self.input().get("index_unique").linecount(),
+            },
+            "oci": {
+                "num_doi": self.input().get("oci_unique").linecount(),
+                "stats_inbound": self.input().get("oci_inbound").json(),
+                "stats_outbound": self.input().get("oci_outbound").json(),
+            },
+            "num_common_doi": self.input().get("common").linecount(),
+            "ratio_corpus": (self.input().get("common").linecount() / self.input().get("oci_unique").linecount()),
+        }
+        with self.output().open("w") as output:
+            json.dump(data, output)
+
+    def output(self):
+        # TODO: exclude outputs from this task from cleanup.
+        return luigi.LocalTarget(path=self.path(ext="json"))

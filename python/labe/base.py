@@ -5,6 +5,7 @@ A default task class for local workflows.
 import configparser
 import datetime
 import hashlib
+import json
 import logging
 import os
 import re
@@ -119,6 +120,14 @@ class BaseTask(luigi.Task):
         if os.path.exists(current):
             os.remove(current)
         os.symlink(self.output().path, current)
+
+    def linecount(self):
+        with self.output().open() as f:
+            return sum((1 for l in f))
+
+    def json(self):
+        with self.output().open() as f:
+            return json.load(f)
 
     def path(self, filename=None, ext='tsv', digest=False, shard=False, encoding='utf-8'):
         """
