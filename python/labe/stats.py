@@ -428,17 +428,16 @@ class StatsCommonDOI(Task):
 class StatsReportData(Task):
     """
     A daily overview (data).
-
-    We want some json overview.
     """
     date = luigi.DateParameter(default=datetime.date.today())
+    institution = luigi.Parameter(default="DE-14")
 
     def requires(self):
         return {
             "common": StatsCommonDOI(date=self.date),
-            "common_slub": StatsCommonDOIForInstitution(date=self.date, institution="DE-14"),
+            "common_slub": StatsCommonDOIForInstitution(date=self.date, institution=self.institution),
             "index_unique": IndexMappedDOI(date=self.date),
-            "index_unique_slub": IndexMappedDOIForInstitution(date=self.date, institution="DE-14"),
+            "index_unique_slub": IndexMappedDOIForInstitution(date=self.date, institution=self.institution),
             "oci_inbound": OpenCitationsInboundStats(),
             "oci_outbound": OpenCitationsOutboundStats(),
             "oci_unique": OpenCitationsUniqueDOI(),
