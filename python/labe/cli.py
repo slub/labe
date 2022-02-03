@@ -124,7 +124,7 @@ def main():
     parser.add_argument("--deps", metavar="TASK", type=str, help="show task dependencies")
     parser.add_argument("--deps-dot", metavar="TASK", type=str, help="print task dependencies in dot format")
     parser.add_argument("--diff", action="store_true", help="generate a diff json from two stats json docs")
-    parser.add_argument("--institution",
+    parser.add_argument("--diff-institution",
                         metavar="ISIL",
                         default="DE-14",
                         help="which isil to compute the stats for (only relevant with --diff)")
