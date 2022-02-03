@@ -436,6 +436,7 @@ class StatsReportData(Task):
     def requires(self):
         return {
             "common": StatsCommonDOI(date=self.date),
+            # TODO: "slub" -> institutional ...
             "common_slub": StatsCommonDOIForInstitution(date=self.date, institution=self.institution),
             "index_unique": IndexMappedDOI(date=self.date),
             "index_unique_slub": IndexMappedDOIForInstitution(date=self.date, institution=self.institution),

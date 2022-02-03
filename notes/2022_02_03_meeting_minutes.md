@@ -7,6 +7,11 @@
 * [x] ansible deployment on sdvlabe, config setup, auto-mode
 * [ ] diff report
 
+## Notes
+
+* [ ] TODO: limit disk cache size
+* [ ] TODO: montly diff stats
+
 ## Misc
 
 * [ ] performance tests: [2022_01_30_performance_report.md](https://github.com/slub/labe/blob/main/notes/2022_01_30_performance_report.md)
