@@ -1,3 +1,4 @@
 # .ansible-lint
 skip_list:  # or 'skip_list' to silence them completely
   - var-spacing  # Variables should have spaces before and after:  {{ var_name }}
+  - yaml  # Violations reported by yamllint

@@ -23,7 +23,7 @@
     daemon_reload: true
 
 - name: "Change application log file ownership"
-  ansible.builtin.file:
+  file:
     path: /var/log/labe.log
     owner: labe
     group: labe
@@ -31,7 +31,7 @@
     mode: '0644'
 
 - name: "Change access log file ownership"
-  ansible.builtin.file:
+  file:
     path: /var/log/labe-access.log
     owner: labe
     group: labe
@@ -39,7 +39,7 @@
     mode: '0644'
 
 - name: "Change default data file ownership"
-  ansible.builtin.file:
+  file:
     path: /usr/share/labe/data
     owner: labe
     group: labe
@@ -130,3 +130,12 @@
       labe.pyz --data-dir /usr/share/labe -r CombinedUpdate --workers 4 &&
       sudo systemctl restart labed &&
       zstd -qcd -T0 /usr/share/labe/data/OpenCitationsRanked/current | awk '{ print $2 }' | head -n 300000 | shuf | parallel -j 32 -I {} 'curl -sL "http://localhost:8000/doi/{}"' > /dev/null
+
+# This it to keep report data from being cleaned up.
+- name: "Put .labekeep into default target directory for stats"
+  file:
+    path: /usr/share/labe/data/StatsReportData/.labekeep
+    owner: labe
+    group: labe
+    state: touch
+    mode: '0644'
