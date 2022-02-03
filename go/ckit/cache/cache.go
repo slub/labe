@@ -79,7 +79,7 @@ func New(path string) (*Cache, error) {
 
 // startSizeWatcher sets up a goroutine that will watch the filesize
 // periodically and will switch to read-only mode, if a given size has been
-// exceeded.
+// exceeded. This is a counter-measure to http flood type of attacks.
 func (c *Cache) startSizeWatcher() {
 	go func() {
 		ticker := time.NewTicker(30 * time.Second)
