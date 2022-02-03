@@ -119,13 +119,14 @@ def main():
                         default=os.path.join(xdg_data_home(), "labe"),
                         help="root directory for all tasks, we follow XDG")
     parser.add_argument("--tmp-dir", "-T", default=tempfile.gettempdir(), help="temporary directory to use")
-    parser.add_argument("--labed-server-process-name",
-                        default="labed",
-                        help="which process to send sighup to on database updates")
     parser.add_argument("--list-deletable", action="store_true", help="list task outputs, which could be deleted")
     parser.add_argument("--deps", metavar="TASK", type=str, help="show task dependencies")
     parser.add_argument("--deps-dot", metavar="TASK", type=str, help="print task dependencies in dot format")
     parser.add_argument("--diff", action="store_true", help="generate a diff json from two stats json docs")
+    parser.add_argument("--institution",
+                        metavar="ISIL",
+                        default="DE-14",
+                        help="which isil to compute the stats for (only relevant with --diff)")
 
     # Task may have their own arguments, which we ignore.
     args, unparsed = parser.parse_known_args()
@@ -157,12 +158,13 @@ def main():
         sys.exit(0)
 
     elif args.diff:
+        # TODO: this can live in a separate task in stats as well
         # in pandas 1.4.0 date_range will get an inclusive kwarg:
         # https://pandas.pydata.org/docs/reference/api/pandas.date_range.html#pandas-date-range
         rng = pd.date_range(start="2022-01-01", end=datetime.date.today(), freq="D")
         found = []
         for date in rng.to_pydatetime():
-            task = StatsReportData(date=date)
+            task = StatsReportData(date=date, institution=args.institution)
             path = task.output().path
             if os.path.exists(path):
                 found.append(path)
