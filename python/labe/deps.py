@@ -52,8 +52,7 @@ def dump_deps_dot(task=None, file=sys.stdout):
     print(textwrap.dedent("""
           graph [fontname=helvetica];
           node [shape=record fontname=helvetica];
-    """),
-          file=file)
+    """), file=file)
     for k, vs in g.items():
         for v in vs:
             print(""" "{}" -> "{}"; """.format(k, v), file=file)

@@ -92,8 +92,7 @@ class OpenCitationsDownload(Task):
         url = self.open_citations_url()
         output = shellout("""
                           curl --fail -sL "{url}" > {output}
-                          """,
-                          url=url)
+                          """, url=url)
 
         # Do a basic sanity check right here, e.g. in 12/2021 filesize was
         # about 30GB; we fail if the file size seems too small.

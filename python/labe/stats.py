@@ -436,10 +436,9 @@ class StatsReportData(Task):
     def requires(self):
         return {
             "common": StatsCommonDOI(date=self.date),
-            # TODO: "slub" -> institutional ...
-            "common_slub": StatsCommonDOIForInstitution(date=self.date, institution=self.institution),
+            "common_institution": StatsCommonDOIForInstitution(date=self.date, institution=self.institution),
             "index_unique": IndexMappedDOI(date=self.date),
-            "index_unique_slub": IndexMappedDOIForInstitution(date=self.date, institution=self.institution),
+            "index_unique_institution": IndexMappedDOIForInstitution(date=self.date, institution=self.institution),
             "oci_inbound": OpenCitationsInboundStats(),
             "oci_outbound": OpenCitationsOutboundStats(),
             "oci_unique": OpenCitationsUniqueDOI(),
@@ -454,10 +453,12 @@ class StatsReportData(Task):
         data = {
             "version": "1",
             "date": str(self.date),
-            "slub": {
-                "num_mapped_doi": sum(1 for _ in si.get("index_unique_slub").open()),
-                "num_common_doi": sum(1 for _ in si.get("common_slub").open()),
-                "ratio": (sum(1 for _ in si.get("common_slub").open()) / sum(1 for _ in si.get("oci_unique").open())),
+            "institution": {
+                self.institution: {
+                    "num_mapped_doi": sum(1 for _ in si.get("index_unique_institution").open()),
+                    "num_common_doi": sum(1 for _ in si.get("common_institution").open()),
+                    "ratio": (sum(1 for _ in si.get("common_institution").open()) / sum(1 for _ in si.get("oci_unique").open())),
+                },
             },
             "index": {
                 "num_mapped_doi": sum(1 for _ in si.get("index_unique").open()),
@@ -475,7 +476,6 @@ class StatsReportData(Task):
             json.dump(data, output)
 
     def output(self):
-        # TODO: exclude outputs from this task from cleanup.
         return luigi.LocalTarget(path=self.path(ext="json"))
 
     def on_success(self):
