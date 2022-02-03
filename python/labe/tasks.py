@@ -19,7 +19,7 @@ import zipfile
 
 import luigi
 
-from labe.base import BaseTask, ensure_minimum_file_size, shellout
+from labe.base import BaseTask, ensure_minimum_file_size, shellout, Zstd
 from labe.oci import OpenCitationsDataset
 
 __all__ = [
@@ -144,7 +144,7 @@ class OpenCitationsSingleFile(Task):
     def output(self):
         fingerprint = self.open_citations_url_hash()
         filename = "{}.zst".format(fingerprint)
-        return luigi.LocalTarget(path=self.path(filename=filename))
+        return luigi.LocalTarget(path=self.path(filename=filename), format=Zstd)
 
     def on_success(self):
         self.create_symlink(name="current")
@@ -211,7 +211,7 @@ class OpenCitationsRanked(Task):
     def output(self):
         fingerprint = self.open_citations_url_hash()
         filename = "{}.txt.zst".format(fingerprint)
-        return luigi.LocalTarget(path=self.path(filename=filename))
+        return luigi.LocalTarget(path=self.path(filename=filename), format=Zstd)
 
     def on_success(self):
         self.create_symlink(name="current")
@@ -247,7 +247,7 @@ class SolrFetchDocs(Task):
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
-        return luigi.LocalTarget(path=self.path(ext="zst"))
+        return luigi.LocalTarget(path=self.path(ext="zst"), format=Zstd)
 
     def on_success(self):
         name = "{}-short".format(self.name) if self.short else self.name
@@ -339,7 +339,7 @@ class IdMappingTable(Task):
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
-        return luigi.LocalTarget(path=self.path(ext="tsv.zst"))
+        return luigi.LocalTarget(path=self.path(ext="tsv.zst"), format=Zstd)
 
     def on_success(self):
         self.create_symlink(name="current")

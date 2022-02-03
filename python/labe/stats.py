@@ -442,6 +442,7 @@ class StatsReportData(Task):
             "oci_inbound": OpenCitationsInboundStats(),
             "oci_outbound": OpenCitationsOutboundStats(),
             "oci_unique": OpenCitationsUniqueDOI(),
+            "oci": OpenCitationsSingleFile(),
         }
 
     def run(self):
@@ -451,7 +452,7 @@ class StatsReportData(Task):
         si = self.input()
         data = {
             "version": "1",
-            "date": str(datetime.date.today()),
+            "date": str(self.date),
             "slub": {
                 "num_mapped_doi": sum(1 for _ in si.get("index_unique_slub").open()),
                 "num_common_doi": sum(1 for _ in si.get("common_slub").open()),
@@ -463,6 +464,7 @@ class StatsReportData(Task):
                 "ratio": (sum(1 for _ in si.get("common").open()) / sum(1 for _ in si.get("oci_unique").open())),
             },
             "oci": {
+                "num_edges": sum(1 for _ in si.get("").open()),
                 "num_doi": sum(1 for _ in si.get("oci_unique").open()),
                 "stats_inbound": json.load(si.get("oci_inbound").open()),
                 "stats_outbound": json.load(si.get("oci_outbound").open()),
