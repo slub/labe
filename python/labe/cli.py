@@ -158,6 +158,9 @@ def main():
         filenames = set()
         symlinked = set()
         for root, dirs, files in os.walk(args.data_dir):
+            keepfile = os.path.join(root, ".labekeep")
+            if os.path.exists(keepfile):
+                continue
             for name in files:
                 full = os.path.join(root, name)
                 if os.path.isfile(full) and not os.path.islink(full):
