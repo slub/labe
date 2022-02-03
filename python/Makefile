@@ -47,13 +47,6 @@ clean: ## clean artifacts
 	rm -rf packaging/deb/labe/etc/
 	rm -rf packaging/deb/labe/usr/
 
-.PHONY: deploy
-deploy: $(ZIPAPP) ## ad-hoc deploy of single file executable via rsync
-	# temporary deploy option for development, you can put:
-	# DEPLOY_DST=user@srv.slub-dresden.de:/home/user/bin
-	# into ".env" file (read by makefile)
-	rsync -avzP -e 'ssh -p 21' labe.pyz $(DEPLOY_DST)
-
 .PHONY: deb
 deb: $(ZIPAPP) ## build a debian package
 	# executables
