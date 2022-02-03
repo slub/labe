@@ -9,7 +9,7 @@
 
 ## Notes
 
-* [ ] TODO: limit disk cache size
+* [x] TODO: limit disk cache size, see: [sizeWatcherThread](https://github.com/slub/labe/blob/087f7a19c1357239049202adc588d040b1b69632/go/ckit/cache/cache.go#L80-L102)
 * [ ] TODO: montly diff stats
 
 ## Misc
