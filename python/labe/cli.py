@@ -180,10 +180,12 @@ def main():
         first, last = found[0], found[-1]
         with open(first) as f:
             with open(last) as g:
+                a = json.load(f)
+                b = json.load(g)
                 doc = {
-                    "a": json.load(f),
-                    "b": json.load(g),
-                    "diff": stats_diff(json.load(f), json.load(g)),
+                    "a": a,
+                    "b": b,
+                    "diff": stats_diff(a, b),
                 }
                 print(json.dumps(doc))
 
