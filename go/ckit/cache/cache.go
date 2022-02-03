@@ -33,7 +33,10 @@ package cache
 
 import (
 	"errors"
+	"log"
+	"os"
 	"sync"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/slub/labe/go/ckit/tabutils"
@@ -41,7 +44,11 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var ErrCacheMiss = errors.New("cache miss")
+var (
+	ErrCacheMiss             = errors.New("cache miss")
+	ErrReadOnly              = errors.New("read only")
+	DefaultMaxFileSize int64 = 1 << 36
+)
 
 // Cache is a minimalistic cache based on sqlite. In the future, values could
 // be transparently compressed as well.
@@ -49,10 +56,12 @@ var ErrCacheMiss = errors.New("cache miss")
 // TODO: set a limit on filesize, e.g. 100G; run periodic checks, whether
 // maximum filesize is exceeded and switch to read-only mode, if necessary
 type Cache struct {
-	Path string
-
+	Path        string
+	MaxFileSize int64
+	// Lock applies to both, db and readOnly.
 	sync.Mutex
-	db *sqlx.DB
+	db       *sqlx.DB
+	readOnly bool
 }
 
 func New(path string) (*Cache, error) {
@@ -60,11 +69,34 @@ func New(path string) (*Cache, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := &Cache{Path: path, db: conn}
+	c := &Cache{Path: path, db: conn, MaxFileSize: DefaultMaxFileSize}
 	if err := c.init(); err != nil {
 		return nil, err
 	}
+	c.startSizeWatcher()
 	return c, nil
+}
+
+// startSizeWatcher sets up a goroutine that will watch the filesize
+// periodically and will switch to read-only mode, if a given size has been
+// exceeded.
+func (c *Cache) startSizeWatcher() {
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		for t := range ticker.C {
+			fi, err := os.Stat(c.Path)
+			if err != nil {
+				log.Printf("could not stat file at %s, stopping watch thread", c.Path)
+				break
+			}
+			if fi.Size() > c.MaxFileSize {
+				c.Lock()
+				log.Printf("switching cache at %s to read-only mode at %v", c.Path, t)
+				c.readOnly = true
+				c.Unlock()
+			}
+		}
+	}()
 }
 
 func (c *Cache) init() error {
@@ -106,6 +138,9 @@ func (c *Cache) ItemCount() (int, error) {
 func (c *Cache) Set(key string, value []byte) error {
 	c.Lock()
 	defer c.Unlock()
+	if c.readOnly {
+		return ErrReadOnly
+	}
 	s := `INSERT into map (k, v) VALUES (?, ?)`
 	_, err := c.db.Exec(s, key, value)
 	return err

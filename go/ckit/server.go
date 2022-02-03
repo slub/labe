@@ -511,7 +511,11 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 					return fmt.Errorf("cache close: %w", err)
 				}
 				if err := s.Cache.Set(response.ID, buf.Bytes()); err != nil {
-					return fmt.Errorf("failed to cache value for %s: %v", response.ID, err)
+					if err == cache.ErrReadOnly {
+						return nil
+					} else {
+						return fmt.Errorf("failed to cache value for %s: %v", response.ID, err)
+					}
 				}
 				s.Stats.MeasureSinceWithLabels("cached", t, nil)
 				sw.Record("cached value")
