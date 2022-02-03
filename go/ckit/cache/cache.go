@@ -86,16 +86,18 @@ func (c *Cache) startSizeWatcher() {
 		for t := range ticker.C {
 			fi, err := os.Stat(c.Path)
 			if err != nil {
-				log.Printf("could not stat file at %s, stopping watch thread", c.Path)
+				log.Printf("[cache] could not stat file at %s", c.Path)
 				break
 			}
 			if fi.Size() > c.MaxFileSize {
 				c.Lock()
-				log.Printf("switching cache at %s to read-only mode at %v", c.Path, t)
+				log.Printf("[cache] switching %s to read-only mode at %v", c.Path, t.Format(time.RFC3339))
 				c.readOnly = true
 				c.Unlock()
+				break
 			}
 		}
+		log.Printf("[cache] stopping file watcher thread")
 	}()
 }
 

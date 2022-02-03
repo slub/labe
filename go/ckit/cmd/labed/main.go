@@ -40,6 +40,7 @@ var (
 	enableGzip             = flag.Bool("z", false, "enable gzip compression")
 	enableCache            = flag.Bool("c", false, "enable caching of expensive responses")
 	cacheTriggerDuration   = flag.Duration("t", 250*time.Millisecond, "cache trigger duration")
+	cacheMaxFileSize       = flag.Int64("cx", 1<<36, "maximum filesize cache in bytes")
 	showVersion            = flag.Bool("version", false, "show version")
 	accessLogFile          = flag.String("a", "", "path to access log file, do not write access log if empty")
 	logFile                = flag.String("logfile", "", "application log file (stderr if empty)")
@@ -200,6 +201,7 @@ func main() {
 			log.Fatal(err)
 		}
 		defer c.Close()
+		c.MaxFileSize = *cacheMaxFileSize
 		srv.Cache = c
 		srv.CacheTriggerDuration = *cacheTriggerDuration
 	}
