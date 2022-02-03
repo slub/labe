@@ -131,6 +131,15 @@
       sudo systemctl restart labed &&
       zstd -qcd -T0 /usr/share/labe/data/OpenCitationsRanked/current | awk '{ print $2 }' | head -n 300000 | shuf | parallel -j 32 -I {} 'curl -sL "http://localhost:8000/doi/{}"' > /dev/null
 
+- name: "Setup crontab for daily stats generation"
+  cron:
+    name: Generate daily stats report data
+    user: labe
+    hour: "12"
+    minute: "0"
+    job: >
+      labe.pyz --data-dir /usr/share/labe -r StatsReportData
+
 # This it to keep report data from being cleaned up.
 - name: "Put .labekeep into default target directory for stats"
   file:
