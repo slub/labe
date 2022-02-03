@@ -43,6 +43,7 @@ Project homepage: https://github.com/slub/labe
 import argparse
 import configparser
 import datetime
+import json
 import logging
 import os
 import sys
@@ -175,10 +176,16 @@ def main():
             sys.exit(1)
 
         found = sorted(found)
+        # TODO: just to have some output for now
         first, last = found[0], found[-1]
         with open(first) as f:
             with open(last) as g:
-                print(json.dumps(stats_diff(json.load(f), json.load(g))))
+                doc = {
+                    "a": json.load(f),
+                    "b": json.load(g),
+                    "diff": stats_diff(json.load(f), json.load(g)),
+                }
+                print(json.dumps(doc))
 
         sys.exit(0)
 
