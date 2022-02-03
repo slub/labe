@@ -7,7 +7,7 @@ ifneq (,$(wildcard ./.env))
 endif
 
 SHELL := /bin/bash
-PY_FILES := $(shell find . -name \*.py -print)
+PY_FILES := $(shell find labe -name \*.py -print)
 PKGNAME := labe
 
 # The "zipapp" we build, cf. PEP441, https://www.python.org/dev/peps/pep-0441/,

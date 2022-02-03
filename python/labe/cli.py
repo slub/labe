@@ -42,18 +42,21 @@ Project homepage: https://github.com/slub/labe
 
 import argparse
 import configparser
+import datetime
 import logging
 import os
 import sys
 import tempfile
 
 import luigi
+import pandas as pd
 from luigi.cmdline_parser import CmdlineParser
 from luigi.parameter import MissingParameterException
 from luigi.task_register import Register, TaskClassNotFoundException
 from xdg import xdg_config_home, xdg_data_home
 
 from labe.deps import dump_deps
+from labe.diff import stats_diff
 from labe.oci import OpenCitationsDataset
 from labe.stats import *
 # We need a star import to import all tasks.
@@ -122,6 +125,7 @@ def main():
     parser.add_argument("--list-deletable", action="store_true", help="list task outputs, which could be deleted")
     parser.add_argument("--deps", metavar="TASK", type=str, help="show task dependencies")
     parser.add_argument("--deps-dot", metavar="TASK", type=str, help="print task dependencies in dot format")
+    parser.add_argument("--diff", action="store_true", help="generate a diff json from two stats json docs")
 
     # Task may have their own arguments, which we ignore.
     args, unparsed = parser.parse_known_args()
@@ -150,6 +154,30 @@ def main():
     if args.list:
         for name in effective_task_names():
             print(name)
+        sys.exit(0)
+
+    elif args.diff:
+        # in pandas 1.4.0 date_range will get an inclusive kwarg:
+        # https://pandas.pydata.org/docs/reference/api/pandas.date_range.html#pandas-date-range
+        rng = pd.date_range(start="2022-01-01", end=datetime.date.today(), freq="D")
+        found = []
+        for date in rng.to_pydatetime():
+            task = StatsReportData(date=date)
+            path = task.output().path
+            if os.path.exists(path):
+                found.append(path)
+
+        # take first and last for now
+        if len(found) < 2:
+            print("not enough stats (only found: {})".format(found))
+            sys.exit(1)
+
+        found = sorted(found)
+        first, last = found[0], found[-1]
+        with open(first) as f:
+            with open(last) as g:
+                print(json.dumps(stats_diff(json.load(f), json.load(g))))
+
         sys.exit(0)
 
     elif args.list_deletable:

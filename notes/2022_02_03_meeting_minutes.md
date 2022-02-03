@@ -39,6 +39,12 @@ $ curl -s http://0.0.0.0:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yM
 
 * [ ] stats tasks, daily stats generation
 
+## TODO
+
+* [ ] set notification email (and do not override config (cf. https://unix.stackexchange.com/a/511865/376)
+
+----
+
 
 ## Notes (last meeting)
 

@@ -7,7 +7,7 @@ Stats related tasks. Mainly:
 
 Other ideas:
 
-* [ ] per institution overlaps
+* [x] per institution overlaps
 
 """
 
@@ -26,6 +26,7 @@ from labe.tasks import (IdMappingTable, OpenCitationsSingleFile, SolrFetchDocs,
 __all__ = [
     'IdMappingTableForInstitution',
     'IndexMappedDOI',
+    'IndexMappedDOIForInstitution',
     'OpenCitationsCitedCount',
     'OpenCitationsCitingCount',
     'OpenCitationsInboundStats',
