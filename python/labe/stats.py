@@ -464,10 +464,10 @@ class StatsReportData(Task):
                 "ratio": (sum(1 for _ in si.get("common").open()) / sum(1 for _ in si.get("oci_unique").open())),
             },
             "oci": {
-                "num_edges": sum(1 for _ in si.get("").open()),
+                "num_edges": sum(1 for _ in si.get("oci").open()),
                 "num_doi": sum(1 for _ in si.get("oci_unique").open()),
-                "stats_inbound": json.load(si.get("oci_inbound").open()),
-                "stats_outbound": json.load(si.get("oci_outbound").open()),
+                "stats_inbound": json.load(si.get("oci_inbound").open()).get("inbound_edges"),
+                "stats_outbound": json.load(si.get("oci_outbound").open()).get("outbound_edges"),
             },
         }
         with self.output().open("w") as output:
