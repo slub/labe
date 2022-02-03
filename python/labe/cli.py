@@ -20,7 +20,7 @@ Command line tool to run luigi tasks for project ≋ labe
   Show task output location:
 
       $ labe.pyz -O OpenCitationsDatabase
-      /usr/share/labe/OpenCitationsDatabase/c90e82e35c9d02c00f81bee6d1f34b132953398c.db
+      /usr/share/labe/data/OpenCitationsDatabase/c90e82e35c9d02c00f81bee6d1f34b132953398c.db
 
 Symlinks point to the current version of a task output. They will only be
 updated, if the task ran successfully. This way we can identify outdated files:
