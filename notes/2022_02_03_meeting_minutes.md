@@ -46,7 +46,7 @@ $ curl -s http://0.0.0.0:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yM
 
 ## TODO
 
-* [ ] set notification email (and do not override config (cf. https://unix.stackexchange.com/a/511865/376)
+* [ ] set notification email (and do not override config (cf. https://unix.stackexchange.com/a/511865/376))
 
 ----
 
