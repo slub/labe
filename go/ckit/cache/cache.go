@@ -45,6 +45,9 @@ var ErrCacheMiss = errors.New("cache miss")
 
 // Cache is a minimalistic cache based on sqlite. In the future, values could
 // be transparently compressed as well.
+//
+// TODO: set a limit on filesize, e.g. 100G; run periodic checks, whether
+// maximum filesize is exceeded and switch to read-only mode, if necessary
 type Cache struct {
 	Path string
 
