@@ -475,3 +475,6 @@ class StatsReportData(Task):
     def output(self):
         # TODO: exclude outputs from this task from cleanup.
         return luigi.LocalTarget(path=self.path(ext="json"))
+
+    def on_success(self):
+        self.create_symlink(name="current")

@@ -19,7 +19,7 @@ import zipfile
 
 import luigi
 
-from labe.base import BaseTask, ensure_minimum_file_size, shellout, Zstd
+from labe.base import BaseTask, Zstd, ensure_minimum_file_size, shellout
 from labe.oci import OpenCitationsDataset
 
 __all__ = [
