@@ -251,20 +251,21 @@ Examples:
 // handleCacheInfo returns the number of currently cached items.
 func (s *Server) handleCacheInfo() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if s.Cache != nil {
-			count, err := s.Cache.ItemCount()
-			if err != nil {
-				httpErrLog(w, http.StatusInternalServerError, err)
-				return
-			}
-			err = json.NewEncoder(w).Encode(map[string]interface{}{
-				"count": count,
-				"path":  s.Cache.Path,
-			})
-			if err != nil {
-				httpErrLog(w, http.StatusInternalServerError, err)
-				return
-			}
+		if s.Cache == nil {
+			return
+		}
+		count, err := s.Cache.ItemCount()
+		if err != nil {
+			httpErrLog(w, http.StatusInternalServerError, err)
+			return
+		}
+		err = json.NewEncoder(w).Encode(map[string]interface{}{
+			"count": count,
+			"path":  s.Cache.Path,
+		})
+		if err != nil {
+			httpErrLog(w, http.StatusInternalServerError, err)
+			return
 		}
 	}
 }
