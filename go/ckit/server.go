@@ -12,6 +12,7 @@ import (
 	"os"
 	"regexp"
 	"sync"
+	"text/template"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -211,7 +212,7 @@ func (s *Server) handleIndex() http.HandlerFunc {
   \:\__\     /:/  /   \::/  /   \:\/  /   \::/  /
    \/__/     \/__/     \/__/     \/__/     \/__/
 
-Pid: %d
+Pid: {{ .PID }} | https://github.com/slub/labe
 
 Available endpoints:
 
@@ -222,18 +223,28 @@ Available endpoints:
     /id/{id}       GET
     /stats         GET
 
-Examples (hostport may be different):
+Examples:
 
-  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
-  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
-  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
-  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
-  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
-  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
-  http://localhost:8000/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
+  http://{{ .Hostport }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
+  http://{{ .Hostport }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwMS9qYW1hLjI4Mi4xNi4xNTE5
+  http://{{ .Hostport }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTAwNi9qbXJlLjE5OTkuMTcxNQ
+  http://{{ .Hostport }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
+  http://{{ .Hostport }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxMC9qYy4yMDExLTAzODU
+  http://{{ .Hostport }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTIxNC9hb3MvMTE3NjM0Nzk2Mw
+  http://{{ .Hostport }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMjMwNy8yMDk1NTIx
 
 `
-		fmt.Fprintf(w, docs, os.Getpid())
+		t := template.Must(template.New("index").Parse(docs))
+		err := t.Execute(w, struct {
+			PID      int
+			Hostport string
+		}{
+			PID:      os.Getpid(),
+			Hostport: r.Host,
+		})
+		if err != nil {
+			httpErrLog(w, http.StatusInternalServerError, err)
+		}
 	}
 }
 
