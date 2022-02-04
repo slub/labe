@@ -36,13 +36,13 @@ var (
 	listenAddr             = flag.String("addr", "localhost:8000", "host and port to listen on")
 	identifierDatabasePath = flag.String("i", "", "identifier database path (id-doi mapping)")
 	ociDatabasePath        = flag.String("o", "", "oci as a database path (citations)")
-	enableStopWatch        = flag.Bool("stopwatch", false, "enable stopwatch")
-	enableGzip             = flag.Bool("z", false, "enable gzip compression")
+	enableStopWatch        = flag.Bool("stopwatch", false, "enable stopwatch (debug)")
+	enableGzip             = flag.Bool("z", false, "enable gzip compression middleware")
 	enableCache            = flag.Bool("c", false, "enable caching of expensive responses")
-	cacheTriggerDuration   = flag.Duration("t", 250*time.Millisecond, "cache trigger duration")
+	cacheTriggerDuration   = flag.Duration("ct", 250*time.Millisecond, "cache trigger duration")
 	cacheMaxFileSize       = flag.Int64("cx", 1<<36, "maximum filesize cache in bytes")
-	showVersion            = flag.Bool("version", false, "show version")
-	accessLogFile          = flag.String("a", "", "path to access log file, do not write access log if empty")
+	showVersion            = flag.Bool("version", false, "show version and exit")
+	accessLogFile          = flag.String("a", "", "path to access log file (off, if empty)")
 	logFile                = flag.String("logfile", "", "application log file (stderr if empty)")
 	quiet                  = flag.Bool("q", false, "no application logging at all")
 
@@ -52,8 +52,9 @@ var (
 	Buildtime string // set by makefile
 	Help      string = `usage: labed [OPTION]
 
-labed is an web service fusing Open Citation and Library Catalog data (SLUB);
-it requires three types of databases:
+labed is a HTTP web server fusing Open Citation (https://opencitations.net/)
+and library catalog data at SLUB Dresden (https://www.slub-dresden.de/) and
+other libraries (https://finc.info/); it requires three types of databases:
 
 (1) [-i] an sqlite3 catalog-id-to-doi translation database (~10GB+)
 (2) [-o] an sqlite3 version of OCI/COCI (~150GB+)
