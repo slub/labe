@@ -52,9 +52,6 @@ var (
 
 // Cache is a minimalistic cache based on sqlite. In the future, values could
 // be transparently compressed as well.
-//
-// TODO: set a limit on filesize, e.g. 100G; run periodic checks, whether
-// maximum filesize is exceeded and switch to read-only mode, if necessary
 type Cache struct {
 	Path        string
 	MaxFileSize int64
@@ -64,6 +61,7 @@ type Cache struct {
 	readOnly bool
 }
 
+// New creates a new cache at a given path with a default maximum file size.
 func New(path string) (*Cache, error) {
 	conn, err := sqlx.Open("sqlite3", path)
 	if err != nil {
