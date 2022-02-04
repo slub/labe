@@ -302,9 +302,6 @@ class IdMappingTableForInstitution(Task):
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="tsv.zst"))
 
-    def on_success(self):
-        self.create_symlink(name="current")
-
 
 class IndexMappedDOIForInstitution(Task):
     """
@@ -330,9 +327,6 @@ class IndexMappedDOIForInstitution(Task):
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="tsv.zst"), format=Zstd)
 
-    def on_success(self):
-        self.create_symlink(name="current")
-
 
 class IndexMappedDOI(Task):
     """
@@ -356,9 +350,6 @@ class IndexMappedDOI(Task):
 
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="tsv.zst"), format=Zstd)
-
-    def on_success(self):
-        self.create_symlink(name="current")
 
 
 class StatsCommonDOIForInstitution(Task):
@@ -387,9 +378,6 @@ class StatsCommonDOIForInstitution(Task):
 
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="tsv.zst"), format=Zstd)
-
-    def on_success(self):
-        self.create_symlink(name="current")
 
 
 class StatsCommonDOI(Task):
@@ -421,9 +409,6 @@ class StatsCommonDOI(Task):
 
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="tsv.zst"), format=Zstd)
-
-    def on_success(self):
-        self.create_symlink(name="current")
 
 
 class StatsReportData(Task):
@@ -477,4 +462,3 @@ class StatsReportData(Task):
 
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="json"))
-
