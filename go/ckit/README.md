@@ -109,27 +109,28 @@ Bulk requests
 
 Flags
 
+  -a string
+        path to access log file, do not write access log if empty
   -addr string
         host and port to listen on (default "localhost:8000")
   -c    enable caching of expensive responses
+  -cx int
+        maximum filesize cache in bytes (default 68719476736)
   -i string
         identifier database path (id-doi mapping)
-  -l    enable logging
   -logfile string
-        file to log to
+        application log file (stderr if empty)
   -m value
         index metadata cache sqlite3 path (repeatable)
   -o string
         oci as a datbase path (citations)
-  -q    no output at all
+  -q    no application logging at all
   -stopwatch
         enable stopwatch
   -t duration
         cache trigger duration (default 250ms)
   -version
         show version
-  -warm-cache
-        warm cache, read one DOI per line from stdin
   -z    enable gzip compression
 ```
 
