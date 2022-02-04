@@ -123,7 +123,7 @@ Flags
   -m value
         index metadata cache sqlite3 path (repeatable)
   -o string
-        oci as a datbase path (citations)
+        oci as a database path (citations)
   -q    no application logging at all
   -stopwatch
         enable stopwatch

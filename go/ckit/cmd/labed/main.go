@@ -35,7 +35,7 @@ import (
 var (
 	listenAddr             = flag.String("addr", "localhost:8000", "host and port to listen on")
 	identifierDatabasePath = flag.String("i", "", "identifier database path (id-doi mapping)")
-	ociDatabasePath        = flag.String("o", "", "oci as a datbase path (citations)")
+	ociDatabasePath        = flag.String("o", "", "oci as a database path (citations)")
 	enableStopWatch        = flag.Bool("stopwatch", false, "enable stopwatch")
 	enableGzip             = flag.Bool("z", false, "enable gzip compression")
 	enableCache            = flag.Bool("c", false, "enable caching of expensive responses")
