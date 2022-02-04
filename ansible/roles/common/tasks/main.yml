@@ -30,7 +30,6 @@
       - sqlite3
       - tmux
       - tree
-      - tree
       - unzip
       - vim
       - wget
