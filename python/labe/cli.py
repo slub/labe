@@ -59,10 +59,9 @@ from xdg import xdg_config_home, xdg_data_home
 from labe.deps import dump_deps
 from labe.diff import stats_diff
 from labe.oci import OpenCitationsDataset
-from labe.stats import *
 # We need a star import to import all tasks.
+from labe.stats import *
 from labe.tasks import *
-from labe.tasks import Task
 
 
 def effective_task_names(suppress=None):
@@ -108,7 +107,7 @@ def main():
         "-c",
         "--config-file",
         default=os.path.join(xdg_config_home(), "labe", "labe.cfg"),
-        help="path to configuration file",
+        help="path to configuration file (overrides default locations)",
     )
     parser.add_argument(
         "--logging-conf-file",
@@ -134,16 +133,15 @@ def main():
 
     # Hack to set the base directory of all tasks.
     Task.BASE = args.data_dir
+
+    # Setup, configure.
+    tempfile.tempdir = args.tmp_dir
     # Hack to override autodetection of config file, if the given file exists.
     if os.path.exists(args.config_file):
         parser = configparser.ConfigParser()
         parser.read(args.config_file)
         Task._config = parser
-
-    # Setup, configure.
-    tempfile.tempdir = args.tmp_dir
     if os.path.exists(args.logging_conf_file):
-        # TODO: This won't work with [2:] ...
         logging.config.fileConfig(args.logging_conf_file)
 
     # Wrapper around OCI.
@@ -158,6 +156,7 @@ def main():
             print(name)
         sys.exit(0)
 
+    # Show stats diff (stub).
     elif args.diff:
         # TODO: this can live in a separate task in stats as well
         # in pandas 1.4.0 date_range will get an inclusive kwarg:
@@ -165,7 +164,7 @@ def main():
         rng = pd.date_range(start="2022-01-01", end=datetime.date.today(), freq="D")
         found = []
         for date in rng.to_pydatetime():
-            task = StatsReportData(date=date, institution=args.institution)
+            task = StatsReportData(date=date, institution=args.diff_institution)
             path = task.output().path
             if os.path.exists(path):
                 found.append(path)
@@ -192,11 +191,11 @@ def main():
         sys.exit(0)
 
     elif args.list_deletable:
-        # TODO: whitelist tasks or directories, e.g. for reports
         # rm -f $(labe.pyz --list-deletable)
         filenames = set()
         symlinked = set()
         for root, dirs, files in os.walk(args.data_dir):
+            # Ignore dirs containing .labekeep file.
             keepfile = os.path.join(root, ".labekeep")
             if os.path.exists(keepfile):
                 continue

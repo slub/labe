@@ -1,7 +1,5 @@
 """
-Derivation tasks.
-
-A few extra ideas:
+Derivation tasks. A few extra ideas:
 
 * [ ] see, whether openalex citation data would yield more edges
 * [ ] see, whether refcat citation data would yield more edges
