@@ -53,12 +53,12 @@ var (
 	Help      string = `usage: labed [OPTION]
 
 labed is an web service fusing Open Citation and Library Catalog data (SLUB);
-it works with three types of databases:
+it requires three types of databases:
 
-(1) [-i] an sqlite3 catalog-id-to-doi translation database (10G+)
-(2) [-o] an sqlite3 version of OCI/COCI (150GB+)
+(1) [-i] an sqlite3 catalog-id-to-doi translation database (~10GB+)
+(2) [-o] an sqlite3 version of OCI/COCI (~150GB+)
 (3) [-m] an sqlite3 mapping from catalog ids to (json) metadata; this can be repeated
-         (size depends on index size and on how much metadata is included) (40-350G)
+         (size depends on index size and on how much metadata is included) (~40-350GB)
 
 Each database may be updated separately, with separate processes.
 
