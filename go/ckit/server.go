@@ -525,6 +525,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 					if err == cache.ErrReadOnly {
 						return nil
 					} else {
+						// TODO: we do not need to fail, if cache fails
 						return fmt.Errorf("failed to cache value for %s: %v", response.ID, err)
 					}
 				}
