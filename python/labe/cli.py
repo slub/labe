@@ -62,6 +62,7 @@ from labe.oci import OpenCitationsDataset
 # We need a star import to import all tasks.
 from labe.stats import *
 from labe.tasks import *
+from labe.experimental import *
 
 
 def effective_task_names(suppress=None):
