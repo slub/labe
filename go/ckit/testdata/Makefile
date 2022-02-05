@@ -8,6 +8,10 @@
 SHELL := /bin/bash
 TARGETS := id_doi.db doi_doi.db id_metadata.db
 
+.PHONY: help
+help:
+	@echo There should be three sqlite3 db file already here.
+
 .PHONY: all
 all: $(TARGETS)
 
