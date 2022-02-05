@@ -16,7 +16,7 @@ class ExpRefcatDownload(Task):
 
     def run(self):
         output = shellout("""
-                          curl -sL --fail {url} | zstd -c -d -T0 -q | LC_ALL=C sort -S50% | zstd -c -T0 > {output}
+                          curl -sL --retry 3 --fail {url} | zstd -c -d -T0 -q | LC_ALL=C sort -S50% | zstd -c -T0 > {output}
                           """, url=self.url)
         luigi.LocalTarget(output).move(self.output().path)
 
