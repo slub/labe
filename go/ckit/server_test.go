@@ -1,6 +1,7 @@
 package ckit
 
 import (
+	"log"
 	"reflect"
 	"testing"
 
@@ -117,11 +118,10 @@ func TestApplyInstitutionFilter(t *testing.T) {
 			t.Fatalf("could not unmarshal test response: %v", err)
 		}
 		resp.applyInstitutionFilter(c.institution)
-		if !cmp.Equal(resp, expected) {
-			t.Fatalf("[%s] got %v, want %v", c.desc,
-				string(mustMarshal(resp)),
-				string(c.expected),
-			)
+		if string(mustMarshal(resp)) != string(mustMarshal(expected)) {
+			log.Printf(string(mustMarshal(resp)))
+			log.Printf(string(mustMarshal(expected)))
+			t.Fatalf("[%s] %v", c.desc, cmp.Diff(resp, expected))
 		}
 	}
 }
