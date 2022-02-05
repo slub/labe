@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const letterBytes = "abcdefghijklmnopqrstuvwxyz"
 
 func randString(n int) string {
 	b := make([]byte, n)
@@ -69,7 +69,7 @@ func (s *StopWatch) Recordf(msg string, vs ...interface{}) {
 	s.Lock()
 	defer s.Unlock()
 	if s.id == "" {
-		s.id = randString(4)
+		s.id = randString(8)
 	}
 	s.entries = append(s.entries, &Entry{
 		T:       time.Now(),
@@ -91,6 +91,11 @@ func (s *StopWatch) Elapsed() time.Duration {
 		return 0
 	}
 	return time.Now().Sub(s.entries[0].T)
+}
+
+// Entries returns the accumulated messages for this stopwatch.
+func (s *StopWatch) Entries() []*Entry {
+	return s.entries
 }
 
 // LogTable write a table using standard library log facilities.
