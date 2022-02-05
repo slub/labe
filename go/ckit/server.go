@@ -287,6 +287,11 @@ func (s *Server) handleCachePurge() http.HandlerFunc {
 
 // handleStats renders a JSON overview of server metrics.
 func (s *Server) handleStats() http.HandlerFunc {
+	if s.Stats == nil {
+		return func(w http.ResponseWriter, r *http.Request) {
+			http.Error(w, "not configured", 400)
+		}
+	}
 	s.Stats.MetricsCounts = make(map[string]int)
 	s.Stats.MetricsTimers = make(map[string]time.Time)
 	return func(w http.ResponseWriter, r *http.Request) {

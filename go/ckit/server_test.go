@@ -1,12 +1,17 @@
 package ckit
 
 import (
+	"fmt"
 	"log"
+	"os"
 	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/gorilla/mux"
+	"github.com/jmoiron/sqlx"
 	"github.com/segmentio/encoding/json"
+	"github.com/slub/labe/go/ckit/tabutils"
 )
 
 func TestBatchedStrings(t *testing.T) {
@@ -126,10 +131,47 @@ func TestApplyInstitutionFilter(t *testing.T) {
 	}
 }
 
+func TestServerBasic(t *testing.T) {
+	a, err := openDatabase("testdata/id_doi.db")
+	if err != nil {
+		t.Fatalf("test data: %v", err)
+	}
+	b, err := openDatabase("testdata/doi_doi.db")
+	if err != nil {
+		t.Fatalf("test data: %v", err)
+	}
+	g := &FetchGroup{}
+	if err := g.FromFiles("testdata/id_metadata.db"); err != nil {
+		t.Fatalf("test data: %v", err)
+	}
+	srv := &Server{
+		IdentifierDatabase: a,
+		OciDatabase:        b,
+		IndexData:          g,
+		Router:             mux.NewRouter(),
+	}
+	srv.Routes()
+	t.Log("setup server")
+
+	// todo: setup test server with out custom header
+}
+
 func mustMarshal(v interface{}) []byte {
 	b, err := json.Marshal(v)
 	if err != nil {
 		panic(err)
 	}
 	return b
+}
+
+// openDatabase first ensures a file does actually exists, then create as
+// read-only connection.
+func openDatabase(filename string) (*sqlx.DB, error) {
+	if len(filename) == 0 {
+		return nil, fmt.Errorf("empty file")
+	}
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		return nil, fmt.Errorf("file not found: %s", filename)
+	}
+	return sqlx.Open("sqlite3", tabutils.WithReadOnly(filename))
 }
