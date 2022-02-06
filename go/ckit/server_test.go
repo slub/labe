@@ -3,6 +3,7 @@ package ckit
 import (
 	"fmt"
 	"log"
+	"net/http/httptest"
 	"os"
 	"reflect"
 	"testing"
@@ -150,10 +151,8 @@ func TestServerBasic(t *testing.T) {
 		IndexData:          g,
 		Router:             mux.NewRouter(),
 	}
-	srv.Routes()
-	t.Log("setup server")
-
-	// todo: setup test server with out custom header
+	rr := httptest.NewRecorder()
+	// TODO: execute handlers
 }
 
 func mustMarshal(v interface{}) []byte {
