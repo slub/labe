@@ -54,3 +54,57 @@ class OpenCitationsDOITable(Task):
 
     def on_success(self):
         self.create_symlink(name="current")
+
+
+class ExpRefcatOnly(Task):
+    """
+    Refcat only DOI-DOI pairs.
+    """
+
+    def requires(self):
+        return {
+            "refcat": ExpRefcatDownload(),
+            "oci": OpenCitationsDOITable(),
+        }
+
+    def run(self):
+        output = shellout("""
+                          LC_ALL=C comm -23 <(zstdcat -T0 {refcat}) <(zstdcat -T0 {oci}) |
+                          zstd -c -T0 > {output}
+                          """,
+                          refcat=self.input().get("refcat"),
+                          oci=self.input().get("oci"))
+        luigi.LocalTarget(output).move(self.output().path)
+
+    def output(self):
+        return luigi.LocalTarget(path=self.path(ext="tsv.zst", digest=True), format=Zstd)
+
+    def on_success(self):
+        self.create_symlink(name="current")
+
+
+class ExpOpenCitationsOnly(Task):
+    """
+    OCI only DOI-DOI pairs.
+    """
+
+    def requires(self):
+        return {
+            "refcat": ExpRefcatDownload(),
+            "oci": OpenCitationsDOITable(),
+        }
+
+    def run(self):
+        output = shellout("""
+                          LC_ALL=C comm -13 <(zstdcat -T0 {refcat}) <(zstdcat -T0 {oci}) |
+                          zstd -c -T0 > {output}
+                          """,
+                          refcat=self.input().get("refcat"),
+                          oci=self.input().get("oci"))
+        luigi.LocalTarget(output).move(self.output().path)
+
+    def output(self):
+        return luigi.LocalTarget(path=self.path(ext="tsv.zst", digest=True), format=Zstd)
+
+    def on_success(self):
+        self.create_symlink(name="current")
