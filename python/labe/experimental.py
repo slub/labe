@@ -72,8 +72,8 @@ class ExpRefcatOnly(Task):
                           LC_ALL=C comm -23 <(zstdcat -T0 {refcat}) <(zstdcat -T0 {oci}) |
                           zstd -c -T0 > {output}
                           """,
-                          refcat=self.input().get("refcat"),
-                          oci=self.input().get("oci"))
+                          refcat=self.input().get("refcat").path,
+                          oci=self.input().get("oci").path)
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -99,8 +99,8 @@ class ExpOpenCitationsOnly(Task):
                           LC_ALL=C comm -13 <(zstdcat -T0 {refcat}) <(zstdcat -T0 {oci}) |
                           zstd -c -T0 > {output}
                           """,
-                          refcat=self.input().get("refcat"),
-                          oci=self.input().get("oci"))
+                          refcat=self.input().get("refcat").path,
+                          oci=self.input().get("oci").path)
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
