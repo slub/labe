@@ -58,11 +58,11 @@ from xdg import xdg_config_home, xdg_data_home
 
 from labe.deps import dump_deps
 from labe.diff import stats_diff
+from labe.experimental import *
 from labe.oci import OpenCitationsDataset
 # We need a star import to import all tasks.
 from labe.stats import *
 from labe.tasks import *
-from labe.experimental import *
 
 
 def effective_task_names(suppress=None):
