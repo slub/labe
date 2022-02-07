@@ -125,7 +125,10 @@ class ExpCombinedCitationsTable(Task):
     https://arxiv.org/pdf/2110.06595v2.pdf#page=2); 13GB compressed, 73GB
     uncompressed; deployment machine i/o throughput at 33MB/s for db generation
     (underlying i/o can go up to 400MB/s, so bottleneck seems to be the code);
-    about 700k edges/s added.
+    about 700k edges/s added; sqlite db was about 185GB (vs 155GB for OCI only).
+
+    As is, stats generation keys on the URL of the oci dump, so it's a bit
+    unwieldy to evaluate this dataset directly.
     """
 
     def requires(self):
