@@ -155,33 +155,12 @@ class OpenCitationsDatabase(Task):
     In 12/2021, task took about 95m3.050s. A full sequence (e.g. download,
     single file, database) can take 2-3h (143m33.560s).
     """
-    exp = luigi.BoolParameter(significant=False, description="if set, use alternative or extended graph data")
 
     def requires(self):
-        if self.exp:
-            from labe.experimental import ExpCombinedCitationsTable
-            return ExpCombinedCitationsTable()
-        else:
-            return OpenCitationsSingleFile()
+        return OpenCitationsSingleFile()
 
-    def run_exp(self):
-        """
-        Run experimental version.
-        """
-        output = shellout(r"""
-                          zstdcat -T0 {input} |
-                          LC_ALL=C grep ^10 |
-                          makta -init -o {output} -I 3
-                          """,
-                          input=self.input().path)
-        ensure_minimum_file_size(output, self.minimum_file_size_map["OpenCitationsDatabase"])
-        luigi.LocalTarget(output).move(self.output().path)
 
     def run(self):
-        if self.exp:
-            return self.run_exp()
-
-        # Classic version.
         output = shellout(r"""
                           zstdcat -T0 {input} |
                           cut -d, -f2,3 |
