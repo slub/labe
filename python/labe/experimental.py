@@ -7,6 +7,14 @@ import luigi
 from labe.base import Zstd, shellout
 from labe.tasks import OpenCitationsSingleFile, Task
 
+__all__ = [
+    'ExpRefcatDownload',
+    'OpenCitationsDOITable',
+    'ExpRefcatDownload',
+    'ExpOpenCitationsOnly',
+    'ExpCombinedCitationsTable',
+]
+
 
 class ExpRefcatDownload(Task):
     """

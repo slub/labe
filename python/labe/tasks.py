@@ -18,7 +18,6 @@ import zipfile
 import luigi
 
 from labe.base import BaseTask, Zstd, ensure_minimum_file_size, shellout
-from labe.experimental import ExpCombinedCitationsTable
 from labe.oci import OpenCitationsDataset
 
 __all__ = [
@@ -160,6 +159,7 @@ class OpenCitationsDatabase(Task):
 
     def requires(self):
         if self.exp:
+            from labe.experimental import ExpCombinedCitationsTable
             return ExpCombinedCitationsTable()
         else:
             return OpenCitationsSingleFile()
