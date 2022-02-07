@@ -114,6 +114,7 @@ class ExpCombinedCitationsTable(Task):
     """
     OCI and refcat as a single file with duplicates removed.
     """
+
     def requires(self):
         return {
             "oci": OpenCitationsSingleFile(),
