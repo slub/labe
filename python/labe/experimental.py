@@ -90,8 +90,8 @@ class ExpOpenCitationsOnly(Task):
 
     def requires(self):
         return {
-            "refcat": ExpRefcatDownload(),
             "oci": OpenCitationsDOITable(),
+            "refcat": ExpRefcatDownload(),
         }
 
     def run(self):
@@ -101,6 +101,34 @@ class ExpOpenCitationsOnly(Task):
                           """,
                           refcat=self.input().get("refcat").path,
                           oci=self.input().get("oci").path)
+        luigi.LocalTarget(output).move(self.output().path)
+
+    def output(self):
+        return luigi.LocalTarget(path=self.path(ext="tsv.zst", digest=True), format=Zstd)
+
+    def on_success(self):
+        self.create_symlink(name="current")
+
+
+class ExpCombinedCitationsTable(Task):
+    """
+    OCI and refcat as a single file with duplicates removed.
+    """
+    def requires(self):
+        return {
+            "oci": OpenCitationsSingleFile(),
+            "refcat": ExpRefcatDownload(),
+        }
+
+    def run(self):
+        output = shellout(r"""
+                          LC_ALL=C sort -S50%
+                            <(zstdcat -T0 {oci} | cut -d, -f2,3 | sed -e 's@,@\t@')
+                            <(zstdcat -T0 {refcat}) |
+                          zstd -c -T0 > {output}
+                          """,
+                          oci=self.input().get("oci").path,
+                          refcat=self.input().get("refcat").path)
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
