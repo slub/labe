@@ -120,7 +120,12 @@ class ExpOpenCitationsOnly(Task):
 
 class ExpCombinedCitationsTable(Task):
     """
-    OCI and refcat as a single file with duplicates removed.
+    OCI and refcat as a single file with duplicates removed; in 02/2022 we
+    gather 1,565,087,463 edges (but many from refcat are dataset related;
+    https://arxiv.org/pdf/2110.06595v2.pdf#page=2); 13GB compressed, 73GB
+    uncompressed; deployment machine i/o throughput at 33MB/s for db generation
+    (underlying i/o can go up to 400MB/s, so bottleneck seems to be the code);
+    about 700k edges/s added.
     """
 
     def requires(self):
