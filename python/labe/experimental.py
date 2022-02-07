@@ -122,9 +122,9 @@ class ExpCombinedCitationsTable(Task):
 
     def run(self):
         output = shellout(r"""
-                          LC_ALL=C sort -S50%
-                            <(zstdcat -T0 {oci} | cut -d, -f2,3 | sed -e 's@,@\t@')
-                            <(zstdcat -T0 {refcat}) |
+                          LC_ALL=C sort -u -S50%
+                            <(zstdcat -T0 {oci} | cut -d, -f2,3 | sed -e 's@,@\t@' | tr [:upper:] [:lower:])
+                            <(zstdcat -T0 {refcat} | tr [:upper:] [:lower:]) |
                           zstd -c -T0 > {output}
                           """,
                           oci=self.input().get("oci").path,
