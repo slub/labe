@@ -15,6 +15,7 @@ __all__ = [
     'ExpCombinedCitationsTable',
 ]
 
+
 class ExpTask(Task):
     TAG = 'exp'
 
@@ -135,7 +136,6 @@ class ExpCombinedCitationsTable(ExpTask):
     unwieldy to evaluate this dataset directly.
     """
     exp = luigi.Parameter(default="1", description="experiment id")
-
 
     def requires(self):
         return {
@@ -316,7 +316,7 @@ class ExpCitationsInboundStats(ExpTask):
         self.create_symlink(name="current")
 
 
-class ExpCitationsOutboundStats(Task):
+class ExpCitationsOutboundStats(ExpTask):
     """
     Outbound edge count distribution.
     """
@@ -341,7 +341,7 @@ class ExpCitationsOutboundStats(Task):
         self.create_symlink(name="current")
 
 
-class ExpCitationsUniqueDOI(Task):
+class ExpCitationsUniqueDOI(ExpTask):
     """
     List of unique DOI in citation dataset.
     """
@@ -370,3 +370,117 @@ class ExpCitationsUniqueDOI(Task):
     def on_success(self):
         self.create_symlink(name="current")
 
+
+class ExpStatsCommonDOIForInstitution(ExpTask):
+    """
+    Run `comm` against open citations and index doi list for institution.
+    """
+    date = luigi.DateParameter(default=datetime.date.today())
+    institution = luigi.Parameter(default="DE-14")
+    exp = luigi.Parameter(default="1", description="experiment id")
+
+    def requires(self):
+        return {
+            "index": IndexMappedDOIForInstitution(date=self.date, institution=self.institution),
+            "oci": ExpCitationsUniqueDOI(exp=self.exp),
+        }
+
+    def run(self):
+        output = shellout("""
+                          LC_ALL=C comm -12
+                            <(zstdcat -T0 {index})
+                            <(zstdcat -T0 {oci}) |
+                          zstd -c -T0 > {output}
+                          """,
+                          index=self.input().get("index").path,
+                          oci=self.input().get("oci").path)
+        luigi.LocalTarget(output).move(self.output().path)
+
+    def output(self):
+        return luigi.LocalTarget(path=self.path(ext="tsv.zst"), format=Zstd)
+
+
+class ExpStatsCommonDOI(ExpTask):
+    """
+    Run `comm` against open citations and index doi list.
+
+    Example data point: 2022-02-02, 44311206 / 72736981; ratio: .6092; about
+    60% of the documents in the index that have a DOI also have an entry in the
+    citation graph.
+    """
+    date = luigi.DateParameter(default=datetime.date.today())
+    exp = luigi.Parameter(default="1", description="experiment id")
+
+    def requires(self):
+        return {
+            "index": IndexMappedDOI(date=self.date),
+            "oci": OpenCitationsUniqueDOI(exp=self.exp),
+        }
+
+    def run(self):
+        output = shellout("""
+                          LC_ALL=C comm -12
+                            <(zstdcat -T0 {index})
+                            <(zstdcat -T0 {oci}) |
+                          zstd -c -T0 > {output}
+                          """,
+                          index=self.input().get("index").path,
+                          oci=self.input().get("oci").path)
+        luigi.LocalTarget(output).move(self.output().path)
+
+    def output(self):
+        return luigi.LocalTarget(path=self.path(ext="tsv.zst"), format=Zstd)
+
+
+class ExpStatsReportData(ExpTask):
+    """
+    A daily overview (data).
+    """
+    date = luigi.DateParameter(default=datetime.date.today())
+    institution = luigi.Parameter(default="DE-14")
+    exp = luigi.Parameter(default="1", description="experiment id")
+
+    def requires(self):
+        return {
+            "common": ExpStatsCommonDOI(date=self.date, exp=self.exp),
+            "common_institution": StatsCommonDOIForInstitution(date=self.date, institution=self.institution, exp=self.exp),
+            "index_unique": IndexMappedDOI(date=self.date),
+            "index_unique_institution": IndexMappedDOIForInstitution(date=self.date, institution=self.institution),
+            "exp_inbound": ExpCitationsInboundStats(exp=self.exp),
+            "exp_outbound": ExpCitationsOutboundStats(exp=self.exp),
+            "exp_unique": ExpCitationsUniqueDOI(exp=self.exp),
+            "exp": ExpCombinedCitationsTable(),
+        }
+
+    def run(self):
+        """
+        Ok to open files and not close them, as this is a sink task.
+        """
+        si = self.input()
+        data = {
+            "version": "1",
+            "date": str(self.date),
+            "institution": {
+                self.institution: {
+                    "num_mapped_doi": sum(1 for _ in si.get("index_unique_institution").open()),
+                    "num_common_doi": sum(1 for _ in si.get("common_institution").open()),
+                    "ratio": (sum(1 for _ in si.get("common_institution").open()) / sum(1 for _ in si.get("exp_unique").open())),
+                },
+            },
+            "index": {
+                "num_mapped_doi": sum(1 for _ in si.get("index_unique").open()),
+                "num_common_doi": sum(1 for _ in si.get("common").open()),
+                "ratio": (sum(1 for _ in si.get("common").open()) / sum(1 for _ in si.get("exp_unique").open())),
+            },
+            "oci": {
+                "num_edges": sum(1 for _ in si.get("exp").open()),
+                "num_doi": sum(1 for _ in si.get("exp_unique").open()),
+                "stats_inbound": json.load(si.get("exp_inbound").open()).get("inbound_edges"),
+                "stats_outbound": json.load(si.get("exp_outbound").open()).get("outbound_edges"),
+            },
+        }
+        with self.output().open("w") as output:
+            json.dump(data, output)
+
+    def output(self):
+        return luigi.LocalTarget(path=self.path(ext="json"))

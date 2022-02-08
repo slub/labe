@@ -159,7 +159,6 @@ class OpenCitationsDatabase(Task):
     def requires(self):
         return OpenCitationsSingleFile()
 
-
     def run(self):
         output = shellout(r"""
                           zstdcat -T0 {input} |
