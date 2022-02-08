@@ -1,0 +1,25 @@
+[Unit]
+Description=Server for labe citation project
+Documentation=https://www.github.com/slub/labe
+After=network.target
+
+[Service]
+Type=simple
+User={{ labe_user }}
+WorkingDirectory=/tmp
+ExecStart=/usr/local/bin/labed \
+                -addr {{ labed_addr }} \
+                -a {{ labed_access_log }} \
+                -logfile {{ labed_log }} \
+                -c \
+                -z \
+                -i {{ labe_data_dir }}/data/IdMappingDatabase/current \
+                -o {{ labe_data_dir }}/data/OpenCitationsDatabase/current \
+                -m {{ labe_data_dir }}/data/SolrDatabase/current-ai-short \
+                -m {{ labe_data_dir }}/data/SolrDatabase/current-main-short \
+                -m {{ labe_data_dir }}/data/SolrDatabase/current-slub-production
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+

@@ -37,4 +37,4 @@
 - name: "Install solrdump"
   apt:
     # https://github.com/ubleipzig/solrdump/releases
-    deb: https://github.com/ubleipzig/solrdump/releases/download/v0.1.7/solrdump_0.1.7_amd64.deb
+    deb: https://github.com/ubleipzig/solrdump/releases/download/v{{ solrdump_version }}/solrdump_{{ solrdump_version }}_amd64.deb

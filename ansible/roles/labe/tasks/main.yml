@@ -14,6 +14,12 @@
   apt:
     deb: https://github.com/slub/labe/releases/download/v{{ ckit_version }}/ckit_{{ ckit_version }}_amd64.deb
 
+- name: "Override package ckit/labed systemd unit file"
+  template:
+    src: "labed.service.j2"
+    dest: "/etc/systemd/system/labed.service"
+    mode: 0644
+
 - name: "Install labe release"
   apt:
     deb: https://github.com/slub/labe/releases/download/v{{ labe_version }}/labe_{{ labe_version}}_amd64.deb
@@ -24,7 +30,7 @@
 
 - name: "Change application log file ownership"
   file:
-    path: /var/log/labe.log
+    path: "{{ labed_log }}"
     owner: "{{ labe_user }}"
     group: "{{ labe_group }}"
     state: touch
@@ -32,7 +38,7 @@
 
 - name: "Change access log file ownership"
   file:
-    path: /var/log/labe-access.log
+    path: "{{ labed_access_log }}"
     owner: "{{ labe_user }}"
     group: "{{ labe_group }}"
     state: touch
@@ -57,7 +63,7 @@
     lp_logrotate_confd:
       - path: labe
         conf: |
-          /var/log/labe.log {
+          {{ labed_log }} {
               daily
               rotate 3
               size 100M
@@ -66,7 +72,7 @@
           }
       - path: labe-access
         conf: |
-          /var/log/labe-access.log {
+          {{ labed_access_log }} {
               daily
               rotate 3
               size 100M
