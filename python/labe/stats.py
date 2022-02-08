@@ -436,7 +436,7 @@ class StatsReportData(Task):
         """
         si = self.input()
         data = {
-            "version": "1",
+            "version": "2",
             "date": str(self.date),
             "institution": {
                 self.institution: {
