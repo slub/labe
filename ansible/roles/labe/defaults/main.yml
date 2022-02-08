@@ -4,7 +4,7 @@ labe_data_dir: /usr/share/labe
 labed_addr: 0.0.0.0:8000
 labed_access_log: /var/log/labe-access.log
 labed_log: /var/log/labe.log
-ckit_version: 0.1.37
-labe_version: 0.1.37
+ckit_version: 0.1.38
+labe_version: 0.1.38
 solrdump_version: 0.1.7
 
