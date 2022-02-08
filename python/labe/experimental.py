@@ -11,8 +11,8 @@ import luigi
 import pandas as pd
 
 from labe.base import Zstd, shellout
-from labe.tasks import OpenCitationsSingleFile, Task
 from labe.stats import IndexMappedDOI, IndexMappedDOIForInstitution
+from labe.tasks import OpenCitationsSingleFile, Task
 
 __all__ = [
     'ExpRefcatDownload',
@@ -406,6 +406,9 @@ class ExpStatsCommonDOIForInstitution(ExpTask):
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="tsv.zst"), format=Zstd)
 
+    def on_success(self):
+        self.create_symlink(name="current")
+
 
 class ExpStatsCommonDOI(ExpTask):
     """
@@ -437,6 +440,9 @@ class ExpStatsCommonDOI(ExpTask):
 
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="tsv.zst"), format=Zstd)
+
+    def on_success(self):
+        self.create_symlink(name="current")
 
 
 class ExpStatsReportData(ExpTask):
@@ -491,3 +497,6 @@ class ExpStatsReportData(ExpTask):
 
     def output(self):
         return luigi.LocalTarget(path=self.path(ext="json"))
+
+    def on_success(self):
+        self.create_symlink(name="current")
