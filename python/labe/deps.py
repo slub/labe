@@ -24,6 +24,7 @@ Example output:
 
 import collections
 import sys
+import os
 import textwrap
 
 
@@ -36,7 +37,10 @@ def dump_deps(task=None, indent=0, dot=False, file=sys.stdout):
     if task is None:
         return
     g = build_dep_graph(task)
-    print('%s \_ %s' % ('   ' * indent, task), file=file)
+    mark = "𐄂"
+    if task.output() and os.path.exists(task.output().path):
+        mark = "√"
+    print('{} \_ {} {}'.format('   ' * indent, mark, task), file=file)
     for dep in g[task]:
         dump_deps(task=dep, indent=indent + 1)
 
