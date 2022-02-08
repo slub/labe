@@ -12,6 +12,7 @@ import pandas as pd
 
 from labe.base import Zstd, shellout
 from labe.tasks import OpenCitationsSingleFile, Task
+from labe.stats import IndexMappedDOI, IndexMappedDOIForInstitution
 
 __all__ = [
     'ExpRefcatDownload',
@@ -449,7 +450,7 @@ class ExpStatsReportData(ExpTask):
     def requires(self):
         return {
             "common": ExpStatsCommonDOI(date=self.date, exp=self.exp),
-            "common_institution": StatsCommonDOIForInstitution(date=self.date, institution=self.institution, exp=self.exp),
+            "common_institution": ExpStatsCommonDOIForInstitution(date=self.date, institution=self.institution, exp=self.exp),
             "index_unique": IndexMappedDOI(date=self.date),
             "index_unique_institution": IndexMappedDOIForInstitution(date=self.date, institution=self.institution),
             "exp_inbound": ExpCitationsInboundStats(exp=self.exp),
