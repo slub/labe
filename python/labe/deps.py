@@ -23,8 +23,8 @@ Example output:
 """
 
 import collections
-import sys
 import os
+import sys
 import textwrap
 
 
