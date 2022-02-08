@@ -205,7 +205,7 @@ class ExpCitationsTargetDOI(ExpTask):
     exp = luigi.Parameter(default="1", description="experiment id")
 
     def requires(self):
-        return OpenCitationsSingleFile()
+        return ExpCombinedCitationsTable(exp=self.exp)
 
     def run(self):
         output = shellout("""
@@ -232,7 +232,7 @@ class ExpCitationsCitedCount(ExpTask):
     exp = luigi.Parameter(default="1", description="experiment id")
 
     def requires(self):
-        return OpenCitationsTargetDOI(exp=self.exp)
+        return ExpCitationsTargetDOI(exp=self.exp)
 
     def run(self):
         output = shellout(r"""
