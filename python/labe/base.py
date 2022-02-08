@@ -56,7 +56,7 @@ class BaseTask(luigi.Task):
     """
     # TODO: allow BASE to be override in config file
     BASE = os.environ.get('LABE_DATA_DIR', tempfile.gettempdir())
-    TAG = 'default'
+    TAG = 'data'
 
     @property
     def logger(self):
