@@ -191,7 +191,7 @@ class ExpCitationsSourceDOI(ExpTask):
         self.create_symlink(name="current")
 
 
-class OpenCitationsTargetDOI(ExpTask):
+class ExpCitationsTargetDOI(ExpTask):
     """
     List of DOI that are target of a citation edge. Normalized and sorted.
     """
@@ -218,7 +218,7 @@ class OpenCitationsTargetDOI(ExpTask):
         self.create_symlink(name="current")
 
 
-class OpenCitationsCitedCount(ExpTask):
+class ExpCitationsCitedCount(ExpTask):
     """
     Generate a table with two columns: inbound link count and DOI.
     """
@@ -245,7 +245,7 @@ class OpenCitationsCitedCount(ExpTask):
         self.create_symlink(name="current")
 
 
-class OpenCitationsCitingCount(ExpTask):
+class ExpCitationsCitingCount(ExpTask):
     """
     Generate a table with two columns: outbound link count and DOI.
     """
@@ -272,7 +272,7 @@ class OpenCitationsCitingCount(ExpTask):
         self.create_symlink(name="current")
 
 
-class OpenCitationsInboundStats(ExpTask):
+class ExpCitationsInboundStats(ExpTask):
     """
     Inbound edge count distribution.
 
@@ -316,7 +316,7 @@ class OpenCitationsInboundStats(ExpTask):
         self.create_symlink(name="current")
 
 
-class OpenCitationsOutboundStats(Task):
+class ExpCitationsOutboundStats(Task):
     """
     Outbound edge count distribution.
     """
@@ -341,7 +341,7 @@ class OpenCitationsOutboundStats(Task):
         self.create_symlink(name="current")
 
 
-class OpenCitationsUniqueDOI(Task):
+class ExpCitationsUniqueDOI(Task):
     """
     List of unique DOI in citation dataset.
     """
