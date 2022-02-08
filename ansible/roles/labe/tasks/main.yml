@@ -1,12 +1,12 @@
 - name: "Ensure group labe exists"
   group:
-    name: {{ labe_group }}
+    name: "{{ labe_group }}"
     state: present
 
 - name: "Create service worker"
   user:
-    name: {{ labe_user }}
-    group: {{ labe_group }}
+    name: "{{ labe_user }}"
+    group: "{{ labe_group }}"
     shell: /bin/bash
     create_home: true
 
@@ -25,24 +25,24 @@
 - name: "Change application log file ownership"
   file:
     path: /var/log/labe.log
-    owner: {{ labe_user }}
-    group: {{ labe_group }}
+    owner: "{{ labe_user }}"
+    group: "{{ labe_group }}"
     state: touch
     mode: '0644'
 
 - name: "Change access log file ownership"
   file:
     path: /var/log/labe-access.log
-    owner: {{ labe_user }}
-    group: {{ labe_group }}
+    owner: "{{ labe_user }}"
+    group: "{{ labe_group }}"
     state: touch
     mode: '0644'
 
 - name: "Change default data file ownership"
   file:
-    path: {{ labe_data_dir }}/data
-    owner: {{ labe_user }}
-    group: {{ labe_group }}
+    path: "{{ labe_data_dir }}/data"
+    owner: "{{ labe_user }}"
+    group: "{{ labe_group }}"
     state: directory
     mode: '0755'
 
@@ -92,14 +92,14 @@
 - name: "Creates an entry like `PATH=/opt/bin:...` on top of crontab"
   cron:
     name: PATH
-    user: {{ labe_user }}
+    user: "{{ labe_user }}"
     env: true
     job: /usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
 - name: "Set shell of cron explicitly"
   cron:
     name: SHELL
-    user: {{ labe_user }}
+    user: "{{ labe_user }}"
     env: true
     job: /bin/bash
 
@@ -122,7 +122,7 @@
 - name: "Setup crontab for data updates, cleanups and cache warmup"
   cron:
     name: Data updates for labe, cleanups, cache warmup
-    user: {{ labe_user }}
+    user: "{{ labe_user }}"
     hour: "0"
     minute: "5"
     job: >
@@ -134,17 +134,17 @@
 - name: "Setup crontab for daily stats generation"
   cron:
     name: Generate daily stats report data
-    user: {{ labe_user }}
+    user: "{{ labe_user }}"
     hour: "12"
     minute: "0"
     job: >
-      labe.pyz --data-dir {{ labe_data_dir }} -r StatsReportData
+      labe.pyz --data-dir "{{ labe_data_dir }}" -r StatsReportData
 
 # This it to keep report data from being cleaned up.
 - name: "Put .labekeep into default target directory for stats"
   file:
-    path: {{ labe_data_dir }}/data/StatsReportData/.labekeep
-    owner: {{ labe_user }}
-    group: {{ labe_group }}
+    path: "{{ labe_data_dir }}/data/StatsReportData/.labekeep"
+    owner: "{{ labe_user }}"
+    group: "{{ labe_group }}"
     state: touch
     mode: '0644'
