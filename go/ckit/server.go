@@ -22,6 +22,7 @@ import (
 	"github.com/segmentio/encoding/json"
 	"github.com/slub/labe/go/ckit/cache"
 	"github.com/slub/labe/go/ckit/set"
+	"github.com/slub/labe/go/ckit/tabutils"
 	"github.com/thoas/stats"
 	"golang.org/x/text/transform"
 )
@@ -575,6 +576,18 @@ func (s *Server) Ping() error {
 		log.Printf("index data service: unknown status")
 	}
 	return nil
+}
+
+// OpenDatabase first ensures a file does actually exists, then create as
+// read-only connection.
+func OpenDatabase(filename string) (*sqlx.DB, error) {
+	if len(filename) == 0 {
+		return nil, fmt.Errorf("empty file")
+	}
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		return nil, fmt.Errorf("file not found: %s", filename)
+	}
+	return sqlx.Open("sqlite3", tabutils.WithReadOnly(filename))
 }
 
 // edges returns citing (outbound) and cited (inbound) edges for a given DOI.

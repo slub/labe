@@ -27,7 +27,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/slub/labe/go/ckit"
 	"github.com/slub/labe/go/ckit/cache"
-	"github.com/slub/labe/go/ckit/tabutils"
 	"github.com/slub/labe/go/ckit/xflag"
 	"github.com/thoas/stats"
 )
@@ -65,7 +64,7 @@ Each database may be updated separately, with separate processes.
 
 Examples
 
-  $ labed -c -z -addr localhost:1234 -i i.db -o o.db -m d.db
+  $ labed -c -z -addr {{ .listenAddr }} -i i.db -o o.db -m d.db
 
   http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTA3My9wbmFzLjg1LjguMjQ0NA
   http://{{ .listenAddr }}/id/ai-49-aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE3Ny8xMDQ5NzMyMzA1Mjc2Njg3
@@ -111,7 +110,6 @@ func main() {
 		flag.PrintDefaults()
 	}
 	flag.Parse()
-	// Show version.
 	if *showVersion {
 		fmt.Printf("labed %v %v\n", Version, Buildtime)
 		os.Exit(0)
@@ -138,10 +136,10 @@ func main() {
 		log.SetOutput(logWriter)
 	}
 	// Setup database connections.
-	if identifierDatabase, err = openDatabase(*identifierDatabasePath); err != nil {
+	if identifierDatabase, err = ckit.OpenDatabase(*identifierDatabasePath); err != nil {
 		log.Fatal(err)
 	}
-	if ociDatabase, err = openDatabase(*ociDatabasePath); err != nil {
+	if ociDatabase, err = ckit.OpenDatabase(*ociDatabasePath); err != nil {
 		log.Fatal(err)
 	}
 	// Setup index data fetcher.
@@ -206,18 +204,13 @@ func main() {
 		srv.Cache = c
 		srv.CacheTriggerDuration = *cacheTriggerDuration
 	}
-	// Setup routes.
 	srv.Routes()
-	// Basic reachability checks.
 	if err := srv.Ping(); err != nil {
 		log.Fatal(err)
 	}
-	// Print banner.
 	fmt.Fprintln(os.Stderr, strings.Replace(Banner, `{{ .listenAddr }}`, *listenAddr, -1))
 	log.Printf("[ok] labed ≋ starting %s %s http://%s", Version, Buildtime, *listenAddr)
-	// Our handler.
 	var h http.Handler = srv
-	// Add middleware.
 	if *enableGzip {
 		h = handlers.CompressHandler(srv)
 	}
@@ -229,17 +222,8 @@ func main() {
 		defer f.Close()
 		h = handlers.LoggingHandler(f, h)
 	}
-	log.Fatal(http.ListenAndServe(*listenAddr, srv.Stats.Handler(h)))
-}
-
-// openDatabase first ensures a file does actually exists, then create as
-// read-only connection.
-func openDatabase(filename string) (*sqlx.DB, error) {
-	if len(filename) == 0 {
-		return nil, fmt.Errorf("empty file")
+	if srv.Stats != nil {
+		h = srv.Stats.Handler(h)
 	}
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		return nil, fmt.Errorf("file not found: %s", filename)
-	}
-	return sqlx.Open("sqlite3", tabutils.WithReadOnly(filename))
+	log.Fatal(http.ListenAndServe(*listenAddr, h))
 }
