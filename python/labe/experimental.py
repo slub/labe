@@ -259,7 +259,7 @@ class ExpCitationsCitingCount(ExpTask):
     exp = luigi.Parameter(default="1", description="experiment id")
 
     def requires(self):
-        return OpenCitationsSourceDOI(exp=self.exp)
+        return ExpCitationsSourceDOI(exp=self.exp)
 
     def run(self):
         output = shellout(r"""
@@ -305,7 +305,7 @@ class ExpCitationsInboundStats(ExpTask):
     exp = luigi.Parameter(default="1", description="experiment id")
 
     def requires(self):
-        return OpenCitationsCitedCount(exp=self.exp)
+        return ExpCitationsCitedCount(exp=self.exp)
 
     def run(self):
         output = shellout("zstdcat -T0 {input} | cut -f1 > {output}", input=self.input().path)
@@ -330,7 +330,7 @@ class ExpCitationsOutboundStats(ExpTask):
     exp = luigi.Parameter(default="1", description="experiment id")
 
     def requires(self):
-        return OpenCitationsCitingCount(exp=self.exp)
+        return ExpCitationsCitingCount(exp=self.exp)
 
     def run(self):
         output = shellout("zstdcat -T0 {input} | cut -f1 > {output}", input=self.input().path)
@@ -356,8 +356,8 @@ class ExpCitationsUniqueDOI(ExpTask):
 
     def requires(self):
         return {
-            "s": OpenCitationsSourceDOI(exp=self.exp),
-            "t": OpenCitationsTargetDOI(exp=self.exp),
+            "s": ExpCitationsSourceDOI(exp=self.exp),
+            "t": ExpCitationsTargetDOI(exp=self.exp),
         }
 
     def run(self):
@@ -421,7 +421,7 @@ class ExpStatsCommonDOI(ExpTask):
     def requires(self):
         return {
             "index": IndexMappedDOI(date=self.date),
-            "oci": OpenCitationsUniqueDOI(exp=self.exp),
+            "exp": ExpCitationsUniqueDOI(exp=self.exp),
         }
 
     def run(self):
@@ -432,7 +432,7 @@ class ExpStatsCommonDOI(ExpTask):
                           zstd -c -T0 > {output}
                           """,
                           index=self.input().get("index").path,
-                          oci=self.input().get("oci").path)
+                          oci=self.input().get("exp").path)
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -479,7 +479,7 @@ class ExpStatsReportData(ExpTask):
                 "num_common_doi": sum(1 for _ in si.get("common").open()),
                 "ratio": (sum(1 for _ in si.get("common").open()) / sum(1 for _ in si.get("exp_unique").open())),
             },
-            "oci": {
+            "exp": {
                 "num_edges": sum(1 for _ in si.get("exp").open()),
                 "num_doi": sum(1 for _ in si.get("exp_unique").open()),
                 "stats_inbound": json.load(si.get("exp_inbound").open()).get("inbound_edges"),
