@@ -1,13 +1,13 @@
 - name: "Ensure group labe exists"
   group:
-    name: labe
+    name: {{ labe_group }}
     state: present
 
 - name: "Create service worker"
   user:
-    name: "labe"
-    group: "labe"
-    shell: "/bin/bash"
+    name: {{ labe_user }}
+    group: {{ labe_group }}
+    shell: /bin/bash
     create_home: true
 
 - name: "Install ckit release"
@@ -25,24 +25,24 @@
 - name: "Change application log file ownership"
   file:
     path: /var/log/labe.log
-    owner: labe
-    group: labe
+    owner: {{ labe_user }}
+    group: {{ labe_group }}
     state: touch
     mode: '0644'
 
 - name: "Change access log file ownership"
   file:
     path: /var/log/labe-access.log
-    owner: labe
-    group: labe
+    owner: {{ labe_user }}
+    group: {{ labe_group }}
     state: touch
     mode: '0644'
 
 - name: "Change default data file ownership"
   file:
-    path: /usr/share/labe/data
-    owner: labe
-    group: labe
+    path: {{ labe_data_dir }}/data
+    owner: {{ labe_user }}
+    group: {{ labe_group }}
     state: directory
     mode: '0755'
 
@@ -92,14 +92,14 @@
 - name: "Creates an entry like `PATH=/opt/bin:...` on top of crontab"
   cron:
     name: PATH
-    user: labe
+    user: {{ labe_user }}
     env: true
     job: /usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
 - name: "Set shell of cron explicitly"
   cron:
     name: SHELL
-    user: labe
+    user: {{ labe_user }}
     env: true
     job: /bin/bash
 
@@ -122,29 +122,29 @@
 - name: "Setup crontab for data updates, cleanups and cache warmup"
   cron:
     name: Data updates for labe, cleanups, cache warmup
-    user: labe
+    user: {{ labe_user }}
     hour: "0"
     minute: "5"
     job: >
-      rm -f $(labe.pyz --data-dir /usr/share/labe --list-deletable) &&
-      labe.pyz --data-dir /usr/share/labe -r CombinedUpdate --workers 4 &&
+      rm -f $(labe.pyz --data-dir {{ labe_data_dir }} --list-deletable) &&
+      labe.pyz --data-dir {{ labe_data_dir }} -r CombinedUpdate --workers 4 &&
       sudo systemctl restart labed &&
-      zstd -qcd -T0 /usr/share/labe/data/OpenCitationsRanked/current | awk '{ print $2 }' | head -n 300000 | shuf | parallel -j 32 -I {} 'curl -sL "http://localhost:8000/doi/{}"' > /dev/null
+      zstd -qcd -T0 {{ labe_data_dir }}/data/OpenCitationsRanked/current | awk '{ print $2 }' | head -n 300000 | shuf | parallel -j 32 -I {} 'curl -sL "http://localhost:8000/doi/{}"' > /dev/null
 
 - name: "Setup crontab for daily stats generation"
   cron:
     name: Generate daily stats report data
-    user: labe
+    user: {{ labe_user }}
     hour: "12"
     minute: "0"
     job: >
-      labe.pyz --data-dir /usr/share/labe -r StatsReportData
+      labe.pyz --data-dir {{ labe_data_dir }} -r StatsReportData
 
 # This it to keep report data from being cleaned up.
 - name: "Put .labekeep into default target directory for stats"
   file:
-    path: /usr/share/labe/data/StatsReportData/.labekeep
-    owner: labe
-    group: labe
+    path: {{ labe_data_dir }}/data/StatsReportData/.labekeep
+    owner: {{ labe_user }}
+    group: {{ labe_group }}
     state: touch
     mode: '0644'
