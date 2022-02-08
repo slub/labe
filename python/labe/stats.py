@@ -442,13 +442,15 @@ class StatsReportData(Task):
                 self.institution: {
                     "num_mapped_doi": sum(1 for _ in si.get("index_unique_institution").open()),
                     "num_common_doi": sum(1 for _ in si.get("common_institution").open()),
-                    "ratio": (sum(1 for _ in si.get("common_institution").open()) / sum(1 for _ in si.get("index_unique_institution").open())),
+                    "ratio_common_mapped": (sum(1 for _ in si.get("common_institution").open()) / sum(1 for _ in si.get("index_unique_institution").open())),
+                    "ratio_common_exp": (sum(1 for _ in si.get("common_institution").open()) / sum(1 for _ in si.get("oci_unique").open())),
                 },
             },
             "index": {
                 "num_mapped_doi": sum(1 for _ in si.get("index_unique").open()),
                 "num_common_doi": sum(1 for _ in si.get("common").open()),
-                "ratio": (sum(1 for _ in si.get("common").open()) / sum(1 for _ in si.get("oci_unique").open())),
+                "ratio_common_mapped": (sum(1 for _ in si.get("common").open()) / sum(1 for _ in si.get("index_unique").open())),
+                "ratio_common_exp": (sum(1 for _ in si.get("common").open()) / sum(1 for _ in si.get("oci_unique").open())),
             },
             "oci": {
                 "num_edges": sum(1 for _ in si.get("oci").open()),
