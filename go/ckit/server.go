@@ -152,7 +152,7 @@ func (r *Response) applyInstitutionFilter(institution string) {
 		if err := json.Unmarshal(b, v); err != nil {
 			panic(fmt.Sprintf("internal data broken: %v", err))
 		}
-		if sliceContains(v.Institution, institution) {
+		if SliceContains(v.Institution, institution) {
 			citing = append(citing, b)
 		} else {
 			r.Unmatched.Citing = append(r.Unmatched.Citing, b)
@@ -164,7 +164,7 @@ func (r *Response) applyInstitutionFilter(institution string) {
 		if err := json.Unmarshal(b, v); err != nil {
 			panic(fmt.Sprintf("internal data broken: %v", err))
 		}
-		if sliceContains(v.Institution, institution) {
+		if SliceContains(v.Institution, institution) {
 			cited = append(cited, b)
 		} else {
 			r.Unmatched.Cited = append(r.Unmatched.Cited, b)
@@ -590,6 +590,16 @@ func OpenDatabase(filename string) (*sqlx.DB, error) {
 	return sqlx.Open("sqlite3", tabutils.WithReadOnly(filename))
 }
 
+// SliceContains returns true, if a string slice contains a given value.
+func SliceContains(ss []string, v string) bool {
+	for _, s := range ss {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
 // edges returns citing (outbound) and cited (inbound) edges for a given DOI.
 func (s *Server) edges(ctx context.Context, doi string) (citing, cited []Map, err error) {
 	t := time.Now()
@@ -653,16 +663,6 @@ func batchedStrings(ss []string, n int) (result [][]string) {
 		}
 	}
 	return
-}
-
-// sliceContains returns true, if a string slice contains a given value.
-func sliceContains(ss []string, v string) bool {
-	for _, s := range ss {
-		if v == s {
-			return true
-		}
-	}
-	return false
 }
 
 // httpErrLogf is a log formatting helper.

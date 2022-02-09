@@ -13,12 +13,14 @@ import (
 	"time"
 
 	"github.com/andrew-d/go-termutil"
+	"github.com/slub/labe/go/ckit"
 	"github.com/slub/labe/go/ckit/tabutils"
 )
 
 var (
-	Version   string
-	Buildtime string
+	Version    string
+	Buildtime  string
+	validTypes = []string{"INTEGER", "READ", "TEXT", "BLOB"} // sqlite3
 
 	showVersion  = flag.Bool("version", false, "show version and exit")
 	outputFile   = flag.String("o", "data.db", "output filename")
@@ -26,11 +28,15 @@ var (
 	indexMode    = flag.Int("I", 3, "index mode: 0=none, 1=k, 2=v, 3=kv")
 	cacheSize    = flag.Int("C", 1000000, "sqlite3 cache size, needs memory = C x page size")
 	initDatabase = flag.Bool("init", false, "on start, initialize database, even when the file already exists")
+	valueType    = flag.String("T", "TEXT", "sqlite3 type for value column")
 	verbose      = flag.Bool("verbose", false, "be verbose")
 )
 
 func main() {
 	flag.Parse()
+	if !ckit.SliceContains(validTypes, *valueType) {
+		log.Fatal("invalid type for value column: %v %v", *valueType, validTypes)
+	}
 	var (
 		err      error
 		initFile string
@@ -40,7 +46,7 @@ PRAGMA synchronous = 0;
 PRAGMA cache_size = %d;
 PRAGMA locking_mode = EXCLUSIVE;`, *cacheSize)
 		initSQL = `
-CREATE TABLE IF NOT EXISTS map (k TEXT, v TEXT);`
+CREATE TABLE IF NOT EXISTS map (k TEXT, v %s);`
 		keyIndexSQL = fmt.Sprintf(`
 %s
 CREATE INDEX IF NOT EXISTS idx_k ON map(k);`, pragma)
@@ -65,7 +71,7 @@ PRAGMA temp_store = MEMORY;
 	_, err = os.Stat(*outputFile)
 	if err != nil || *initDatabase {
 		if os.IsNotExist(err) || *initDatabase {
-			if err := tabutils.RunScript(*outputFile, initSQL, "initialized database"); err != nil {
+			if err := tabutils.RunScript(*outputFile, fmt.Sprintf(initSQL, *valueType), "initialized database"); err != nil {
 				log.Fatal(err)
 			}
 		} else {
