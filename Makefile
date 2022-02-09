@@ -14,8 +14,8 @@ deploy: ## deploy to site
 
 .PHONY: deb
 deb: ## shortcut to build both ckit and labe debian packages
-	(cd python && make clean && make deb)
-	(cd go/ckit && make clean && make -j deb)
+	(cd python && make clean deb)
+	(cd go/ckit && make clean deb)
 
 .PHONY: clean
 clean: ## clean artifacts
