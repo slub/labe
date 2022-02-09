@@ -11,6 +11,6 @@ labed_access_log: /var/log/labe-access.log
 labed_log: /var/log/labe.log
 
 # tools versions
-ckit_version: 0.1.38
-labe_version: 0.1.38
+ckit_version: 0.1.39
+labe_version: 0.1.39
 solrdump_version: 0.1.7
