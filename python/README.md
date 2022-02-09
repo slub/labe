@@ -102,3 +102,10 @@ $ tree -sh
 
 7 directories, 26 files
 ```
+
+## Misc
+
+Most tasks mostly are templated shell commands.
+
+![](https://i.imgur.com/1jAUnXX.png)
+
