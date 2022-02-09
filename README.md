@@ -45,10 +45,14 @@ $ tree -d
 │       │   └── tasks
 │       └── labe
 │           ├── defaults
-│           └── tasks
+│           ├── tasks
+│           └── templates
 ├── data
+├── extra
+│   └── perfstats
 ├── go
 │   └── ckit
+│       ├── cache
 │       ├── cmd
 │       │   ├── doisniffer
 │       │   ├── labed
@@ -62,8 +66,11 @@ $ tree -d
 │       │           └── DEBIAN
 │       ├── set
 │       ├── static
+│       ├── tabutils
+│       ├── testdata
 │       └── xflag
 ├── notes
+│   └── 2022_01_30_performance_report_files
 ├── python
 │   ├── labe
 │   ├── packaging
@@ -73,7 +80,7 @@ $ tree -d
 │   └── tests
 └── static
 
-33 directories
+40 directories
 ```
 
 ## SLOC
@@ -90,6 +97,12 @@ $ tokei -C -t=Go,Python,yaml
  Total                  39         5421         4362          483          576
 ===============================================================================
 ```
+
+## Ideas
+
+* [x] stats on combined oci, refcat graph; [notes](notes/2022_02_08_stats_oci_refcat.md)
+* [ ] stats on combined oci, openalex (mag), refcat graph
+* [ ] include "cited by" count in documents; may need a separate mapping database (with about 70M rows) for (doi, cited by count)
 
 ## Misc
 
