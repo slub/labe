@@ -214,6 +214,38 @@ class OpenCitationsRanked(Task):
         self.create_symlink(name="current")
 
 
+class OpenCitationsCitedCountTable(Task):
+    """
+    Generate a TSV with two columns: DOI and inbound link count.
+    """
+    def requires(self):
+        return OpenCitationsSingleFile()
+
+    def run(self):
+        output = shellout(r"""
+                          zstdcat -T0 {input} |
+                          LC_ALL=C cut -d, -f 3 |
+                          LC_ALL=C tr [:upper:] [:lower:] |
+                          LC_ALL=C sort -S 50% |
+                          LC_ALL=C uniq -c |
+                          LC_ALL=C sort -S 25% -nr |
+                          LC_ALL=C sed -e 's@^[ ]*@@;s@ @\t@' |
+                          LC_ALL=C awk -F'\t' '{print $2"\t"$1' |
+                          zstd -c -T0 > {output}
+                          """,
+                          input=self.input().path,
+                          preserve_whitespace=True)
+        luigi.LocalTarget(output).move(self.output().path)
+
+    def output(self):
+        fingerprint = self.open_citations_url_hash()
+        filename = "{}.tsv.zst".format(fingerprint)
+        return luigi.LocalTarget(path=self.path(filename=filename), format=Zstd)
+
+    def on_success(self):
+        self.create_symlink(name="current")
+
+
 class SolrFetchDocs(Task):
     """
     Fetch JSON data from SOLR; uses solrdump (https://github.com/ubleipzig/solrdump).
