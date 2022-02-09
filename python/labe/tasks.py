@@ -218,6 +218,7 @@ class OpenCitationsCitedCountTable(Task):
     """
     Generate a TSV with two columns: DOI and inbound link count.
     """
+
     def requires(self):
         return OpenCitationsSingleFile()
 

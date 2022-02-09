@@ -115,19 +115,13 @@ def main():
         default=os.path.join(xdg_config_home(), "labe", "logging.ini"),
         help="path to logging configuration file",
     )
-    parser.add_argument("--data-dir",
-                        "-D",
-                        default=os.path.join(xdg_data_home(), "labe"),
-                        help="root directory for all tasks, we follow XDG")
+    parser.add_argument("--data-dir", "-D", default=os.path.join(xdg_data_home(), "labe"), help="root directory for all tasks, we follow XDG")
     parser.add_argument("--tmp-dir", "-T", default=tempfile.gettempdir(), help="temporary directory to use")
     parser.add_argument("--list-deletable", action="store_true", help="list task outputs, which could be deleted")
     parser.add_argument("--deps", metavar="TASK", type=str, help="show task dependencies")
     parser.add_argument("--deps-dot", metavar="TASK", type=str, help="print task dependencies in dot format")
     parser.add_argument("--diff", action="store_true", help="generate a diff json from two stats json docs")
-    parser.add_argument("--diff-institution",
-                        metavar="ISIL",
-                        default="DE-14",
-                        help="which isil to compute the stats for (only relevant with --diff)")
+    parser.add_argument("--diff-institution", metavar="ISIL", default="DE-14", help="which isil to compute the stats for (only relevant with --diff)")
 
     # Task may have their own arguments, which we ignore.
     args, unparsed = parser.parse_known_args()

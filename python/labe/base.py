@@ -187,14 +187,7 @@ def ensure_minimum_file_size(filename, size=1024):
     raise RuntimeError("size underflow for {}, got {}, want at least {}".format(filename, sz, size))
 
 
-def shellout(template,
-             preserve_whitespace=False,
-             executable='/bin/bash',
-             ignoremap=None,
-             encoding=None,
-             pipefail=True,
-             temp_prefix="labe-",
-             **kwargs):
+def shellout(template, preserve_whitespace=False, executable='/bin/bash', ignoremap=None, encoding=None, pipefail=True, temp_prefix="labe-", **kwargs):
     """
     Takes a shell command template and executes it. The template must use the
     new (2.6+) format mini language. `kwargs` must contain any defined
