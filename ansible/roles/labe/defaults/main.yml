@@ -1,9 +1,16 @@
+# user to run server and batch jobs
 labe_user: labe
 labe_group: labe
+
+# directory to put all task artifacts in
 labe_data_dir: /usr/share/labe
+
+# server options
 labed_addr: 0.0.0.0:8000
 labed_access_log: /var/log/labe-access.log
 labed_log: /var/log/labe.log
+
+# tools versions
 ckit_version: 0.1.38
 labe_version: 0.1.38
 solrdump_version: 0.1.7
