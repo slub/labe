@@ -247,6 +247,33 @@ class OpenCitationsCitedCountTable(Task):
         self.create_symlink(name="current")
 
 
+class OpenCitationsCitedCountDatabase(Task):
+    """
+    Generate a database mapping DOI to inbound link count. Could be used to
+    augment metadata with citation count, which in turn could be used to sort
+    by this data.
+    """
+
+    def requires(self):
+        return OpenCitationsCitedCountTable()
+
+    def run(self):
+        output = shellout(r"""
+                          zstdcat -T0 {input} |
+                          makta -T INTEGER -init -o {output}
+                          """,
+                          input=self.input().path)
+        luigi.LocalTarget(output).move(self.output().path)
+
+    def output(self):
+        fingerprint = self.open_citations_url_hash()
+        filename = "{}.db".format(fingerprint)
+        return luigi.LocalTarget(path=self.path(filename=filename), format=Zstd)
+
+    def on_success(self):
+        self.create_symlink(name="current")
+
+
 class SolrFetchDocs(Task):
     """
     Fetch JSON data from SOLR; uses solrdump (https://github.com/ubleipzig/solrdump).
@@ -411,5 +438,7 @@ class CombinedUpdate(luigi.WrapperTask):
         yield SolrDatabase(date=self.date, name="slub-production", short=False)
         yield IdMappingDatabase(date=self.date)
         yield OpenCitationsDatabase()
+        # This is generated, but not used yet.
+        yield OpenCitationsCitedCountDatabase()
         # We want OpenCitationsRanked for cache warmup.
         yield OpenCitationsRanked()
