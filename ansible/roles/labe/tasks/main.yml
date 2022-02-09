@@ -146,6 +146,14 @@
     job: >
       labe.pyz --data-dir "{{ labe_data_dir }}" -r StatsReportData
 
+- name: "Create directory for default target directory for stats"
+  file:
+    path: "{{ labe_data_dir }}/data/StatsReportData/"
+    owner: "{{ labe_user }}"
+    group: "{{ labe_group }}"
+    state: directory
+    mode: '0755'
+
 # This it to keep report data from being cleaned up.
 - name: "Put .labekeep into default target directory for stats"
   file:
