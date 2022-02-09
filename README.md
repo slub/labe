@@ -101,8 +101,11 @@ $ tokei -C -t=Go,Python,yaml
 ## Ideas
 
 * [x] stats on combined oci, refcat graph; [notes](notes/2022_02_08_stats_oci_refcat.md)
-* [ ] stats on combined oci, openalex (mag), refcat graph
-* [ ] include "cited by" count in documents; may need a separate mapping database (with about 70M rows) for (doi, cited by count)
+* [ ] stats on combined oci, [openalex](https://docs.openalex.org/download-snapshot/download-to-your-machine) (mag), refcat graph
+* [ ] include "cited by" count in documents; may need a separate mapping
+  database (with about 70M rows) for (doi, cited by count) -- could also be a
+`COUNT` on oci, but may want to have separate lookup table for performance
+(e.g. result would be just an int; db is about 4GB)
 
 ## Misc
 
