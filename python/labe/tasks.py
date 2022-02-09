@@ -260,7 +260,7 @@ class OpenCitationsCitedCountDatabase(Task):
     def run(self):
         output = shellout(r"""
                           zstdcat -T0 {input} |
-                          makta -T INTEGER -init -o {output}
+                          makta -I 1 -T INTEGER -init -o {output}
                           """,
                           input=self.input().path)
         luigi.LocalTarget(output).move(self.output().path)
