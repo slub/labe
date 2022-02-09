@@ -231,7 +231,7 @@ class OpenCitationsCitedCountTable(Task):
                           LC_ALL=C uniq -c |
                           LC_ALL=C sort -S 25% -nr |
                           LC_ALL=C sed -e 's@^[ ]*@@;s@ @\t@' |
-                          LC_ALL=C awk -F'\t' '{print $2"\t"$1' |
+                          LC_ALL=C awk -F'\t' '{{ print $2"\t"$1 }}' |
                           zstd -c -T0 > {output}
                           """,
                           input=self.input().path,
