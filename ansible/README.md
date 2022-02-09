@@ -2,7 +2,7 @@
 
 * default user/group is "labe"
 * you can set the version of ckit and labe packages to be installed in
-  [roles/labe/defaults/main.yml](defaults/main.yml)
+  [roles/labe/defaults/main.yml](https://github.com/slub/labe/blob/main/ansible/roles/labe/defaults/main.yml)
 
 After deployment the `labed.service` is not started (or restarted); the server
 requires the sqlite3 database files anyway, which are not present directly
@@ -15,7 +15,7 @@ The deployment has been tested with Debian 10
 
 ## Cron
 
-The [roles/labe](labe) role includes crontab setup.
+The labe role includes crontab setup.
 
 ## Lint
 
