@@ -325,11 +325,82 @@ func (s *Server) handleDOI() http.HandlerFunc {
 				http.Error(w, `{"msg": "no id found", "status": 404}`, http.StatusNotFound)
 			}
 		} else {
-			target := fmt.Sprintf("/id/%s", response.ID)
+			loc := fmt.Sprintf("/id/%s", response.ID)
 			w.Header().Set("Content-Type", "text/plain") // disable http snippet
-			http.Redirect(w, r, target, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, loc, http.StatusTemporaryRedirect)
 		}
 	}
+}
+
+// serveFromCache tries to serve a response for cache. If this method returns
+// nil, the response has been successfully served from the cache.
+func (s *Server) serveFromCache(w http.ResponseWriter, r *http.Request) error {
+	var (
+		t    = time.Now()
+		vars = mux.Vars(r)
+		id   = vars["id"]
+		isil = r.URL.Query().Get("i")
+	)
+	b, err := s.Cache.Get(id)
+	if err != nil {
+		return err
+	}
+	zr, err := zstd.NewReader(bytes.NewReader(b))
+	if err != nil {
+		return fmt.Errorf("cache decompress: %w", err)
+	}
+	took := fmt.Sprintf(`"took":%f`, time.Since(t).Seconds())
+	replacer := transform.NewReader(zr, replace.RegexpString(regexp.MustCompile(`"took":[0-9.]+`), took))
+	switch {
+	case isil != "":
+		var resp Response
+		if err := json.NewDecoder(replacer).Decode(&resp); err != nil {
+			return fmt.Errorf("cache json decode: %w", err)
+		}
+		resp.applyInstitutionFilter(isil)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			return fmt.Errorf("encode: %w", err)
+		}
+	default:
+		if _, err := io.Copy(w, replacer); err != nil {
+			return fmt.Errorf("cache copy: %w", err)
+		}
+	}
+	zr.Close()
+	return nil
+}
+
+// cacheResponse prepares and caches a response. If the cache is read-only no
+// error is returned (but the value is not cached). Other caching errors are
+// returned.
+func (s *Server) cacheResponse(response *Response) error {
+	t := time.Now()
+	response.Extra.Cached = true
+	buf := bufPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer bufPool.Put(buf)
+	zw, err := zstd.NewWriter(buf)
+	if err != nil {
+		return fmt.Errorf("cache compress: %w", err)
+	}
+	// We cache the unfiltered response (otherwise the cache would
+	// waste disk space).
+	if err := json.NewEncoder(zw).Encode(response); err != nil {
+		return fmt.Errorf("cache json encode: %w", err)
+	}
+	if err := zw.Close(); err != nil {
+		return fmt.Errorf("cache close: %w", err)
+	}
+	if err := s.Cache.Set(response.ID, buf.Bytes()); err != nil {
+		if err == cache.ErrReadOnly {
+			return nil
+		} else {
+			// TODO: we do not need to fail, if cache fails
+			return fmt.Errorf("failed to cache value for %s: %v", response.ID, err)
+		}
+	}
+	s.Stats.MeasureSinceWithLabels("cached", t, nil)
+	return nil
 }
 
 // handleLocalIdentifier does all the lookups and assembles a JSON response.
@@ -369,38 +440,15 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		w.Header().Add("Content-Type", "application/json")
 		// (0) Check cache first.
 		if s.Cache != nil {
-			t := time.Now()
-			b, err := s.Cache.Get(response.ID)
-			if err == nil {
-				sw.Recordf("retrieved value (%db) from cache", len(b))
-				r, err := zstd.NewReader(bytes.NewReader(b))
-				if err != nil {
-					httpErrLogf(w, http.StatusInternalServerError, "cache decompress: %w", err)
-					return
-				}
-				took := fmt.Sprintf(`"took":%f`, time.Since(started).Seconds())
-				replacer := transform.NewReader(r, replace.RegexpString(regexp.MustCompile(`"took":[0-9.]+`), took))
-				switch {
-				case isil != "":
-					var resp Response
-					if err := json.NewDecoder(replacer).Decode(&resp); err != nil {
-						httpErrLogf(w, http.StatusInternalServerError, "cache json decode: %w", err)
-						return
-					}
-					resp.applyInstitutionFilter(isil)
-					sw.Record("applied institution filter")
-					if err := json.NewEncoder(w).Encode(resp); err != nil {
-						httpErrLogf(w, http.StatusInternalServerError, "encode: %w", err)
-						return
-					}
-				default:
-					if _, err := io.Copy(w, replacer); err != nil {
-						httpErrLogf(w, http.StatusInternalServerError, "cache copy: %w", err)
-						return
-					}
-				}
-				r.Close()
-				s.Stats.MeasureSinceWithLabels("cache_hit", t, nil)
+			err := s.serveFromCache(w, r)
+			switch {
+			case err == cache.ErrCacheMiss:
+				break
+			case err != nil:
+				httpErrLog(w, http.StatusInternalServerError, err)
+				return
+			default:
+				s.Stats.MeasureSinceWithLabels("cache_hit", started, nil)
 				sw.Record("sent cached value")
 				sw.LogTable()
 				return
@@ -511,41 +559,11 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		response.Extra.Took = time.Since(started).Seconds()
 		// (7) Cache expensive results.
 		if s.Cache != nil && time.Since(started) > s.CacheTriggerDuration {
-			t := time.Now()
-			response.Extra.Cached = true
-			buf := bufPool.Get().(*bytes.Buffer)
-			buf.Reset()
-			// Wrap cache handling, so we can use defer to reclaim the buffer.
-			wrap := func() error {
-				defer bufPool.Put(buf)
-				zw, err := zstd.NewWriter(buf)
-				if err != nil {
-					return fmt.Errorf("cache compress: %w", err)
-				}
-				// We cache the unfiltered response (otherwise the cache would
-				// waste disk space).
-				if err := json.NewEncoder(zw).Encode(response); err != nil {
-					return fmt.Errorf("cache json encode: %w", err)
-				}
-				if err := zw.Close(); err != nil {
-					return fmt.Errorf("cache close: %w", err)
-				}
-				if err := s.Cache.Set(response.ID, buf.Bytes()); err != nil {
-					if err == cache.ErrReadOnly {
-						return nil
-					} else {
-						// TODO: we do not need to fail, if cache fails
-						return fmt.Errorf("failed to cache value for %s: %v", response.ID, err)
-					}
-				}
-				s.Stats.MeasureSinceWithLabels("cached", t, nil)
-				sw.Record("cached value")
-				return nil
-			}
-			if err := wrap(); err != nil {
+			if err := s.cacheResponse(response); err != nil {
 				httpErrLog(w, http.StatusInternalServerError, err)
 				return
 			}
+			sw.Record("cached value")
 		}
 		// (8) Optional: Apply institution filter.
 		if isil != "" {
