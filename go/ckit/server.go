@@ -39,26 +39,26 @@ var snippetPool = sync.Pool{
 	},
 }
 
-// Snippet is a small piece of index metadata used for institution filter.
+// Snippet is a small piece of index metadata used for institution filtering.
 type Snippet struct {
 	Institution []string `json:"institution"`
 }
 
 // Server wraps three data sources required for index and citation data fusion.
-// The IdentifierDatabase is a map from local identifier (e.g. 0-1238201) to
+// The IdentifierDatabase maps a local identifier (e.g. 0-1238201) to a
 // DOI, the OciDatabase contains citing and cited relationships from OCI/COCI
 // citation corpus and IndexData allows to fetch a metadata blob from a backing store.
 //
 // A performance data point: On a 8 core 16G RAM machine we can keep a
 // sustained load of about 12K SQL qps, 150MB/s reads off disk. Total size of
-// databases involved at about 224GB plus 7 GB cache (ie. at most 6% of the
-// data can be held in memory at any given time).
+// databases involved is about 220GB plus 10GB cache (ie. at most 6% of the
+// data could be held in memory at any given time).
 //
-// Under load requesting the most costly (and large) 150K docs the server will
+// Under load requesting the most costly (and large) 150K docs, the server will
 // hover at around 10% (of 16GB) RAM.
 type Server struct {
-	// IdentifierDatabase maps local ids to DOI. The expected schema documented
-	// here: https://github.com/miku/labe/tree/main/go/ckit#makta
+	// IdentifierDatabase maps local ids to DOI. The expected schema is
+	// documented here: https://github.com/miku/labe/tree/main/go/ckit#makta
 	//
 	// 0-025152688     10.1007/978-3-476-03951-4
 	// 0-025351737     10.13109/9783666551536
@@ -67,7 +67,7 @@ type Server struct {
 	// ...
 	IdentifierDatabase *sqlx.DB
 	// OciDatabase contains DOI to DOI mappings representing a citation
-	// relationship. The expected schema documented here:
+	// relationship. The expected schema is documented here:
 	// https://github.com/miku/labe/tree/main/go/ckit#makta
 	//
 	// 10.1002/9781119393351.ch1       10.1109/icelmach.2012.6350005
@@ -76,11 +76,11 @@ type Server struct {
 	// 10.1002/9781119393351.ch1       10.1109/cdc.2013.6760196
 	// ...
 	OciDatabase *sqlx.DB
-	// IndexData allows to fetch a metadata blob given an identifier. This is
+	// IndexData allows to fetch a metadata blob for an identifier. This is
 	// an interface that in the past has been implemented by types wrapping
 	// microblob, SOLR and sqlite3, as well as a FetchGroup, that allows to
 	// query multiple backends. We settled on sqlite3 and FetchGroup, the other
-	// implementation are now gone.
+	// implementations are now gone.
 	//
 	// dswarm-126-ZnR0aG9zdHdlc3RsaX...   {"id":"dswarm-126-ZnR0aG9zdHdlc3RsaXBwZ...
 	// dswarm-126-ZnR0aG9zdHdlc3RsaX...   {"id":"dswarm-126-ZnR0aG9zdHdlc3RsaXBwZ...
@@ -115,8 +115,8 @@ type ErrorMessage struct {
 }
 
 // Response contains a subset of index data fused with citation data. Citing
-// and cited documents are raw bytes, but typically will contain JSON. For
-// unmatched docs, we only transmit the DOI, e.g. {"doi_str_mv": "10.12/34"}.
+// and cited documents are kept unparsed for flexibility and performance; we expect JSON. For
+// unmatched docs, we may only transmit the DOI, e.g. {"doi_str_mv": "10.12/34"}.
 type Response struct {
 	ID        string            `json:"id,omitempty"`
 	DOI       string            `json:"doi,omitempty"`
@@ -133,15 +133,17 @@ type Response struct {
 		CitedCount           int     `json:"cited_count"`
 		Cached               bool    `json:"cached"`
 		Took                 float64 `json:"took"` // seconds
-		// Institution is set optionally, if the response has been tailored
-		// towards the holdings of a given institution.
+		// Institution is set optionally (e.g. to "DE-14"), if the response has
+		// been tailored towards the holdings of a given institution.
 		Institution string `json:"institution,omitempty"`
 	} `json:"extra,omitempty"`
 }
 
 // applyInstitutionFilter rearranges cited and citing documents in-place based
-// on holdings of an institution (as found in the index data), given by its
-// ISIL (ISO 15511). This will panic, if the index metadata is not valid JSON.
+// on holdings of an institution (as found in the index data), identified by
+// its ISIL (ISO 15511). This method will panic, if the index metadata is not
+// valid JSON. In order for this to work, we expect an "institution" field in
+// the metadata.
 func (r *Response) applyInstitutionFilter(institution string) {
 	var (
 		citing []json.RawMessage
