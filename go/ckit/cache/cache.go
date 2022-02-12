@@ -32,6 +32,7 @@
 package cache
 
 import (
+	"database/sql"
 	"errors"
 	"log"
 	"os"
@@ -153,6 +154,9 @@ func (c *Cache) Get(key string) ([]byte, error) {
 		v   string
 	)
 	if err := row.Scan(&v); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrCacheMiss
+		}
 		return nil, err
 	}
 	if v == "" {
