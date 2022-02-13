@@ -23,5 +23,5 @@ require (
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
 	golang.org/x/net v0.0.0-20220121210141-e204ce36a2ba // indirect
-	golang.org/x/sys v0.0.0-20220204135822-1c1b9b1eba6a // indirect
+	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
 )
