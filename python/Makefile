@@ -26,8 +26,9 @@ help: ## print info about all commands
 	@grep -E '^[/.a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sed -e 's@Makefile:@@' | awk 'BEGIN {FS = ":.*?## "}; {printf "    \033[01;32m%-40s\033[0m %s\n", $$1, $$2}'
 
 $(ZIPAPP): $(PY_FILES) ## build single python executable with shiv
-	# https://shiv.readthedocs.io/en/latest/cli-reference.html
-	# note: use SHIV_ROOT envvar to override expansion dir (e.g. if home is networked)
+	# https://shiv.readthedocs.io/en/latest/cli-reference.html note: use
+	# SHIV_ROOT envvar to override expansion dir (e.g. if home is networked)
+	# You can use `shiv-info -j labe.pyz` to show info about the built file.
 	shiv --no-modify --reproducible --compressed --entry-point labe.cli:main --python $(PYTHON_INTERPRETER) --output-file $(ZIPAPP) .
 
 .PHONY: fmt
