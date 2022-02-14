@@ -28,7 +28,7 @@ help: ## print info about all commands
 $(ZIPAPP): $(PY_FILES) ## build single python executable with shiv
 	# https://shiv.readthedocs.io/en/latest/cli-reference.html
 	# note: use SHIV_ROOT envvar to override expansion dir (e.g. if home is networked)
-	shiv --reproducible --compressed --entry-point labe.cli:main --python $(PYTHON_INTERPRETER) --output-file $(ZIPAPP) .
+	shiv --no-modify --reproducible --compressed --entry-point labe.cli:main --python $(PYTHON_INTERPRETER) --output-file $(ZIPAPP) .
 
 .PHONY: fmt
 fmt: ## apply code formatting
