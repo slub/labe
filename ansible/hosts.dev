@@ -1,3 +1,9 @@
+# This file can be used with a local VM for testing, e.g. debian via vagrant.
+#
+# $ vagrant init debian/buster64
+# $ vagrant up
+# $ ansible-playbook --ask-become-pass -b -v -i ansible/hosts.dev ansible/site.yml
+
 [labe]
 
 localhost ansible_connection=ssh ansible_ssh_port=2222 ansible_user=vagrant ansible_python_interpreter=/usr/bin/python3 ansible_ssh_private_key_file=.vagrant/machines/default/virtualbox/private_key
