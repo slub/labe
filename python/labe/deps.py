@@ -37,9 +37,9 @@ def dump_deps(task=None, indent=0, dot=False, file=sys.stdout):
     if task is None:
         return
     g = build_dep_graph(task)
-    mark = "𐄂"
+    mark = "\033[33m𐄂\033[0m"
     if task.output() and os.path.exists(task.output().path):
-        mark = "√"
+        mark = "\033[32m√\033[0m"
     print('{} \_ {} {}'.format('   ' * indent, mark, task), file=file)
     for dep in g[task]:
         dump_deps(task=dep, indent=indent + 1)
