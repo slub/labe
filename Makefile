@@ -13,9 +13,9 @@ deploy: ## deploy to site
 	$(ANSIBLE_OPTS) ansible-playbook --ask-become-pass -b -v -i ansible/hosts ansible/site.yml
 
 .PHONY: deb
-deb: ## shortcut to build both ckit and labe debian packages
-	(cd python && make clean deb)
-	(cd go/ckit && make clean deb)
+deb: clean ## shortcut to build both ckit and labe debian packages
+	(cd python && make deb)
+	(cd go/ckit && make deb)
 
 .PHONY: clean
 clean: ## clean artifacts
