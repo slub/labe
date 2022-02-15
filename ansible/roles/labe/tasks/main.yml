@@ -154,6 +154,10 @@
     job: >
       labe.pyz --data-dir "{{ labe_data_dir }}" -r StatsReportData
 
+# Python binaries built with shiv (https://github.com/linkedin/shiv) work by
+# expanding their content into a temporary directory (once, per version or
+# deployment). The temporary directory is transparent, so we can savely delete
+# it occasionally.
 - name: "Cleanup shiv temporary directory"
   cron:
     name: Cleanup shiv temporary directory (assuming default location at ~/.shiv)
@@ -164,6 +168,7 @@
     job: >
       rm -rf /home/{{ labe_user }}/.shiv
 
+# Create a directory, so we can put a file in.
 - name: "Create directory for default target directory for stats"
   file:
     path: "{{ labe_data_dir }}/data/StatsReportData/"
@@ -172,7 +177,7 @@
     state: directory
     mode: '0755'
 
-# This it to keep report data from being cleaned up.
+# This keeps report data from being cleaned up.
 - name: "Put .labekeep into default target directory for stats"
   file:
     path: "{{ labe_data_dir }}/data/StatsReportData/.labekeep"
