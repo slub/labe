@@ -14,6 +14,14 @@
   apt:
     deb: https://github.com/slub/labe/releases/download/v{{ ckit_version }}/ckit_{{ ckit_version }}_amd64.deb
 
+# This takes advantage of the unit search path precedence rules
+# https://www.freedesktop.org/software/systemd/man/systemd.unit.html#Unit%20File%20Load%20Path
+#
+#  ....
+# [this] /etc/systemd/system/     "System units created by the administrator"
+#  ....
+# [ckit] /usr/lib/systemd/system/ "System units installed by the distribution package manager"
+#  ....
 - name: "Override package ckit/labed systemd unit file"
   template:
     src: "labed.service.j2"
