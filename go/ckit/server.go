@@ -332,7 +332,7 @@ func (s *Server) handleDOI() http.HandlerFunc {
 	}
 }
 
-// serveFromCache tries to serve a response for cache. If this method returns
+// serveFromCache tries to serve a response from cache. If this method returns
 // nil, the response has been successfully served from the cache.
 func (s *Server) serveFromCache(w http.ResponseWriter, r *http.Request) error {
 	var (
@@ -640,14 +640,14 @@ func (s *Server) edges(ctx context.Context, doi string) (citing, cited []Map, er
 // mapToLocal takes a list of DOI and returns a slice of Maps containing the
 // local id and DOI.
 func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err error) {
+	// sqlite has a limit on the variable count, which at most is 999; it may
+	// lead to "too many SQL variables", SQLITE_LIMIT_VARIABLE_NUMBER (default:
+	// 999; https://www.daemon-systems.org/man/sqlite3_bind_blob.3.html).
+	const size = 500 // Anything between 1 and 999.
 	var (
 		t     time.Time
 		query string
 		args  []interface{}
-		// sqlite has a limit on the variable count, which at most is 999; it may
-		// lead to "too many SQL variables", SQLITE_LIMIT_VARIABLE_NUMBER (default:
-		// 999; https://www.daemon-systems.org/man/sqlite3_bind_blob.3.html).
-		size = 500 // Anything between 1 and 999.
 	)
 	for _, batch := range batchedStrings(dois, size) {
 		t = time.Now()
@@ -669,8 +669,8 @@ func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err 
 	return ids, nil
 }
 
-// batchedStrings batches one string slice into a potentially smaller number of
-// strings slices with size at most n.
+// batchedStrings turns one string slice into one or more smaller strings
+// slices, each with size of at most n.
 func batchedStrings(ss []string, n int) (result [][]string) {
 	b, e := 0, n
 	for {
