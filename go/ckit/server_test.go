@@ -148,6 +148,7 @@ func TestServerBasic(t *testing.T) {
 		Router:             mux.NewRouter(),
 	}
 	rr := httptest.NewRecorder()
+	t.Logf("setup %v [%v]", srv, rr)
 	// TODO: execute handlers
 }
 

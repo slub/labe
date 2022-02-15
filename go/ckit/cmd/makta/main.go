@@ -35,7 +35,7 @@ var (
 func main() {
 	flag.Parse()
 	if !ckit.SliceContains(validTypes, *valueType) {
-		log.Fatal("invalid type for value column: %v %v", *valueType, validTypes)
+		log.Fatalf("invalid type for value column: %v %v", *valueType, validTypes)
 	}
 	var (
 		err      error

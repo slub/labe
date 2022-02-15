@@ -41,7 +41,7 @@ var snippetPool = sync.Pool{
 
 // Snippet is a small piece of index metadata used for institution filtering.
 type Snippet struct {
-	Institution []string `json:"institution"`
+	Institutions []string `json:"institution"`
 }
 
 // Server wraps three data sources required for index and citation data fusion.
@@ -148,13 +148,14 @@ func (r *Response) applyInstitutionFilter(institution string) {
 	var (
 		citing []json.RawMessage
 		cited  []json.RawMessage
+		v      *Snippet
 	)
 	for _, b := range r.Citing {
-		v := snippetPool.Get().(*Snippet)
+		v = snippetPool.Get().(*Snippet)
 		if err := json.Unmarshal(b, v); err != nil {
 			panic(fmt.Sprintf("internal data broken: %v", err))
 		}
-		if SliceContains(v.Institution, institution) {
+		if SliceContains(v.Institutions, institution) {
 			citing = append(citing, b)
 		} else {
 			r.Unmatched.Citing = append(r.Unmatched.Citing, b)
@@ -162,11 +163,11 @@ func (r *Response) applyInstitutionFilter(institution string) {
 		snippetPool.Put(v)
 	}
 	for _, b := range r.Cited {
-		v := snippetPool.Get().(*Snippet)
+		v = snippetPool.Get().(*Snippet)
 		if err := json.Unmarshal(b, v); err != nil {
 			panic(fmt.Sprintf("internal data broken: %v", err))
 		}
-		if SliceContains(v.Institution, institution) {
+		if SliceContains(v.Institutions, institution) {
 			cited = append(cited, b)
 		} else {
 			r.Unmatched.Cited = append(r.Unmatched.Cited, b)
@@ -374,9 +375,11 @@ func (s *Server) serveFromCache(w http.ResponseWriter, r *http.Request) error {
 // error is returned (but the value is not cached). Other caching errors are
 // returned.
 func (s *Server) cacheResponse(response *Response) error {
-	t := time.Now()
 	response.Extra.Cached = true
-	buf := bufPool.Get().(*bytes.Buffer)
+	var (
+		t   = time.Now()
+		buf = bufPool.Get().(*bytes.Buffer)
+	)
 	buf.Reset()
 	defer bufPool.Put(buf)
 	zw, err := zstd.NewWriter(buf)
@@ -395,7 +398,7 @@ func (s *Server) cacheResponse(response *Response) error {
 		if err == cache.ErrReadOnly {
 			return nil
 		} else {
-			// TODO: we do not need to fail, if cache fails
+			// TODO: we would not need to fail, if cache fails; but do for now
 			return fmt.Errorf("failed to cache value for %s: %v", response.ID, err)
 		}
 	}
@@ -538,7 +541,6 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		for _, v := range ids {
 			t := time.Now()
 			b, err := s.IndexData.Fetch(v.Key)
-			s.Stats.MeasureSinceWithLabels("index_data_fetch", t, nil)
 			if errors.Is(err, ErrBlobNotFound) {
 				continue
 			}
@@ -546,6 +548,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 				httpErrLogf(w, http.StatusInternalServerError, "index data fetch: %w", err)
 				return
 			}
+			s.Stats.MeasureSinceWithLabels("index_data_fetch", t, nil)
 			switch {
 			case outbound.Contains(v.Value):
 				response.Citing = append(response.Citing, b)
@@ -638,7 +641,7 @@ func (s *Server) edges(ctx context.Context, doi string) (citing, cited []Map, er
 }
 
 // mapToLocal takes a list of DOI and returns a slice of Maps containing the
-// local id and DOI.
+// local id (key) and DOI (value).
 func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err error) {
 	// sqlite has a limit on the variable count, which at most is 999; it may
 	// lead to "too many SQL variables", SQLITE_LIMIT_VARIABLE_NUMBER (default:
@@ -655,16 +658,14 @@ func (s *Server) mapToLocal(ctx context.Context, dois []string) (ids []Map, err 
 		if err != nil {
 			return nil, fmt.Errorf("query (%d): %v", len(dois), err)
 		}
-		var result []Map
 		query = s.IdentifierDatabase.Rebind(query)
+		var result []Map // TODO: select into a portion of the final slice directly
 		err = s.IdentifierDatabase.SelectContext(ctx, &result, query, args...)
 		if err != nil {
 			return nil, fmt.Errorf("select (%d): %v", len(dois), err)
 		}
 		s.Stats.MeasureSinceWithLabels("sql_query", t, nil)
-		for _, r := range result {
-			ids = append(ids, r)
-		}
+		ids = append(ids, result...)
 	}
 	return ids, nil
 }
