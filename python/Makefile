@@ -1,11 +1,5 @@
 # Makefile for labe python package.
 
-# use .env if present, https://lithic.tech/blog/2020-05/makefile-dot-env
-ifneq (,$(wildcard ./.env))
-	include .env
-	export
-endif
-
 SHELL := /bin/bash
 PY_FILES := $(shell find labe -name \*.py -print)
 PKGNAME := labe
@@ -42,11 +36,8 @@ clean: ## clean artifacts
 	rm -rf $(PKGNAME).egg-info/
 	rm -rf $(PKGNAME)_*.deb
 	rm -rf $(ZIPAPP)
-	rm -rf .pytest_cache/
-	rm -rf build/
-	rm -rf dist/
-	rm -rf packaging/deb/labe/etc/
-	rm -rf packaging/deb/labe/usr/
+	rm -rf .pytest_cache/ build/ dist/
+	rm -rf packaging/deb/labe/etc/ packaging/deb/labe/usr/
 
 .PHONY: deb
 deb: $(ZIPAPP) ## build a debian package
@@ -61,4 +52,3 @@ deb: $(ZIPAPP) ## build a debian package
 	# build package
 	cd packaging/deb && fakeroot dpkg-deb --build $(PKGNAME) .
 	mv packaging/deb/$(PKGNAME)_*.deb .
-
