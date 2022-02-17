@@ -60,7 +60,6 @@ from labe.deps import dump_deps
 from labe.diff import stats_diff
 from labe.experimental import *
 from labe.oci import OpenCitationsDataset
-# We need a star import to import all tasks.
 from labe.stats import *
 from labe.tasks import *
 
@@ -88,9 +87,9 @@ def effective_task_names(suppress=None):
             'TestNotificationsTask',
             'WrapperTask',
         ]
-    names = (name for name in sorted(Register.task_names()))
+    names = (name for name in Register.task_names())
     names = (name for name in names if name not in suppress and not name.islower())
-    return names
+    return sorted(names)
 
 
 def main():
