@@ -10,11 +10,11 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/icholy/replace v0.5.0
 	github.com/jmoiron/sqlx v1.3.4
-	github.com/klauspost/compress v1.14.2
+	github.com/klauspost/compress v1.14.3
 	github.com/matryer/is v1.4.0
 	github.com/mattn/go-sqlite3 v1.14.11
 	github.com/miku/parallel v0.0.0-20210205192328-1a799ab70294
-	github.com/segmentio/encoding v0.3.3
+	github.com/segmentio/encoding v0.3.4
 	github.com/thoas/stats v0.0.0-20190407194641-965cb2de1678
 	golang.org/x/text v0.3.7
 )
