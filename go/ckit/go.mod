@@ -8,20 +8,20 @@ require (
 	github.com/google/go-cmp v0.5.7
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
-	github.com/icholy/replace v0.5.0
-	github.com/jmoiron/sqlx v1.3.4
-	github.com/klauspost/compress v1.14.3
+	github.com/icholy/replace v0.6.0
+	github.com/jmoiron/sqlx v1.3.5
+	github.com/klauspost/compress v1.15.12
 	github.com/matryer/is v1.4.0
-	github.com/mattn/go-sqlite3 v1.14.11
+	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/miku/parallel v0.0.0-20210205192328-1a799ab70294
-	github.com/segmentio/encoding v0.3.4
+	github.com/segmentio/encoding v0.3.6
 	github.com/thoas/stats v0.0.0-20190407194641-965cb2de1678
-	golang.org/x/text v0.3.7
+	golang.org/x/text v0.4.0
 )
 
 require (
-	github.com/felixge/httpsnoop v1.0.2 // indirect
-	github.com/segmentio/asm v1.1.3 // indirect
+	github.com/felixge/httpsnoop v1.0.3 // indirect
+	github.com/segmentio/asm v1.2.0 // indirect
 	golang.org/x/net v0.0.0-20220121210141-e204ce36a2ba // indirect
-	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
+	golang.org/x/sys v0.2.0 // indirect
 )
