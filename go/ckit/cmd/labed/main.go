@@ -47,9 +47,8 @@ var (
 
 	sqliteFetcherPaths xflag.Array // allows to specify multiple database to get catalog metadata from
 
-	Version   string // set by makefile
-	Buildtime string // set by makefile
-	Help      string = `usage: labed [OPTION]
+	Version string // set by makefile
+	Help    string = `usage: labed [OPTION]
 
 labed is a HTTP web server fusing Open Citation (https://opencitations.net/)
 and library catalog data at SLUB Dresden (https://www.slub-dresden.de/) and
@@ -111,7 +110,7 @@ func main() {
 	}
 	flag.Parse()
 	if *showVersion {
-		fmt.Printf("labed %v %v\n", Version, Buildtime)
+		fmt.Printf("labed %v\n", Version)
 		os.Exit(0)
 	}
 	var (
@@ -209,7 +208,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Fprintln(os.Stderr, strings.Replace(Banner, `{{ .listenAddr }}`, *listenAddr, -1))
-	log.Printf("[ok] labed ≋ starting %s %s http://%s", Version, Buildtime, *listenAddr)
+	log.Printf("[ok] labed ≋ starting %s http://%s", Version, *listenAddr)
 	var h http.Handler = srv
 	if *enableGzip {
 		h = handlers.CompressHandler(srv)

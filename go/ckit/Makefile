@@ -19,11 +19,9 @@ TARGETS := \
 # This is an automatic version string using the git commit id. The debian
 # package version is currently separately defined in (and only in):
 # packaging/deb/ckit/DEBIAN/control
-VERSION := $(shell git rev-parse --short HEAD)
-BUILDTIME := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
+VERSION := 0.1.45
 
 GOLDFLAGS += -X main.Version=$(VERSION)
-GOLDFLAGS += -X main.Buildtime=$(BUILDTIME)
 GOLDFLAGS += -w -s
 GOFILES = $(shell find . -name \*.go -print)
 

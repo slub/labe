@@ -54,8 +54,7 @@ import (
 )
 
 var (
-	Version   string
-	Buildtime string
+	Version string
 
 	compressValue = flag.Bool("C", false, "compress value; gz+b64")
 	compressTable = flag.Bool("T", false, "emit table showing possible savings through compression")
@@ -71,7 +70,7 @@ type Doc struct {
 func main() {
 	flag.Parse()
 	if *showVersion {
-		fmt.Printf("makta %s %s\n", Version, Buildtime)
+		fmt.Printf("makta %s\n", Version)
 		os.Exit(0)
 	}
 	pp := parallel.NewProcessor(os.Stdin, os.Stdout, func(p []byte) ([]byte, error) {

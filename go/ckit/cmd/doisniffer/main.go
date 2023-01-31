@@ -14,8 +14,7 @@ import (
 )
 
 var (
-	Version   string
-	Buildtime string
+	Version string
 
 	noSkipUnmatched = flag.Bool("S", false, "do not skip unmatched documents")
 	updateKey       = flag.String("k", "doi_str_mv", "update key")
@@ -30,7 +29,7 @@ var (
 func main() {
 	flag.Parse()
 	if *showVersion {
-		fmt.Printf("makta %s %s\n", Version, Buildtime)
+		fmt.Printf("makta %s\n", Version)
 		os.Exit(0)
 	}
 	ignore, err := stringToRegexpSlice(*ignoreKeys, ",")

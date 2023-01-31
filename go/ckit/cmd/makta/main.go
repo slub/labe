@@ -19,7 +19,6 @@ import (
 
 var (
 	Version    string
-	Buildtime  string
 	validTypes = []string{"INTEGER", "READ", "TEXT", "BLOB"} // sqlite3
 
 	showVersion  = flag.Bool("version", false, "show version and exit")
@@ -61,7 +60,7 @@ PRAGMA temp_store = MEMORY;
 .import /dev/stdin map`, pragma)
 	)
 	if *showVersion {
-		fmt.Printf("makta %s %s\n", Version, Buildtime)
+		fmt.Printf("makta %s\n", Version)
 		os.Exit(0)
 	}
 	if termutil.Isatty(os.Stdin.Fd()) {
