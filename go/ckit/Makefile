@@ -19,7 +19,7 @@ TARGETS := \
 # This is an automatic version string using the git commit id. The debian
 # package version is currently separately defined in (and only in):
 # packaging/deb/ckit/DEBIAN/control
-VERSION := 0.1.45
+VERSION := 0.1.46
 
 GOLDFLAGS += -X main.Version=$(VERSION)
 GOLDFLAGS += -w -s
