@@ -40,7 +40,7 @@ def dump_deps(task=None, indent=0, dot=False, file=sys.stdout):
     mark = "\033[31m𐄂\033[0m"
     if task.output() and os.path.exists(task.output().path):
         mark = "\033[32m√\033[0m"
-    print('{} \_ {} {}'.format('   ' * indent, mark, task), file=file)
+    print("{} \_ {} {}".format("   " * indent, mark, task), file=file)
     for dep in g[task]:
         dump_deps(task=dep, indent=indent + 1)
 
@@ -53,10 +53,13 @@ def dump_deps_dot(task=None, file=sys.stdout):
         return
     g = build_dep_graph(task)
     print("digraph deps {", file=file)
-    print(textwrap.dedent("""
+    print(
+        textwrap.dedent("""
           graph [fontname=helvetica];
           node [shape=record fontname=helvetica];
-    """), file=file)
+    """),
+        file=file,
+    )
     for k, vs in g.items():
         for v in vs:
             print(""" "{}" -> "{}"; """.format(k, v), file=file)

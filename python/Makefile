@@ -27,8 +27,11 @@ $(ZIPAPP): $(PY_FILES) ## build single python executable with shiv
 
 .PHONY: fmt
 fmt: ## apply code formatting
-	yapf -p -i -r $(PKGNAME) tests
-	isort $(PKGNAME)
+	ruff format .
+
+.PHONY: lint
+lint: ## apply lint check with safe automatic fixes
+	ruff check --fix .
 
 .PHONY: clean
 clean: ## clean artifacts

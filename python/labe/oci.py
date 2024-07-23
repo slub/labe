@@ -14,7 +14,7 @@ import re
 import requests
 
 __all__ = [
-    'OpenCitationsDataset',
+    "OpenCitationsDataset",
 ]
 
 default_user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36"
@@ -33,7 +33,7 @@ def get_terminal_url(link, headers=None, user_agent=default_user_agent):
     if resp.status_code >= 400:
         raise RuntimeError("got http status {} on {}".format(resp.status_code, link))
     if not resp.url:
-        raise ValueError('url not found')
+        raise ValueError("url not found")
     return resp.url
 
 
@@ -42,13 +42,17 @@ def get_figshare_download_link(link):
     Given a link that should redirect to figshare. If it does not, this will fail.
     """
     landing_page_url = get_terminal_url(link)
-    pattern_figshare_url = re.compile(r"https://figshare.com/articles/dataset/"
-                                      r"(?P<name>[^/]*)/(?P<id>[^/]*)/(?P<version>[\d]*)")
+    pattern_figshare_url = re.compile(
+        r"https://figshare.com/articles/dataset/"
+        r"(?P<name>[^/]*)/(?P<id>[^/]*)/(?P<version>[\d]*)"
+    )
     match = re.match(pattern_figshare_url, landing_page_url)
     if not match:
         raise RuntimeError("unexpected landing page url: {}".format(landing_page_url))
     groups = match.groupdict()
-    return "https://figshare.com/ndownloader/articles/{}/versions/{}".format(groups["id"], groups["version"])
+    return "https://figshare.com/ndownloader/articles/{}/versions/{}".format(
+        groups["id"], groups["version"]
+    )
 
 
 class OpenCitationsDataset:
@@ -83,7 +87,9 @@ class OpenCitationsDataset:
         if not direct_download_url:
             resp = requests.get(self.download_url)
             if resp.status_code >= 400:
-                raise RuntimeError("cannot download page at: {}".format(self.download_url))
+                raise RuntimeError(
+                    "cannot download page at: {}".format(self.download_url)
+                )
             self.cache[self.download_url] = resp.text
 
     def __repr__(self):
@@ -92,7 +98,9 @@ class OpenCitationsDataset:
     def __str__(self):
         if self.direct_download_url:
             return "<OpenCitationsDataset via {})>".format(self.direct_download_url)
-        return "<OpenCitationsDataset via {} ({} rows)>".format(self.download_url, len(self.rows()))
+        return "<OpenCitationsDataset via {} ({} rows)>".format(
+            self.download_url, len(self.rows())
+        )
 
     def rows(self):
         """
@@ -103,27 +111,30 @@ class OpenCitationsDataset:
         Return list of dicts describing a table entry. Most recent should be the first.
 
             [ ...
-	        {'format': 'CSV',
-	         'url': 'https://doi.org/10.6084/m9.figshare.6741422.v3',
-	         'ext': 'ZIP',
-	         'size': '72 GB ',
-	         'size_compressed': '11 GB zipped'},
-	        {'format': 'N-Triple',
-	         'url': 'https://doi.org/10.6084/m9.figshare.6741425.v3',
-	         'ext': 'ZIP',
-	         'size': '481 GB ',
-	         'size_compressed': '22 GB zipped'},
+                {'format': 'CSV',
+                 'url': 'https://doi.org/10.6084/m9.figshare.6741422.v3',
+                 'ext': 'ZIP',
+                 'size': '72 GB ',
+                 'size_compressed': '11 GB zipped'},
+                {'format': 'N-Triple',
+                 'url': 'https://doi.org/10.6084/m9.figshare.6741425.v3',
+                 'ext': 'ZIP',
+                 'size': '481 GB ',
+                 'size_compressed': '22 GB zipped'},
              ... ]
 
         """
         pattern_citation_data = re.compile(
-            r'citation data \((?P<format>[^)]*)\)</td>'
+            r"citation data \((?P<format>[^)]*)\)</td>"
             r'<td><a href="(?P<url>[^"]*)">(?P<ext>'
-            r'[^<]*)</a></td><td>(?P<size>[^(]*)\((?P<'
-            r'size_compressed>[^)]*)\)</td></tr>',
+            r"[^<]*)</a></td><td>(?P<size>[^(]*)\((?P<"
+            r"size_compressed>[^)]*)\)</td></tr>",
             re.IGNORECASE,
         )
-        return [m.groupdict() for m in re.finditer(pattern_citation_data, self.cache[self.download_url])]
+        return [
+            m.groupdict()
+            for m in re.finditer(pattern_citation_data, self.cache[self.download_url])
+        ]
 
     def most_recent_url(self, format="CSV"):
         """

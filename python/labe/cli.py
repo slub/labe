@@ -72,20 +72,20 @@ def effective_task_names(suppress=None):
     if suppress is None:
         # These are internal luigi names. TODO: may filter out by module name.
         suppress = [
-            'BaseTask',
-            'Config',
-            'ExternalTask',
-            'RangeBase',
-            'RangeByMinutes',
-            'RangeByMinutesBase',
-            'RangeDaily',
-            'RangeDailyBase',
-            'RangeHourly',
-            'RangeHourlyBase',
-            'RangeMonthly',
-            'Task',
-            'TestNotificationsTask',
-            'WrapperTask',
+            "BaseTask",
+            "Config",
+            "ExternalTask",
+            "RangeBase",
+            "RangeByMinutes",
+            "RangeByMinutesBase",
+            "RangeDaily",
+            "RangeDailyBase",
+            "RangeHourly",
+            "RangeHourlyBase",
+            "RangeMonthly",
+            "Task",
+            "TestNotificationsTask",
+            "WrapperTask",
         ]
     names = (name for name in Register.task_names())
     names = (name for name in names if name not in suppress and not name.islower())
@@ -93,7 +93,9 @@ def effective_task_names(suppress=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog="labe.pyz", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        prog="labe.pyz", formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument(
         "-L",
         "--print-most-recent-download-url",
@@ -101,7 +103,13 @@ def main():
         help="show most recent OCI download URL",
     )
     parser.add_argument("-l", "--list", action="store_true", help="list task names")
-    parser.add_argument("-O", "--show-output-path", metavar="TASK", type=str, help="show output path of task")
+    parser.add_argument(
+        "-O",
+        "--show-output-path",
+        metavar="TASK",
+        type=str,
+        help="show output path of task",
+    )
     parser.add_argument("-r", "--run", metavar="TASK", type=str, help="task to run")
     parser.add_argument(
         "-c",
@@ -114,13 +122,43 @@ def main():
         default=os.path.join(xdg_config_home(), "labe", "logging.ini"),
         help="path to logging configuration file",
     )
-    parser.add_argument("--data-dir", "-D", default=os.path.join(xdg_data_home(), "labe"), help="root directory for all tasks, we follow XDG")
-    parser.add_argument("--tmp-dir", "-T", default=tempfile.gettempdir(), help="temporary directory to use")
-    parser.add_argument("--list-deletable", action="store_true", help="list task outputs, which could be deleted")
-    parser.add_argument("--deps", metavar="TASK", type=str, help="show task dependencies")
-    parser.add_argument("--deps-dot", metavar="TASK", type=str, help="print task dependencies in dot format")
-    parser.add_argument("--diff", action="store_true", help="generate a diff json from two stats json docs")
-    parser.add_argument("--diff-institution", metavar="ISIL", default="DE-14", help="which isil to compute the stats for (only relevant with --diff)")
+    parser.add_argument(
+        "--data-dir",
+        "-D",
+        default=os.path.join(xdg_data_home(), "labe"),
+        help="root directory for all tasks, we follow XDG",
+    )
+    parser.add_argument(
+        "--tmp-dir",
+        "-T",
+        default=tempfile.gettempdir(),
+        help="temporary directory to use",
+    )
+    parser.add_argument(
+        "--list-deletable",
+        action="store_true",
+        help="list task outputs, which could be deleted",
+    )
+    parser.add_argument(
+        "--deps", metavar="TASK", type=str, help="show task dependencies"
+    )
+    parser.add_argument(
+        "--deps-dot",
+        metavar="TASK",
+        type=str,
+        help="print task dependencies in dot format",
+    )
+    parser.add_argument(
+        "--diff",
+        action="store_true",
+        help="generate a diff json from two stats json docs",
+    )
+    parser.add_argument(
+        "--diff-institution",
+        metavar="ISIL",
+        default="DE-14",
+        help="which isil to compute the stats for (only relevant with --diff)",
+    )
 
     # Task may have their own arguments, which we ignore.
     args, unparsed = parser.parse_known_args()
@@ -209,11 +247,11 @@ def main():
             output = parser.get_task_obj().output()
             try:
                 print(output.path)
-            except AttributeError as err:
-                print('output of task has no path', file=sys.stderr)
+            except AttributeError:
+                print("output of task has no path", file=sys.stderr)
                 sys.exit(1)
         except MissingParameterException as err:
-            print('missing parameter: %s' % err, file=sys.stderr)
+            print("missing parameter: %s" % err, file=sys.stderr)
             sys.exit(1)
         except TaskClassNotFoundException as err:
             print(err, file=sys.stderr)
@@ -228,7 +266,7 @@ def main():
             obj = parser.get_task_obj()
             dump_deps(obj)
             sys.exit(0)
-        except TaskClassNotFoundException as exc:
+        except TaskClassNotFoundException:
             print("no such task")
             sys.exit(1)
 
@@ -242,7 +280,7 @@ def main():
             obj = parser.get_task_obj()
             dump_deps(obj, dot=True)
             sys.exit(0)
-        except TaskClassNotFoundException as exc:
+        except TaskClassNotFoundException:
             print("no such task")
             sys.exit(1)
 
@@ -252,7 +290,7 @@ def main():
             sys.argv = [sys.argv[0], args.run] + unparsed
             luigi.run(local_scheduler=True)
         except MissingParameterException as err:
-            print('missing parameter: %s' % err, file=sys.stderr)
+            print("missing parameter: %s" % err, file=sys.stderr)
             sys.exit(1)
         except TaskClassNotFoundException as err:
             print(err, file=sys.stderr)

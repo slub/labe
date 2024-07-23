@@ -21,16 +21,16 @@ from labe.base import BaseTask, Zstd, ensure_minimum_file_size, shellout
 from labe.oci import OpenCitationsDataset
 
 __all__ = [
-    'CombinedUpdate',
-    'IdMappingDatabase',
-    'IdMappingTable',
-    'OpenCitationsDatabase',
-    'OpenCitationsDownload',
-    'OpenCitationsRanked',
-    'OpenCitationsSingleFile',
-    'SolrDatabase',
-    'SolrFetchDocs',
-    'Task',
+    "CombinedUpdate",
+    "IdMappingDatabase",
+    "IdMappingTable",
+    "OpenCitationsDatabase",
+    "OpenCitationsDownload",
+    "OpenCitationsRanked",
+    "OpenCitationsSingleFile",
+    "SolrDatabase",
+    "SolrFetchDocs",
+    "Task",
 ]
 
 
@@ -38,6 +38,7 @@ class Task(BaseTask):
     """
     Superclass for labe tasks.
     """
+
     # Put all task outputs under BASE/TAG/...
     TAG = "data"
 
@@ -88,13 +89,18 @@ class OpenCitationsDownload(Task):
 
     def run(self):
         url = self.open_citations_url()
-        output = shellout("""
+        output = shellout(
+            """
                           curl --fail -sL "{url}" > {output}
-                          """, url=url)
+                          """,
+            url=url,
+        )
 
         # Do a basic sanity check right here, e.g. in 12/2021 filesize was
         # about 30GB; we fail if the file size seems too small.
-        ensure_minimum_file_size(output, self.minimum_file_size_map["OpenCitationsDownload"])
+        ensure_minimum_file_size(
+            output, self.minimum_file_size_map["OpenCitationsDownload"]
+        )
         # We excect a zip file.
         if not zipfile.is_zipfile(output):
             raise RuntimeError("not a zip: {}".format(output))
@@ -127,15 +133,17 @@ class OpenCitationsSingleFile(Task):
         Decompress, find zips, decompress, remove decoration, compress,
         cleanup.
         """
-        output = shellout("""
+        output = shellout(
+            """
                  T=$(mktemp -d) && unzip -d $T {file} &&
                  for f in $(find "$T" -name "*zip"); do
                      unzip -p "$f"
                  done | grep -vF 'oci,citing' | zstd -c -T0 > {output} &&
                  rm -rf "$T"
                  """,
-                          file=self.input().path,
-                          preserve_whitespace=True)
+            file=self.input().path,
+            preserve_whitespace=True,
+        )
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -160,14 +168,18 @@ class OpenCitationsDatabase(Task):
         return OpenCitationsSingleFile()
 
     def run(self):
-        output = shellout(r"""
+        output = shellout(
+            r"""
                           zstdcat -T0 {input} |
                           cut -d, -f2,3 |
                           sed -e 's@,@\t@' |
                           makta -init -o {output} -I 3
                           """,
-                          input=self.input().path)
-        ensure_minimum_file_size(output, self.minimum_file_size_map["OpenCitationsDatabase"])
+            input=self.input().path,
+        )
+        ensure_minimum_file_size(
+            output, self.minimum_file_size_map["OpenCitationsDatabase"]
+        )
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -191,7 +203,8 @@ class OpenCitationsRanked(Task):
         return OpenCitationsSingleFile()
 
     def run(self):
-        output = shellout("""
+        output = shellout(
+            """
                           zstd -cd -T0 {input} |
                           LC_ALL=C cut -d , -f2,3 |
                           LC_ALL=C tr ',' '\n' |
@@ -201,8 +214,9 @@ class OpenCitationsRanked(Task):
                           LC_ALL=C sort -nr -S 20% |
                           zstd -c -T0 > {output}
                           """,
-                          input=self.input().path,
-                          preserve_whitespace=True)
+            input=self.input().path,
+            preserve_whitespace=True,
+        )
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -223,7 +237,8 @@ class OpenCitationsCitedCountTable(Task):
         return OpenCitationsSingleFile()
 
     def run(self):
-        output = shellout(r"""
+        output = shellout(
+            r"""
                           zstdcat -T0 {input} |
                           LC_ALL=C cut -d, -f 3 |
                           LC_ALL=C tr [:upper:] [:lower:] |
@@ -234,8 +249,9 @@ class OpenCitationsCitedCountTable(Task):
                           LC_ALL=C awk -F'\t' '{{ print $2"\t"$1 }}' |
                           zstd -c -T0 > {output}
                           """,
-                          input=self.input().path,
-                          preserve_whitespace=True)
+            input=self.input().path,
+            preserve_whitespace=True,
+        )
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -258,11 +274,13 @@ class OpenCitationsCitedCountDatabase(Task):
         return OpenCitationsCitedCountTable()
 
     def run(self):
-        output = shellout(r"""
+        output = shellout(
+            r"""
                           zstdcat -T0 {input} |
                           makta -I 1 -T INTEGER -init -o {output}
                           """,
-                          input=self.input().path)
+            input=self.input().path,
+        )
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -282,25 +300,36 @@ class SolrFetchDocs(Task):
     "ai" full version (22h) - however with "-rows 50000" eta about 2.5h
     (134m27.012s).
     """
+
     date = luigi.DateParameter(default=datetime.date.today())
-    name = luigi.Parameter(default="main", description="index name, url lookup up from a config")
-    short = luigi.BoolParameter(description="only fetch id,title,author,format,url,doi_str_mv fields, e.g. for ai")
+    name = luigi.Parameter(
+        default="main", description="index name, url lookup up from a config"
+    )
+    short = luigi.BoolParameter(
+        description="only fetch id,title,author,format,url,doi_str_mv fields, e.g. for ai"
+    )
 
     def run(self):
         try:
             indices = self.config["indices"]
             url = indices[self.name]
         except KeyError:
-            raise LookupError('cannot map name to solr url, available indices: {}'.format(indices.keys()))
-        extra_opts = ''
+            raise LookupError(
+                "cannot map name to solr url, available indices: {}".format(
+                    indices.keys()
+                )
+            )
+        extra_opts = ""
         if self.short:
             extra_opts = "-fl 'id,title,author,format,url,doi_str_mv,institution'"
-        output = shellout("""
+        output = shellout(
+            """
                           solrdump -verbose -server {server} -rows 50000 {extra_opts} |
                           zstd -c -T0 > {output}
                           """,
-                          server=url,
-                          extra_opts=extra_opts)
+            server=url,
+            extra_opts=extra_opts,
+        )
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -323,21 +352,33 @@ class SolrDatabase(Task):
     a sqlite3 version of the full "ai" metadata is over 350G, whereas the short
     version is only 50G).
     """
+
     date = luigi.DateParameter(default=datetime.date.today())
-    name = luigi.Parameter(default="main", description="index name, url lookup up from a config")
-    short = luigi.BoolParameter(description="only fetch id,title,author,format,url,doi_str_mv fields, e.g. for ai")
+    name = luigi.Parameter(
+        default="main", description="index name, url lookup up from a config"
+    )
+    short = luigi.BoolParameter(
+        description="only fetch id,title,author,format,url,doi_str_mv fields, e.g. for ai"
+    )
 
     def requires(self):
         return SolrFetchDocs(date=self.date, name=self.name, short=self.short)
 
     def run(self):
-        output = shellout("""
+        output = shellout(
+            """
                           zstdcat -T0 {input} |
                           tabjson |
                           makta -init -I 1 -o {output}
                           """,
-                          input=self.input().path)
-        ensure_minimum_file_size(output, self.minimum_file_size_map["SolrDatabase-{}-{}".format(self.name, self.short)])
+            input=self.input().path,
+        )
+        ensure_minimum_file_size(
+            output,
+            self.minimum_file_size_map[
+                "SolrDatabase-{}-{}".format(self.name, self.short)
+            ],
+        )
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -358,12 +399,15 @@ class IdMappingTable(Task):
     ways to do this currently, e.g. via "doi_str_mv" field and via
     "doisniffer" - this distinction is wrapped in this task.
     """
+
     date = luigi.DateParameter(default=datetime.date.today())
 
     def requires(self):
         # TODO: may require per-index id to doi mapping
         return {
-            "slub-production": SolrFetchDocs(date=self.date, name="slub-production", short=False),
+            "slub-production": SolrFetchDocs(
+                date=self.date, name="slub-production", short=False
+            ),
             "main": SolrFetchDocs(date=self.date, name="main", short=False),
             "ai": SolrFetchDocs(date=self.date, name="ai", short=True),
         }
@@ -371,26 +415,32 @@ class IdMappingTable(Task):
     def run(self):
         # In 01/2022, for "main", we still need to apply "doisniffer", but that
         # may change in the future.
-        output = shellout(""" zstd -q -d -c -T0 {input} |
+        output = shellout(
+            """ zstd -q -d -c -T0 {input} |
                               doisniffer |
                               jq -rc '[.id, .doi_str_mv[0]] | @tsv' |
                               zstd -c -T0 >> {output} """,
-                          input=self.input().get("main").path)
+            input=self.input().get("main").path,
+        )
 
         # In 01/2022, we use "doisniffer" for slub-production as well.
-        shellout(""" zstd -q -d -c -T0 {input} |
+        shellout(
+            """ zstd -q -d -c -T0 {input} |
                      doisniffer |
                      jq -rc '[.id, .doi_str_mv[0]] | @tsv' |
                      zstd -c -T0 >> {output} """,
-                 output=output,
-                 input=self.input().get("slub-production").path)
+            output=output,
+            input=self.input().get("slub-production").path,
+        )
 
         # In 01/2022, the "doi_str_mv" field is included in "ai" - with 73881207 values.
-        shellout(""" zstd -q -d -c -T0 {input} |
+        shellout(
+            """ zstd -q -d -c -T0 {input} |
                      parallel -j 8 --pipe --block 10M "jq -rc 'select(.doi_str_mv | length > 0) | [.id, .doi_str_mv[0]] | @tsv'" |
                      zstd -T0 -c >> {output} """,
-                 output=output,
-                 input=self.input().get("ai").path)
+            output=output,
+            input=self.input().get("ai").path,
+        )
 
         ensure_minimum_file_size(output, self.minimum_file_size_map["IdMappingTable"])
         luigi.LocalTarget(output).move(self.output().path)
@@ -406,17 +456,22 @@ class IdMappingDatabase(Task):
     """
     Generate a (id, doi) mapping database (5min).
     """
+
     date = luigi.DateParameter(default=datetime.date.today())
 
     def requires(self):
         return IdMappingTable(date=self.date)
 
     def run(self):
-        output = shellout(""" zstd -q -d -c -T0 {input} |
+        output = shellout(
+            """ zstd -q -d -c -T0 {input} |
                               makta -init -o {output} -I 3
                           """,
-                          input=self.input().path)
-        ensure_minimum_file_size(output, self.minimum_file_size_map["IdMappingDatabase"])
+            input=self.input().path,
+        )
+        ensure_minimum_file_size(
+            output, self.minimum_file_size_map["IdMappingDatabase"]
+        )
         luigi.LocalTarget(output).move(self.output().path)
 
     def output(self):
@@ -430,6 +485,7 @@ class CombinedUpdate(luigi.WrapperTask):
     """
     Wrapper around generation of the the various databases required for the labed service.
     """
+
     date = luigi.DateParameter(default=datetime.date.today())
 
     def requires(self):

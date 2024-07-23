@@ -21,7 +21,7 @@ def no_internet(host="8.8.8.8", port=53, timeout=3):
         socket.setdefaulttimeout(timeout)
         socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
         return False
-    except socket.error as ex:
+    except socket.error:
         return True
 
 
@@ -32,7 +32,10 @@ def test_get_redirct_url():
 
     assert get_terminal_url("https://google.com") == "https://www.google.com/"
     assert get_terminal_url("http://google.com") == "https://www.google.com/?gws_rd=ssl"
-    assert (get_terminal_url("https://doi.org/10.1111/icad.12417") == "https://onlinelibrary.wiley.com/doi/10.1111/icad.12417")
+    assert (
+        get_terminal_url("https://doi.org/10.1111/icad.12417")
+        == "https://onlinelibrary.wiley.com/doi/10.1111/icad.12417"
+    )
 
 
 @pytest.mark.skipif(no_internet(), reason="no internet")

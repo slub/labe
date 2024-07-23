@@ -31,14 +31,13 @@ with open("README.md", "r") as fh:
         extras_require={
             "dev": [
                 "ipython",
-                "isort",
                 "mypy",
                 "pylint",
                 "pytest",
                 "pytest-cov",
+                "ruff",
                 "shiv",
                 "twine",
-                "yapf",
             ],
         },
     )
