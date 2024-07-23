@@ -39,7 +39,10 @@ clean: ## clean artifacts
 	rm -rf $(PKGNAME).egg-info/
 	rm -rf $(PKGNAME)_*.deb
 	rm -rf $(ZIPAPP)
-	rm -rf .pytest_cache/ build/ dist/
+	rm -rf .pytest_cache/
+	rm -rf .ruff_cache/
+	rm -rf build/
+	rm -rf dist/
 	rm -rf packaging/deb/labe/etc/ packaging/deb/labe/usr/
 
 .PHONY: deb
