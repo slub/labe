@@ -13,8 +13,8 @@ Merging citations and catalog data at [SLUB Dresden](https://www.slub-dresden.de
 The project is composed of a couple of command line tools, both written in
 Python and Go.
 
-* [ckit](go/ckit), citation toolkit contains an API server, plus a few command line tools
-* [python](python), orchestration helper to assemble data files regularly (based on luigi)
+* [ckit](go/ckit), citation toolkit contains an API server, plus a few command line tools (go)
+* [python](python), orchestration helper to assemble data files regularly (python, based on luigi)
 
 ## Meeting Minutes
 
@@ -90,11 +90,11 @@ $ tokei -C -t=Go,Python,yaml
 ===============================================================================
  Language            Files        Lines         Code     Comments       Blanks
 ===============================================================================
- Go                     19         2668         2136          341          191
- Python                 16         2606         2100          127          379
- YAML                    4          226          184           22           20
+ Go                     19         2666         2134          341          191
+ Python                 16         2881         2345          126          410
+ YAML                    4          249          193           35           21
 ===============================================================================
- Total                  39         5500         4420          490          590
+ Total                  39         5796         4672          502          622
 ===============================================================================
 ```
 

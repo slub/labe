@@ -8,12 +8,12 @@ Structured paths for data artifacts. Scheduling with
 
 ![](static/labe-tree.png)
 
-Data acquisition and processing results in three (kinds of)
-[sqlite3](https://sqlite.org/) databases:
+Data acquisition and processing results in three [sqlite3](https://sqlite.org/)
+databases:
 
-* a) one id-doi "mapping" database
-* b) one "citations" database (doi-doi)
-* c) one or more index "metadata" [fetcher](https://github.com/slub/labe/blob/838fdd6c935d9d2d18693ba6dd9625eb34accb7e/go/ckit/fetcher.go#L31-L34) (id-doc)
+* a) one id-doi "mapping" database (e.g. "ai-49-12345" -> "10.1001/12345")
+* b) one "citations" database (doi-doi) (e.g. "10.1001/12345" -> "10.123/ABC")
+* c) one or more index "metadata" [fetcher](https://github.com/slub/labe/blob/838fdd6c935d9d2d18693ba6dd9625eb34accb7e/go/ckit/fetcher.go#L31-L34) (id-doc) ("ai-49-12345" -> JSON)
 
 Currently, we use a
 [FetchGroup](https://github.com/slub/labe/blob/838fdd6c935d9d2d18693ba6dd9625eb34accb7e/go/ckit/fetcher.go#L56-L62)
