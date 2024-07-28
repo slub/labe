@@ -3,9 +3,7 @@ package ckit
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"os"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/slub/labe/go/ckit/tabutils"
@@ -15,12 +13,6 @@ var (
 	// ErrBlobNotFound can be used for unfetchable blobs.
 	ErrBlobNotFound   = errors.New("blob not found")
 	ErrBackendsFailed = errors.New("all backends failed")
-	client            = http.Client{
-		// We use the client to fetch data from backends. Often, we request one
-		// item after another and there will be a 5 second timeout per request,
-		// not for the whole operation.
-		Timeout: 5 * time.Second,
-	}
 )
 
 // Pinger allows to perform a simple health check.

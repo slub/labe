@@ -40,7 +40,6 @@ type Entry struct {
 // > XVlB    6    105.771005ms    0.38    encoded JSON
 // > XVlB    -    -               -       -
 // > XVlB    S    278.113164ms    1.00    total
-//
 type StopWatch struct {
 	sync.Mutex
 	id       string
@@ -90,7 +89,7 @@ func (s *StopWatch) Elapsed() time.Duration {
 	if len(s.entries) == 0 {
 		return 0
 	}
-	return time.Now().Sub(s.entries[0].T)
+	return time.Since(s.entries[0].T)
 }
 
 // Entries returns the accumulated messages for this stopwatch.

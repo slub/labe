@@ -427,7 +427,7 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			outbound     = set.New()
 			inbound      = set.New()
 			matched      []string
-			unmatchedSet = set.New()
+			unmatchedSet set.Set
 			response     = &Response{
 				ID: vars["id"],
 			}
@@ -683,7 +683,6 @@ func batchedStrings(ss []string, n int) (result [][]string) {
 			b, e = e, e+n
 		}
 	}
-	return
 }
 
 // httpErrLogf is a log formatting helper.

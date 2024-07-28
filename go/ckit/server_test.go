@@ -121,8 +121,8 @@ func TestApplyInstitutionFilter(t *testing.T) {
 		}
 		resp.applyInstitutionFilter(c.institution)
 		if string(mustMarshal(resp)) != string(mustMarshal(expected)) {
-			log.Printf(string(mustMarshal(resp)))
-			log.Printf(string(mustMarshal(expected)))
+			log.Println(string(mustMarshal(resp)))
+			log.Println(string(mustMarshal(expected)))
 			t.Fatalf("[%s] %v", c.desc, cmp.Diff(resp, expected))
 		}
 	}
