@@ -54,7 +54,7 @@ type Snippet struct {
 // databases involved is about 220GB plus 10GB cache (ie. at most 6% of the
 // data could be held in memory at any given time).
 //
-// Under load requesting the most costly (and large) 150K docs, the server will
+// Requesting the most costly (and large) 150K docs under load, the server will
 // hover at around 10% (of 16GB) RAM.
 type Server struct {
 	// IdentifierDatabase maps local ids to DOI. The expected schema is
