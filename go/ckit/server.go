@@ -141,10 +141,10 @@ type Response struct {
 
 // applyInstitutionFilter rearranges cited and citing documents in-place based
 // on holdings of an institution (as found in the index data), identified by
-// its ISIL (ISO 15511). This method will panic, if the index metadata is not
-// valid JSON. In order for this to work, we expect an "institution" field in
-// the metadata.
-func (r *Response) applyInstitutionFilter(institution string) {
+// its ISIL (ISO 15511). In order for this to work, we expect an "institution"
+// field in the metadata. Returns an error if index metadata contains invalid
+// JSON.
+func (r *Response) applyInstitutionFilter(institution string) error {
 	var (
 		citing []json.RawMessage
 		cited  []json.RawMessage
@@ -153,7 +153,8 @@ func (r *Response) applyInstitutionFilter(institution string) {
 	for _, b := range r.Citing {
 		v = snippetPool.Get().(*Snippet)
 		if err := json.Unmarshal(b, v); err != nil {
-			panic(fmt.Sprintf("internal data broken: %v", err))
+			snippetPool.Put(v)
+			return fmt.Errorf("institution filter: invalid citing metadata: %w", err)
 		}
 		if SliceContains(v.Institutions, institution) {
 			citing = append(citing, b)
@@ -165,7 +166,8 @@ func (r *Response) applyInstitutionFilter(institution string) {
 	for _, b := range r.Cited {
 		v = snippetPool.Get().(*Snippet)
 		if err := json.Unmarshal(b, v); err != nil {
-			panic(fmt.Sprintf("internal data broken: %v", err))
+			snippetPool.Put(v)
+			return fmt.Errorf("institution filter: invalid cited metadata: %w", err)
 		}
 		if SliceContains(v.Institutions, institution) {
 			cited = append(cited, b)
@@ -178,6 +180,7 @@ func (r *Response) applyInstitutionFilter(institution string) {
 	r.Cited = cited
 	r.updateCounts()
 	r.Extra.Institution = institution
+	return nil
 }
 
 // updateCounts updates extra fields containing counts. Best called after the
@@ -244,7 +247,7 @@ Examples:
 			Hostport string
 		}{
 			PID:      os.Getpid(),
-			Hostport: r.Host,
+			Hostport: sanitizeHost(r.Host),
 		})
 		if err != nil {
 			httpErrLog(w, http.StatusInternalServerError, err)
@@ -353,12 +356,16 @@ func (s *Server) serveFromCache(w http.ResponseWriter, r *http.Request) error {
 	took := fmt.Sprintf(`"took":%f`, time.Since(t).Seconds())
 	replacer := transform.NewReader(zr, replace.RegexpString(regexp.MustCompile(`"took":[0-9.]+`), took))
 	switch {
+	case isil != "" && !validISIL(isil):
+		return fmt.Errorf("invalid ISIL parameter: %q", isil)
 	case isil != "":
 		var resp Response
 		if err := json.NewDecoder(replacer).Decode(&resp); err != nil {
 			return fmt.Errorf("cache json decode: %w", err)
 		}
-		resp.applyInstitutionFilter(isil)
+		if err := resp.applyInstitutionFilter(isil); err != nil {
+			return fmt.Errorf("cache institution filter: %w", err)
+		}
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			return fmt.Errorf("encode: %w", err)
 		}
@@ -437,6 +444,10 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 			// field of the index data, e.g. "DE-14".
 			isil = r.URL.Query().Get("i")
 		)
+		if isil != "" && !validISIL(isil) {
+			httpErrLogf(w, http.StatusBadRequest, "invalid ISIL parameter: %q", isil)
+			return
+		}
 		sw.SetEnabled(s.StopWatchEnabled)
 		sw.Recordf("[%s] started query: %s", isil, response.ID)
 		// Ganz sicher application/json.
@@ -517,17 +528,16 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		}
 		unmatchedSet = ds.Difference(set.FromSlice(matched))
 		for k := range unmatchedSet {
-			// We shortcut and do not use a proper JSON marshaller to save a
-			// bit of time. TODO: may switch to proper JSON encoding, if other
-			// parts are more optimized.
-			b := []byte(fmt.Sprintf(`{"doi_str_mv": %q}`, k))
+			b, err := json.Marshal(map[string]string{"doi_str_mv": k})
+			if err != nil {
+				httpErrLogf(w, http.StatusInternalServerError, "marshal unmatched doi: %w", err)
+				return
+			}
 			switch {
 			case outbound.Contains(k):
 				response.Unmatched.Citing = append(response.Unmatched.Citing, b)
 			case inbound.Contains(k):
 				response.Unmatched.Cited = append(response.Unmatched.Cited, b)
-			default:
-				panic("cosmic rays detected (in-flight change of inbound or outbound values)")
 			}
 		}
 		sw.Record("recorded unmatched ids")
@@ -570,7 +580,10 @@ func (s *Server) handleLocalIdentifier() http.HandlerFunc {
 		}
 		// (8) Optional: Apply institution filter.
 		if isil != "" {
-			response.applyInstitutionFilter(isil)
+			if err := response.applyInstitutionFilter(isil); err != nil {
+				httpErrLog(w, http.StatusInternalServerError, err)
+				return
+			}
 			sw.Record("applied institution filter")
 		}
 		// (9) Send response.
@@ -683,6 +696,28 @@ func batchedStrings(ss []string, n int) (result [][]string) {
 			b, e = e, e+n
 		}
 	}
+}
+
+// hostPattern matches a valid host:port or host string. Rejects anything with
+// special characters that could be used for injection.
+var hostPattern = regexp.MustCompile(`^[a-zA-Z0-9._-]+(:[0-9]+)?$`)
+
+// sanitizeHost returns the host string if it matches a safe pattern, or a
+// fallback placeholder otherwise.
+func sanitizeHost(host string) string {
+	if hostPattern.MatchString(host) {
+		return host
+	}
+	return "localhost"
+}
+
+// isilPattern matches ISIL identifiers per ISO 15511 (e.g. "DE-14",
+// "DE-Gla1"). Format: country code, hyphen, alphanumeric library code.
+var isilPattern = regexp.MustCompile(`^[A-Z]{1,4}-[A-Za-z0-9/:-]{1,11}$`)
+
+// validISIL returns true if the given string looks like a valid ISIL.
+func validISIL(s string) bool {
+	return isilPattern.MatchString(s)
 }
 
 // httpErrLogf is a log formatting helper.

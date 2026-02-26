@@ -70,7 +70,7 @@ type Doc struct {
 func main() {
 	flag.Parse()
 	if *showVersion {
-		fmt.Printf("makta %s\n", Version)
+		fmt.Printf("tabjson %s\n", Version)
 		os.Exit(0)
 	}
 	pp := parallel.NewProcessor(os.Stdin, os.Stdout, func(p []byte) ([]byte, error) {

@@ -29,7 +29,7 @@ var (
 func main() {
 	flag.Parse()
 	if *showVersion {
-		fmt.Printf("makta %s\n", Version)
+		fmt.Printf("doisniffer %s\n", Version)
 		os.Exit(0)
 	}
 	ignore, err := stringToRegexpSlice(*ignoreKeys, ",")

@@ -107,7 +107,7 @@ PRAGMA synchronous = 0;
 PRAGMA locking_mode = EXCLUSIVE;
 PRAGMA temp_store = MEMORY;
 CREATE TABLE IF NOT EXISTS map (k TEXT, v TEXT);
-CREATE INDEX IF NOT EXISTS idx_k ON map(k);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_k ON map(k);
 	`
 	return tabutils.RunScript(c.Path, s, "initialized database")
 }
@@ -142,7 +142,7 @@ func (c *Cache) Set(key string, value []byte) error {
 	if c.readOnly {
 		return ErrReadOnly
 	}
-	s := `INSERT into map (k, v) VALUES (?, ?)`
+	s := `INSERT OR REPLACE INTO map (k, v) VALUES (?, ?)`
 	_, err := c.db.Exec(s, key, value)
 	return err
 }

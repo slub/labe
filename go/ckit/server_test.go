@@ -61,7 +61,7 @@ func TestApplyInstitutionFilter(t *testing.T) {
 			expected:    []byte("{}"),
 		},
 		{
-			desc:        "empty",
+			desc:        "empty with institution",
 			institution: "any",
 			resp:        []byte("{}"),
 			expected:    []byte(`{"extra": {"institution": "any"}}`),
@@ -119,11 +119,58 @@ func TestApplyInstitutionFilter(t *testing.T) {
 		if err := json.Unmarshal(c.expected, &expected); err != nil {
 			t.Fatalf("could not unmarshal test response: %v", err)
 		}
-		resp.applyInstitutionFilter(c.institution)
+		if err := resp.applyInstitutionFilter(c.institution); err != nil {
+			t.Fatalf("[%s] unexpected error: %v", c.desc, err)
+		}
 		if string(mustMarshal(resp)) != string(mustMarshal(expected)) {
 			log.Println(string(mustMarshal(resp)))
 			log.Println(string(mustMarshal(expected)))
 			t.Fatalf("[%s] %v", c.desc, cmp.Diff(resp, expected))
+		}
+	}
+}
+
+func TestApplyInstitutionFilterMalformedJSON(t *testing.T) {
+	resp := Response{
+		Citing: []json.RawMessage{[]byte(`not valid json`)},
+	}
+	err := resp.applyInstitutionFilter("DE-14")
+	if err == nil {
+		t.Fatal("expected error for malformed JSON, got nil")
+	}
+}
+
+func TestValidISIL(t *testing.T) {
+	valid := []string{"DE-14", "DE-Gla1", "DE-Ch1", "DE-D161", "DE-Brt1", "DE-L229", "DE-Bn3", "US-NNC"}
+	for _, v := range valid {
+		if !validISIL(v) {
+			t.Errorf("expected %q to be valid ISIL", v)
+		}
+	}
+	invalid := []string{"", "DE", "14", "DE-", "-14", `DE-14"; DROP TABLE`, "<script>alert(1)</script>", "DE 14", "../../etc/passwd"}
+	for _, v := range invalid {
+		if validISIL(v) {
+			t.Errorf("expected %q to be invalid ISIL", v)
+		}
+	}
+}
+
+func TestSanitizeHost(t *testing.T) {
+	cases := []struct {
+		input    string
+		expected string
+	}{
+		{"localhost:8000", "localhost:8000"},
+		{"example.com", "example.com"},
+		{"10.0.0.1:8080", "10.0.0.1:8080"},
+		{"evil.com\r\nX-Injected: true", "localhost"},
+		{`"><script>alert(1)</script>`, "localhost"},
+		{"", "localhost"},
+	}
+	for _, c := range cases {
+		got := sanitizeHost(c.input)
+		if got != c.expected {
+			t.Errorf("sanitizeHost(%q) = %q, want %q", c.input, got, c.expected)
 		}
 	}
 }
