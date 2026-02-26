@@ -138,3 +138,4 @@ labe-*.run
 .vagrant/*
 labe_*_amd64.deb
 packaging/deb/labe/usr/*
+/notes/2026-02-26-assessment.md
